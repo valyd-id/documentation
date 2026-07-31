@@ -140,7 +140,7 @@ export const VerifyLicenseRecipe = () => (
         <strong> state + license type (default MD) + number</strong>. No <code className="font-mono text-xs">provider_code</code>;
         Valyd resolves the board. The check runs synchronously (10–60 s) — set your timeout to at least 90 s.
       </p>
-      <CodeBlock language="javascript" title="Valyd SDK (recommended)" code={`import { VerifyClient } from "valyd-verify-sdk";
+      <CodeBlock language="javascript" title="Valyd SDK (recommended)" code={`import { VerifyClient } from "@valyd/sdk";
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY, timeoutMs: 90_000 });
 
 const { check } = await verify.standalone.credentialVerification({

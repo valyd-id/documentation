@@ -1,8 +1,8 @@
 > Source: https://{{DOCS_BASE_URL}}/verify#intro
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: IntroSection.tsx
 
-# Valyd Verify
+# Verification APIs
 
 ## Agent Quick-Start
 - Source URL: https://{{DOCS_BASE_URL}}/verify#intro
@@ -12,7 +12,7 @@
 - Can complete without human input: YES — reading/reference only, no actions required
 - Prerequisites: none
 
-Valyd Verify has **two API types** — **Account (Managed by Valyd)**, where the user has a Valyd account and their verified identity is stored and reused, and **Non-account (Fresh)**, a one-shot check with nothing retained. Each is available two ways: **Hosted** (Valyd renders the capture page) or **Core APIs** (you call REST directly with your own UI).
+Verification APIs has **two API types** — **Account (Managed by Valyd)**, where the user has a Valyd account and their verified identity is stored and reused, and **Non-account (Fresh)**, a one-shot check with nothing retained. Each is available two ways: **Hosted** (Valyd renders the capture page) or **Core APIs** (you call REST directly with your own UI).
 
 | | Hosted | Core APIs |
 |---|---|---|

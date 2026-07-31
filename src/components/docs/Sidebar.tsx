@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, BookOpen, Key, Shield, Code, RefreshCw, User, FileCheck, BadgeCheck, Zap, Link2, Play, ExternalLink, FileCode2, Bot } from "lucide-react";
+import { ChevronDown, ChevronRight, BookOpen, Key, Shield, Code, RefreshCw, User, FileCheck, BadgeCheck, Zap, Link2, Play, ExternalLink, FileCode2, Bot, Building2, UserCheck } from "lucide-react";
 
 interface SidebarProps {
   /** slug of the docs group currently shown (from the URL) */
@@ -32,9 +32,9 @@ const navItems: NavItem[] = [
   },
   {
     id: "verify-docs",
-    label: "Valyd Verify docs",
+    label: "Verification API docs",
     icon: <Shield className="h-4 w-4" />,
-    href: "/verify",
+    href: "/verifications",
   },
   {
     id: "agents",
@@ -85,6 +85,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    id: "request-data",
+    label: "Request user data",
+    icon: <UserCheck className="h-4 w-4" />,
+  },
+  {
     id: "endpoints",
     label: "API reference",
     icon: <Code className="h-4 w-4" />,
@@ -120,6 +125,11 @@ const navItems: NavItem[] = [
       { id: "create-project", label: "Create a project" },
       { id: "get-credentials", label: "Get credentials" },
     ],
+  },
+  {
+    id: "organizations",
+    label: "Organizations & teams",
+    icon: <Building2 className="h-4 w-4" />,
   },
   {
     id: "oidc",

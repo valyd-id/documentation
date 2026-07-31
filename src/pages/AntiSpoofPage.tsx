@@ -157,10 +157,10 @@ function CredRow({ label, value, secret }: { label: string; value: string; secre
 }
 
 // ── Ready-to-run server snippet (login → share details → verify face) ────────
-const serverCode = `// server.js — Node 18+ (Express). Install: npm i express valyd-idp-sdk
+const serverCode = `// server.js — Node 18+ (Express). Install: npm i express @valyd/sdk
 // The client_secret and app key stay here on the server, never in the browser.
 import express from "express";
-import { ValydClient } from "valyd-idp-sdk";
+import { ValydClient } from "@valyd/sdk";
 
 const app = express();
 const PORT = 3000;

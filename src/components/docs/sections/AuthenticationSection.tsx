@@ -3,7 +3,7 @@ import { CodeBlock } from "../CodeBlock";
 import { LanguageTabs } from "../LanguageTabs";
 
 export const AuthenticationSection = () => {
-  const authUrlExample = `import { ValydClient } from "valyd-idp-sdk";
+  const authUrlExample = `import { ValydClient } from "@valyd/sdk";
 
 const valyd = new ValydClient({
   clientId: process.env.VALYD_CLIENT_ID!,
@@ -27,8 +27,8 @@ res.redirect(url);`;
       language: "javascript",
       label: "Node (Express + SDK)",
       code: `// Recommended: use the official SDK.
-//   npm install valyd-idp-sdk@^0.2.0
-import { ValydClient } from "valyd-idp-sdk";
+//   npm install @valyd/sdk@^0.2.0
+import { ValydClient } from "@valyd/sdk";
 
 const valyd = new ValydClient({
   clientId: process.env.VALYD_CLIENT_ID!,

@@ -45,7 +45,7 @@ const HostedKycPage = () => {
           steps={STEPS}
           activeId={activeId}
           backHref="/verify"
-          backLabel="Valyd Verify docs"
+          backLabel="Verification APIs docs"
           onNavigate={onNavigate}
         />
       )}

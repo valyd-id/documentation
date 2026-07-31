@@ -14,7 +14,7 @@
   - A Valyd application registered in the Developer Portal (https://{{DEV_PORTAL_URL}}) with a Client ID and Client Secret.
   - The exact callback/redirect URL (e.g. `https://yourapp.com/callback`) registered on that application — it must match the `redirect_url` you send.
   - A server-side environment that can keep `VALYD_CLIENT_SECRET` private (token exchange MUST happen server-side).
-  - (Recommended) Node project with the official SDK: `npm install valyd-idp-sdk@^0.2.0`
+  - (Recommended) Node project with the official SDK: `npm install @valyd/sdk@^0.2.0`
 
 ---
 
@@ -56,7 +56,7 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
 2. **Issue a login session and redirect (recommended: use the SDK).** On your login route, create a login session, store its marker (httpOnly cookie or server session), build the authorization URL, and redirect the user:
 
    ```javascript
-   import { ValydClient } from "valyd-idp-sdk";
+   import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
      clientId: process.env.VALYD_CLIENT_ID!,
@@ -111,8 +111,8 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
 
    ```javascript
    // Recommended: use the official SDK.
-   //   npm install valyd-idp-sdk@^0.2.0
-   import { ValydClient } from "valyd-idp-sdk";
+   //   npm install @valyd/sdk@^0.2.0
+   import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
      clientId: process.env.VALYD_CLIENT_ID!,

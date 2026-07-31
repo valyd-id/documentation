@@ -19,20 +19,20 @@
 ### Prerequisites
 
 - Node.js 18+ (the SDK requires it).
-- `valyd-idp-sdk` version `^0.2.0` or later (older versions lack the login-session helpers used here).
+- `@valyd/sdk` version `^0.2.0` or later (older versions lack the login-session helpers used here).
 - A Valyd app with credentials. Obtain `VALYD_CLIENT_ID` and `VALYD_CLIENT_SECRET` from the Valyd developer portal (get these from the developer portal → your project → Credentials). `VALYD_CLIENT_SECRET` is server-side only and must never reach a browser.
 - A redirect URI registered in the portal that exactly matches `VALYD_REDIRECT_URI` (no trailing slash).
 - Scopes enabled in the portal: any of `profile`, `verifications`, `doctor_license`, `zkp`, `mcp`.
 
 ### Steps
 
-1. **Install the SDK.** Run the install command (the official `valyd-idp-sdk` handles the full TPSSO/OAuth2 flow, login sessions for CSRF protection, and typed resource calls).
+1. **Install the SDK.** Run the install command (the official `@valyd/sdk` handles the full TPSSO/OAuth2 flow, login sessions for CSRF protection, and typed resource calls).
 
    ```bash
-   npm install valyd-idp-sdk@^0.2.0
+   npm install @valyd/sdk@^0.2.0
    ```
 
-   **Expected output:** npm adds `valyd-idp-sdk` (a `0.2.x` or newer release) to `dependencies` in `package.json` and reports the package was added with no error exit code.
+   **Expected output:** npm adds `@valyd/sdk` (a `0.2.x` or newer release) to `dependencies` in `package.json` and reports the package was added with no error exit code.
 
 2. **Create the `.env` file.** Use `KEY=value` with no spaces around `=`. The values shown are examples — substitute your own.
 
@@ -53,7 +53,7 @@
 
    ```typescript
    // server.ts
-   import { ValydClient } from "valyd-idp-sdk";
+   import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
      clientId: process.env.VALYD_CLIENT_ID!,
@@ -156,10 +156,10 @@
 - Confirm the SDK installed at the required version:
 
   ```bash
-  npm ls valyd-idp-sdk
+  npm ls @valyd/sdk
   ```
 
-  **Expected output:** `valyd-idp-sdk@0.2.x` (or newer) listed. If it shows below `0.2.0`, the login-session helpers (`createLoginSession`, `verifyLoginSession`) will be missing.
+  **Expected output:** `@valyd/sdk@0.2.x` (or newer) listed. If it shows below `0.2.0`, the login-session helpers (`createLoginSession`, `verifyLoginSession`) will be missing.
 
 - Run the full round trip: start the server, visit the `/login` route in a browser, complete login at Valyd, and confirm the `/callback` route reaches step 6. A successful run sets the `valyd_login` cookie on `/login`, passes `verifyLoginSession` on the callback, and returns a populated `profile` from `getUserInfo`.
 

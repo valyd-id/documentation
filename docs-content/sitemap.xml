@@ -27,4 +27,19 @@
   <url><loc>https://{{DOCS_BASE_URL}}/verify/api-reference.md</loc></url>
   <url><loc>https://{{DOCS_BASE_URL}}/openapi/valyd-id.json</loc></url>
   <url><loc>https://{{DOCS_BASE_URL}}/openapi/valyd-verify.json</loc></url>
+  <url>
+    <loc>https://{{DOCS_BASE_URL}}/verifications</loc>
+  </url>
+  <url>
+    <loc>https://{{DOCS_BASE_URL}}/docs/organizations</loc>
+  </url>
+  <url>
+    <loc>https://{{DOCS_BASE_URL}}/docs/organizations.md</loc>
+  </url>
+  <url>
+    <loc>https://{{DOCS_BASE_URL}}/docs/request-data</loc>
+  </url>
+  <url>
+    <loc>https://{{DOCS_BASE_URL}}/docs/request-data.md</loc>
+  </url>
 </urlset>

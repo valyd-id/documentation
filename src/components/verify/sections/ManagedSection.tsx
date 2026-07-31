@@ -19,7 +19,7 @@ const CONSOLE = VERIFY_CONFIG.CONSOLE_URL;
 
 /* ── SDK-first snippets (one runnable block per step) ─────────────────────── */
 
-const INIT = `import { Valyd } from "valyd-verify-sdk";
+const INIT = `import { Valyd } from "@valyd/sdk";
 
 // ONE app from ${CONSOLE_HOST} gives you all of these.
 const valyd = new Valyd({
@@ -98,14 +98,13 @@ const SESSION_CURL = `curl -X POST ${BASE}/api/v2/session \\
   }'
 # → { data: { url, session_id, … } }   (401 valyd_login_required if the token is bad)`;
 
-const BROWSER = `import { open } from "valyd-verify-js";
-
-// No redirect needed — open the hosted session in a modal.
+const BROWSER = `// Hosted verification is a redirect — there is no browser SDK.
+// Your server creates the session and returns its url; send the user there.
 const { url } = await fetch("/verify/start").then((r) => r.json());
-await open({ url, onComplete: ({ sessionId }) => {
-  // Signal only. Your server reads the real result with sessions.decision(sessionId).
-  fetch("/verify/result/" + sessionId);
-}});`;
+window.location.href = url;
+
+// Valyd hosts the capture. When the user returns, your server reads the
+// outcome with valyd.verify.sessions.decision(sessionId) (or via the webhook).`;
 
 const RESULT_SDK = `// 5) The decision is the source of truth (webhook or not).
 const decision = await valyd.verify.sessions.decision(sessionId);
@@ -233,17 +232,17 @@ export const ManagedSection = () => (
       <p className="text-sm text-muted-foreground">
         One SDK, two namespaces:{" "}
         <a
-          href="https://www.npmjs.com/package/valyd-verify-sdk"
+          href="https://www.npmjs.com/package/@valyd/sdk"
           target="_blank"
           rel="noreferrer"
           className="text-primary hover:underline"
         >
-          <code>valyd-verify-sdk</code>
+          <code>@valyd/sdk</code>
         </a>{" "}
         gives you <code>valyd.auth</code> (Login with Valyd) and <code>valyd.verify</code> (the checks).
       </p>
-      <CodeBlock language="bash" code={`npm i valyd-verify-sdk   # server (Node 18+)
-npm i valyd-verify-js    # browser: hosted modal (no redirect)`} />
+      <CodeBlock language="bash" code={`npm i @valyd/sdk   # server (Node 18+)
+# No browser SDK — hosted verification is a redirect to session.url`} />
       <CodeBlock language="javascript" title="Init — one app, all credentials" code={INIT} />
     </div>
 
@@ -340,7 +339,7 @@ npm i valyd-verify-js    # browser: hosted modal (no redirect)`} />
           </>
         }
       >
-        <CodeBlock language="javascript" title="Browser — valyd-verify-js" code={BROWSER} />
+        <CodeBlock language="javascript" title="Browser — redirect to the hosted page" code={BROWSER} />
       </Step>
 
       <Step
@@ -397,11 +396,23 @@ npm i valyd-verify-js    # browser: hosted modal (no redirect)`} />
       </SubHeading>
       <p className="text-sm text-muted-foreground">
         Account sessions never return raw KYC. When you genuinely need raw attributes (legal name, date of birth, …),
-        request them explicitly: the user approves the release in their Valyd app, and the values are end-to-end
-        encrypted (X25519 sealed box) to your public key — Valyd stays blind on the server-blind path. This is the only
-        way raw account KYC leaves Valyd.
+        the values are always end-to-end encrypted (X25519 sealed box) to your public key — Valyd stays blind. There
+        are two ways to ask (full guide:{" "}
+        <a href="/docs/request-data" className="text-primary hover:underline">Request user data</a>):
       </p>
-      <LanguageTabs examples={[{ language: "bash", label: "Request → approve → result", code: CONSENT_CURL }]} />
+      <ul className="list-disc pl-5 space-y-1.5 text-sm text-muted-foreground">
+        <li>
+          <strong>At login (recommended)</strong> — add <code>attributes</code> + your{" "}
+          <code>requester_public_key</code> to the authorize URL. The user checks/unchecks them on the
+          consent screen; granted fields come back inline as <code>attr_code</code>. Consent is{" "}
+          <strong>remembered per app</strong> — a returning user isn't re-prompted. No mobile step.
+        </li>
+        <li>
+          <strong>After login</strong> — the <code>attribute-request</code> flow below; the user approves in
+          their Valyd app. Use it for fields not granted at login.
+        </li>
+      </ul>
+      <LanguageTabs examples={[{ language: "bash", label: "After login: request → approve → result", code: CONSENT_CURL }]} />
       <p className="text-xs text-muted-foreground">
         A second consent surface, <code>credential-share</code>, releases a specific vault credential and gates the
         release with a face scan as the user's consent.

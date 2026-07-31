@@ -5,9 +5,9 @@ import { VERIFY_CONFIG } from "@/lib/verify-config";
 export const IntroSection = () => (
   <section id="intro" className="scroll-mt-8 space-y-6">
     <div>
-      <h1 className="text-4xl font-bold text-foreground">Valyd Verify</h1>
+      <h1 className="text-4xl font-bold text-foreground">Verification APIs</h1>
       <p className="text-lg text-muted-foreground mt-4 max-w-3xl">
-        Valyd Verify has <strong>two API types</strong> — <strong>Account (Managed by Valyd)</strong>,
+        Verification APIs has <strong>two API types</strong> — <strong>Account (Managed by Valyd)</strong>,
         where the user has a Valyd account and their verified identity is stored and reused, and{" "}
         <strong>Non-account (Fresh)</strong>, a one-shot check with nothing retained. Each is available
         two ways: <strong>Hosted</strong> (Valyd renders the capture page) or <strong>Core APIs</strong>{" "}

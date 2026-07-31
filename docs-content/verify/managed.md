@@ -1,5 +1,5 @@
 > Source: https://{{DOCS_BASE_URL}}/verify?mode=managed#managed
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: ManagedSection.tsx
 
 # Account (Managed by Valyd)
@@ -63,7 +63,16 @@ Account ("Managed by Valyd") is one of the two Valyd API types. The other is Non
 
 ## Consent Core API — request raw KYC (user approves)
 
-The only way to obtain raw account attributes:
+There are **two ways** to get raw account attributes (full guide: `/docs/request-data`):
+
+- **At login (recommended)** — add `attributes` + your X25519 `requester_public_key` to the
+  authorize URL. The user checks/unchecks them on the Login-with-Valyd consent screen and the
+  granted fields ride back with the login as `attr_code`. Consent is **remembered per app**, so a
+  returning user isn't re-prompted. No mobile step.
+- **Any time after login** — the `attribute-request` flow below; the user approves in their Valyd
+  app. Use it for fields the user didn't grant at login.
+
+After login, request explicitly:
 
 ```bash
 # 1) Request specific attributes, sending your X25519 public key

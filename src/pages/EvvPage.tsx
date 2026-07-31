@@ -27,7 +27,7 @@ function Pill({ children }: { children: React.ReactNode }) {
   return <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{children}</span>;
 }
 
-const hostedCode = (c: EnvCfg) => `import { Valyd } from "valyd-verify-sdk";
+const hostedCode = (c: EnvCfg) => `import { Valyd } from "@valyd/sdk";
 ${initBlock(c, true)}
 
 // 1) "Connect Valyd" — log the clinician in (OAuth)
@@ -54,16 +54,15 @@ app.post("/webhooks/valyd", express.raw({ type: "*/*" }), async (req, res) => {
   res.json({ ok: true });
 });`;
 
-const HOSTED_BROWSER = `import { connectButton, open } from "valyd-verify-js";
+const HOSTED_BROWSER = `// No browser SDK — "Connect Valyd" and the hosted flow are both redirects.
 
-// "Connect Valyd" button → sends the clinician to your /evv/login (OAuth)
-connectButton("#connect", { loginUrl: "/evv/login" });
-
-// After they're connected, your server made a session → open it in the modal
+// 1) "Connect Valyd" is a plain link to your OAuth login:
+//    <a href="/evv/login">Connect Valyd</a>
+// 2) Once connected, your server creates a session and returns its url:
 const { url } = await fetch("/evv/session").then(r => r.json());
-await open({ url, onComplete: (r) => console.log("EVV:", r.status) }); // modal, no redirect`;
+window.location.href = url; // Valyd hosts the capture; result via webhook + decision`;
 
-const coreCode = (c: EnvCfg) => `import { Valyd } from "valyd-verify-sdk";
+const coreCode = (c: EnvCfg) => `import { Valyd } from "@valyd/sdk";
 ${initBlock(c, false)}
 
 // 1) "Connect Valyd" — SAME OAuth step as hosted; this is how you get the token.
@@ -88,7 +87,7 @@ app.get("/evv/callback", async (req, res) => {
 
 // 4) The visit itself — ACCOUNT mode: selfie only (matched to the stored Valyd face
 //    vector) + the location check. No ID image; the browser captures both:
-//    import { captureVisit } from "valyd-verify-js";  const v = await captureVisit();
+//    capture with the browser's native camera + geolocation, then POST to your server.
 const face = await valyd.verify.standalone.faceMatch({
   valydAccessToken: accessToken,               // ← selfie matched to the stored vector
   selfie: v.selfie,
@@ -106,7 +105,7 @@ const atTheHome = face.check.status === "passed" && loc.check.status === "passed
 const CONNECT_NOTE = `// The "Connect Valyd" button is just a link to your /evv/login route:
 //   <a href="/evv/login">Connect Valyd</a>
 // or use the browser SDK helper:
-import { connectButton } from "valyd-verify-js";
+// "Connect Valyd" is a plain link to your OAuth login — no browser SDK.
 connectButton("#connect", { loginUrl: "/evv/login" });`;
 
 const RESULT_POLL = `// NO WEBHOOK NEEDED — read the result when the user returns.
@@ -183,15 +182,15 @@ function buildAiPrompt(c: EnvCfg): string {
   new Valyd({ clientId, clientSecret, apiKey, env: "${c.env}" })
   This targets ${c.idp} (login) + ${c.verify} (Verify) + KYC. WITHOUT env the SDK defaults to PRODUCTION
   (valyd.id) and OAuth fails with "client_id/redirect_uri not allowed". One env switch sets IdP + Verify + KYC.`;
-  return `You are integrating Valyd Verify — EVV (Electronic Visit Verification) into my app.
+  return `You are integrating Verification APIs — EVV (Electronic Visit Verification) into my app.
 Valyd proves the right, licensed clinician is physically at the right patient's home:
 verified identity (KYC) + live medical license + face match + geolocation. It uses the
 ACCOUNT / Managed-Identity model — the clinician logs in with Valyd once; their KYC and
 license are stored and reused on later visits.
 
 SDKs (install):
-- Server (Node 18+):  npm i valyd-verify-sdk@^0.5.0    // valyd.auth (OAuth) + valyd.verify (checks)
-- Browser:            npm i valyd-verify-js@^0.4.0      // hosted modal, connectButton, captureVisit (camera+GPS UI)
+- Server (Node 18+):  npm i @valyd/sdk@^0.5.0    // valyd.auth (OAuth) + valyd.verify (checks)
+- Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
 
 ${envBlock}
 
@@ -228,7 +227,7 @@ Flow A — Hosted (Valyd renders the UI in a modal):
 2. GET /evv/callback?code= -> const { accessToken, user } = await valyd.auth.exchangeCode(code)
 3. const s = await valyd.verify.sessions.create({ workflowId: VALYD_WORKFLOW_ID, valydAccessToken: accessToken,
      vendorData: user.valyd_id, metadata: { expected_lat, expected_lng }, redirectUrl, callback }); send s.url to the browser
-4. Browser: import { open } from "valyd-verify-js"; await open({ url })  // returning users do only the face scan
+4. Browser: redirect the user to the hosted url (window.location.href = url) — returning users do only the face scan
 5. Webhook POST /webhooks/valyd: const e = valyd.verify.webhooks.constructEvent(raw, headers);
      const decision = await valyd.verify.sessions.decision(e.sessionId)   // source of truth
 
@@ -238,7 +237,7 @@ Flow B — Core APIs (your own UI):
 3. License: await valyd.verify.standalone.credentialVerification({ licenseState, licenseType:"MD", licenseNumber })
      Provider is auto-resolved from state+type (default MD); the NAME comes from the account (don't pass it).
 4. Visit (ACCOUNT = selfie only, matched to the stored Valyd face vector — NO idImage):
-     import { captureVisit } from "valyd-verify-js"; const v = await captureVisit(); // camera + GPS UI
+     build your own capture with navigator.mediaDevices + navigator.geolocation
      const face = await valyd.verify.standalone.faceMatch({ valydAccessToken: accessToken, selfie: v.selfie })
      const loc  = await valyd.verify.standalone.locationMatch({
        latitude: v.latitude, longitude: v.longitude, accuracy: v.accuracy,
@@ -253,12 +252,14 @@ Now: ask me for the credentials, then scaffold the server routes + a minimal UI 
 Put every secret in env vars and make all Valyd calls server-to-server.`;
 }
 
-const CAPTURE_CODE = `import { captureVisit } from "valyd-verify-js";
-// ONE call: opens a small camera UI for the selfie + reads a high-accuracy GPS fix.
-// No file inputs, no "ID image". Pass the result straight to evvPresence.
-const v = await captureVisit({ maxAccuracyM: 100 });
-// → { selfie, latitude, longitude, accuracy }
-// (or captureSelfie() / captureLocation() individually)`;
+const CAPTURE_CODE = `// Building your own capture UI (Core APIs path)? There is no Valyd browser
+// SDK — use the browser's native camera + geolocation, then POST to your server.
+const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+// draw a video frame to a <canvas>, then canvas.toDataURL("image/jpeg") -> selfie
+const pos = await new Promise((res, rej) =>
+  navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true }));
+// POST { selfie, latitude: pos.coords.latitude, longitude: pos.coords.longitude }
+// to YOUR server, which calls valyd.verify.standalone.* with your API key.`;
 
 export default function EvvPage() {
   const [mode, setMode] = useState<"hosted" | "core">("hosted");
@@ -271,7 +272,7 @@ export default function EvvPage() {
 
       {/* Hero */}
       <section className="max-w-5xl mx-auto px-6 pt-14 pb-10">
-        <Pill><Stethoscope className="h-3.5 w-3.5" /> Valyd Verify · EVV</Pill>
+        <Pill><Stethoscope className="h-3.5 w-3.5" /> Verification APIs · EVV</Pill>
         <h1 className="mt-4 text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
           Electronic Visit Verification
         </h1>
@@ -363,14 +364,14 @@ export default function EvvPage() {
             <p className="mt-3 text-sm text-muted-foreground">Server (Node 18+) and browser:</p>
             <div className="mt-2">
               <CodeBlock language="bash" code={`# server: OAuth + Verify checks (v0.3+ has kyc.redirectUrl, evvPresence, locationMatch)
-npm i valyd-verify-sdk@^0.5.0
+npm i @valyd/sdk@^0.5.0
 
 # browser: the modal + high-accuracy location capture (v0.2+ has captureLocation)
-npm i valyd-verify-js@^0.2.0`} />
+# No browser SDK — hosted verification is a redirect to the session url`} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               No bundler? Load the browser SDK from a CDN:{" "}
-              <code>&lt;script src="https://unpkg.com/valyd-verify-js@^0.2.0"&gt;&lt;/script&gt;</code> → <code>window.ValydVerify</code>.
+              redirecting the user to the hosted session url (there is no browser SDK to include).
             </p>
           </div>
         </div>

@@ -60,7 +60,7 @@ export const HostedKycRecipe = () => (
         <code className="font-mono text-sm">workflow_id</code> changes.
       </p>
       <div className="flex flex-wrap gap-2 text-xs">
-        {["~30 min", "Express / Node.js", "valyd-verify-sdk"].map((tag) => (
+        {["~30 min", "Express / Node.js", "@valyd/sdk"].map((tag) => (
           <span key={tag} className="rounded-full bg-muted border border-border px-3 py-1 font-mono text-muted-foreground">
             {tag}
           </span>
@@ -98,7 +98,7 @@ export const HostedKycRecipe = () => (
 VALYD_WEBHOOK_SECRET=your_webhook_secret
 VALYD_WORKFLOW_ID=wf_…
 APP_URL=https://api.example.com`} />
-      <CodeBlock language="bash" title="Install the SDK" code="npm i valyd-verify-sdk" />
+      <CodeBlock language="bash" title="Install the SDK" code="npm i @valyd/sdk" />
     </section>
 
     {/* ── Step 1 ── */}
@@ -109,7 +109,7 @@ APP_URL=https://api.example.com`} />
         you'll send the user. Pass <code className="font-mono text-xs">vendor_data</code> to
         correlate the result back to your user later.
       </p>
-      <CodeBlock language="javascript" title="SDK (Node.js)" code={`import { VerifyClient } from "valyd-verify-sdk";
+      <CodeBlock language="javascript" title="SDK (Node.js)" code={`import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -193,7 +193,7 @@ const session = await verify.sessions.create({
         signature against the <strong>raw request body</strong> — do not re-serialise the JSON.
         Use <code className="font-mono text-xs">X-Valyd-Event-Id</code> to deduplicate retries.
       </p>
-      <CodeBlock language="javascript" title="Express webhook handler" code={`import { ValydVerifyError } from "valyd-verify-sdk";
+      <CodeBlock language="javascript" title="Express webhook handler" code={`import { ValydVerifyError } from "@valyd/sdk";
 
 // IMPORTANT: raw body required for signature verification
 app.post(

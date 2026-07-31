@@ -37,7 +37,7 @@ const VerifyApiRef = () => {
         <ApiRefSidebar
           spec={spec}
           backHref="/verify"
-          backLabel="Valyd Verify docs"
+          backLabel="Verification APIs docs"
           activeId={activeId}
           onNavigate={onNavigate}
           demos

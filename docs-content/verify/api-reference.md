@@ -1,5 +1,5 @@
 > Source: https://{{DOCS_BASE_URL}}/verify#api-sessions
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: ApiReferenceSection.tsx
 
 # API Reference

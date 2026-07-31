@@ -35,18 +35,30 @@ export const SdkSection = () => (
         <Package className="h-7 w-7 text-primary" /> Node SDK
       </h2>
       <p className="text-muted-foreground">
-        The official Node SDK for Valyd Verify.{" "}
+        One SDK covers everything.{" "}
         <a
-          href="https://www.npmjs.com/package/valyd-verify-sdk"
+          href="https://www.npmjs.com/package/@valyd/sdk"
           target="_blank"
           rel="noreferrer"
           className="text-primary hover:underline inline-flex items-center gap-1"
         >
-          valyd-verify-sdk on npm <ExternalLink className="h-3 w-3" />
-        </a>
-        . Zero-dependency, dual ESM + CJS, fully typed TypeScript. Requires <strong>Node 18+</strong>{" "}
-        (built-in <code>fetch</code> / <code>crypto</code>).
+          @valyd/sdk on npm <ExternalLink className="h-3 w-3" />
+        </a>{" "}
+        is the single, unified Valyd SDK — <strong>Login with Valyd</strong> lives on{" "}
+        <code>valyd.auth</code> and the <strong>Verification APIs</strong> on{" "}
+        <code>valyd.verify</code>. Zero-dependency, dual ESM + CJS, fully typed. Requires{" "}
+        <strong>Node 18+</strong> (built-in <code>fetch</code> / <code>crypto</code>).
       </p>
+      <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+        <Package className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+        <p className="text-foreground">
+          <strong>One app, one credential.</strong> Create an app in the developer portal (owned by
+          your individual account or your <strong>organization</strong>) and use its{" "}
+          <code>client_id</code> / <code>client_secret</code> for both login and verification — no
+          separate verify key or URL. For verification-only use (no login), a project{" "}
+          <code>apiKey</code> works instead. Everything routes through one host, the Valyd IdP.
+        </p>
+      </div>
       <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
         <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
         <p className="text-foreground">
@@ -61,18 +73,26 @@ export const SdkSection = () => (
       <SubHeading id="sdk-install-h" icon={<Zap className="h-5 w-5 text-primary" />}>
         Install & initialise
       </SubHeading>
-      <CodeBlock language="bash" code={`npm i valyd-verify-sdk`} />
+      <CodeBlock language="bash" code={`npm i @valyd/sdk`} />
       <CodeBlock
         language="javascript"
-        code={`import { VerifyClient } from "valyd-verify-sdk";
+        code={`import { Valyd } from "@valyd/sdk";
 
-const verify = new VerifyClient({
-  apiKey: process.env.VALYD_API_KEY!,
-});`}
+// One app credential for both login and verification (recommended).
+const valyd = new Valyd({
+  clientId: process.env.VALYD_CLIENT_ID,
+  clientSecret: process.env.VALYD_CLIENT_SECRET, // server-side only
+  webhookSecret: process.env.VALYD_WEBHOOK_SECRET,
+});
+
+valyd.auth;   // Login with Valyd (OAuth2 / OIDC)
+valyd.verify; // Verification APIs (hosted + standalone)`}
       />
       <p className="text-sm text-muted-foreground">
-        Versions follow semver and are pinned per release — lock to <code>^x.y.z</code> for
-        backwards-compatible upgrades.
+        Verification-only (no login)? Construct with a project API key instead:{" "}
+        <code>new Valyd({`{ apiKey: process.env.VALYD_API_KEY }`})</code>. Both{" "}
+        <code>valyd.auth</code> (a <code>ValydClient</code>) and <code>valyd.verify</code> (a{" "}
+        <code>VerifyClient</code>) are also exported directly if you prefer to instantiate one alone.
       </p>
     </div>
 
@@ -195,7 +215,7 @@ const verify = new VerifyClient({
       </SubHeading>
       <CodeBlock
         language="typescript"
-        code={`import { readImage, type ImageInput } from "valyd-verify-sdk";
+        code={`import { readImage, type ImageInput } from "@valyd/sdk";
 
 // ImageInput accepted everywhere an image is required:
 //   Buffer | Uint8Array | base64 string | data-URL string
@@ -220,7 +240,7 @@ const fromDataUrl: ImageInput = "data:image/jpeg;base64,/9j/4AAQ...";`}
   CredentialState,
   CredentialProvider,
   WebhookEvent,
-} from "valyd-verify-sdk";`}
+} from "@valyd/sdk";`}
       />
     </div>
 
@@ -242,7 +262,7 @@ const fromDataUrl: ImageInput = "data:image/jpeg;base64,/9j/4AAQ...";`}
       </ul>
       <CodeBlock
         language="javascript"
-        code={`import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+        code={`import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY!, timeoutMs: 90_000 });
 
@@ -274,7 +294,7 @@ try {
           {
             language: "javascript",
             label: "Hosted",
-            code: `import { VerifyClient } from "valyd-verify-sdk";
+            code: `import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -300,7 +320,7 @@ const decision = await verify.sessions.decision(event.session_id);
           {
             language: "javascript",
             label: "Standalone",
-            code: `import { VerifyClient, readImage } from "valyd-verify-sdk";
+            code: `import { VerifyClient, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
@@ -333,7 +353,7 @@ const result = await verify.standalone.kycCredential({
       <CodeBlock
         language="javascript"
         code={`import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const app = express();
 const verify = new VerifyClient({

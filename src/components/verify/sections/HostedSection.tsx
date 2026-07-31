@@ -118,19 +118,19 @@ export const HostedSection = () => (
       <p className="text-sm text-muted-foreground">
         The official Node SDK is{" "}
         <a
-          href="https://www.npmjs.com/package/valyd-verify-sdk"
+          href="https://www.npmjs.com/package/@valyd/sdk"
           target="_blank"
           rel="noreferrer"
           className="text-primary hover:underline"
         >
-          <code>valyd-verify-sdk</code>
+          <code>@valyd/sdk</code>
         </a>
         . It wraps sessions, workflows, webhooks, and the decision API.
       </p>
-      <CodeBlock language="bash" code={`npm i valyd-verify-sdk`} />
+      <CodeBlock language="bash" code={`npm i @valyd/sdk`} />
       <CodeBlock
         language="javascript"
-        code={`import { VerifyClient } from "valyd-verify-sdk";
+        code={`import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -333,7 +333,7 @@ app.post("/start-verification", async (req, res) => {
             language: "javascript",
             label: "SDK (Node)",
             code: `import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -515,7 +515,7 @@ await verify.workflows.remove(wf.id);`}
       <CodeBlock
         language="javascript"
         code={`import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const app = express();
 const verify = new VerifyClient({

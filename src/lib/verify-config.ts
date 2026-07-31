@@ -1,4 +1,4 @@
-// Valyd Verify API config (environment-driven; see api-config.ts + .env.example)
+// Verification API config (environment-driven; see api-config.ts + .env.example)
 const env = import.meta.env;
 
 // Verify is served BY the IdP (/api/v2, /api/hosted). The old verify.* host is retired.
@@ -12,7 +12,7 @@ export const VERIFY_CONFIG = {
   // Verify dashboard any more — VITE_VERIFY_CONSOLE_URL now points at the dev portal.
   CONSOLE_URL: env.VITE_VERIFY_CONSOLE_URL ?? DEV_PORTAL_URL,
   DEV_PORTAL_URL,
-  BRAND_NAME: "Valyd Verify",
+  BRAND_NAME: "Verification APIs",
 } as const;
 
 /** The console host without a scheme — e.g. "dev.valyd.work". */

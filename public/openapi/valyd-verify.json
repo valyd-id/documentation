@@ -1,10 +1,10 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Valyd Verify API",
+    "title": "Verification API",
     "version": "2.0.0",
     "summary": "Hosted and server-to-server identity verification: ID checks, liveness, face match, age, and credential verification.",
-    "description": "REST API for Valyd Verify (`/api/v2`).\n\n- **Hosted** — create a session with a `workflow_id`, redirect the user to the returned hosted `url`, receive a signed webhook on a terminal state, then pull the authoritative result from `GET /api/v2/session/{id}/decision`. The redirect-back `?status=` is a hint only — never treat it as final.\n- **Standalone** — call individual check endpoints (`/api/v2/id-verification`, `/liveness`, `/face-match`, `/age-verification`, `/credential-verification`, `/kyc-credential`) directly for a synchronous result.\n\nAll responses use a `{ success, data, error }` envelope. Authenticate with `X-API-Key: <App API key>` (a Bearer token with the same key is also accepted). API keys are created by a human in the Developer Portal — not via API.",
+    "description": "REST API for Verification APIs (`/api/v2`).\n\n- **Hosted** — create a session with a `workflow_id`, redirect the user to the returned hosted `url`, receive a signed webhook on a terminal state, then pull the authoritative result from `GET /api/v2/session/{id}/decision`. The redirect-back `?status=` is a hint only — never treat it as final.\n- **Standalone** — call individual check endpoints (`/api/v2/id-verification`, `/liveness`, `/face-match`, `/age-verification`, `/credential-verification`, `/kyc-credential`) directly for a synchronous result.\n\nAll responses use a `{ success, data, error }` envelope. Authenticate with `X-API-Key: <App API key>` (a Bearer token with the same key is also accepted). API keys are created by a human in the Developer Portal — not via API.",
     "contact": {
       "name": "Valyd Developer Docs",
       "url": "https://docs.valyd.work/verify/intro.md"
@@ -17,7 +17,7 @@
   "servers": [
     {
       "url": "https://idp.valyd.work",
-      "description": "Valyd Verify host"
+      "description": "Verification APIs host"
     }
   ],
   "tags": [

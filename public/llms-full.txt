@@ -9,10 +9,12 @@ This file concatenates every Valyd documentation page. Each page is delimited by
 
 # Valyd — Identity & Verify API Documentation
 
-> Valyd provides two developer products: **Valyd ID** (OAuth2 / OpenID Connect third-party SSO,
-> internally "TPSSO" — verified user profiles, professional licenses, and identity claims) and
-> **Valyd Verify** (hosted and server-to-server identity verification: ID checks, liveness, face
-> match, age, and credential verification). This file is the machine-readable index of the docs.
+> Valyd is one identity platform with a single unified SDK, **@valyd/sdk**. It covers **Login with
+> Valyd** (OAuth 2.0 / OpenID Connect SSO — `valyd.auth`) and the **Verification APIs** (KYC, liveness,
+> face match, age and professional-license checks — `valyd.verify`). **One app credential** (client_id /
+> client_secret, created in the developer portal and owned by your individual account or your
+> organization) authenticates both; a project API key is available for verification-only use. Everything
+> runs through one host, the Valyd IdP — there is no separate verify service or URL. This file is the machine-readable index of the docs.
 > Every page below is available as clean Markdown at the linked `.md` URL — fetch those directly;
 > do not try to scrape the HTML site (it is a client-rendered SPA and returns no static content).
 
@@ -22,14 +24,14 @@ This file concatenates every Valyd documentation page. Each page is delimited by
   verification, and common errors).
 - **Base URLs (one canonical host per product — use these exactly):**
   - Valyd ID / OAuth / OIDC: `https://idp.valyd.work`
-  - Valyd Verify API: `https://idp.valyd.work`
+  - Verification API: `https://idp.valyd.work`
   - Developer Portal (Valyd ID): `https://dev.valyd.work`
   - Developer Portal: `https://dev.valyd.work`
 - **Credentials cannot be created via API.** A human must sign up and generate them in the portal
   (see "Human-only steps" at the bottom). Pause and request these values rather than guessing:
   `client_id`, `client_secret` (Valyd ID); App `API key`, `workflow_id`, webhook signing secret
-  (Valyd Verify).
-- Auth headers: Valyd ID uses OAuth2 Bearer access tokens; Valyd Verify uses `X-API-Key: <App API key>`
+  (Verification APIs).
+- Auth headers: Valyd ID uses OAuth2 Bearer access tokens; Verification APIs uses `X-API-Key: <App API key>`
   (Bearer also accepted).
 - Token exchange and webhook signature verification MUST run server-side (never expose the client
   secret or webhook secret to a browser).
@@ -38,7 +40,7 @@ This file concatenates every Valyd documentation page. Each page is delimited by
 
 - [Overview](https://docs.valyd.work/docs/overview.md): What Valyd ID is, the 6-step OAuth2 SSO integration flow, and security notes.
 - [Create a Project & Get Credentials](https://docs.valyd.work/docs/create-project.md): Dev-portal setup — sign up, create a project, set redirect/scopes, copy client_id + client_secret. (Human-only.)
-- [Quick start — Login with Valyd](https://docs.valyd.work/docs/quick-start.md): Install valyd-idp-sdk and wire the full TPSSO/OAuth login flow end to end.
+- [Quick start — Login with Valyd](https://docs.valyd.work/docs/quick-start.md): Install @valyd/sdk and wire the full TPSSO/OAuth login flow end to end.
 - [Login sessions (CSRF)](https://docs.valyd.work/docs/login-sessions.md): Why OAuth `state` comparison fails for TPSSO and how to use createLoginSession/verifyLoginSession.
 
 ## Valyd ID — Authentication & integration
@@ -51,22 +53,22 @@ This file concatenates every Valyd documentation page. Each page is delimited by
 - [API Reference (endpoints)](https://docs.valyd.work/docs/endpoints.md): POST /token, GET /userinfo, GET /licenses, GET /verifications, POST /refresh — base URL https://idp.valyd.work/api/auth/tpsso.
 - [OAuth2 Scopes](https://docs.valyd.work/docs/scopes.md): profile, verifications, doctor_license, zkp, mcp — what data each unlocks and how to request them.
 - [Errors & troubleshooting](https://docs.valyd.work/docs/errors.md): Every error code with cause and fix, plus the SDK "Invalid login session" failure.
-- [Changelog](https://docs.valyd.work/docs/changelog.md): valyd-idp-sdk release history (v0.2.0 login sessions, v0.1.0 initial client).
+- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history (v0.2.0 login sessions, v0.1.0 initial client).
 
-## Valyd Verify — Guides
+## Verification APIs — Guides
 
-- [Introduction](https://docs.valyd.work/verify/intro.md): What Valyd Verify is, Hosted vs Core APIs modes, services, base URL, response envelope.
+- [Introduction](https://docs.valyd.work/verify/intro.md): What Verification APIs is, Hosted vs Core APIs modes, services, base URL, response envelope.
 - [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an API key, create a workflow/webhook, make a first Core API call and a hosted session.
 - [Developer Portal](https://docs.valyd.work/verify/console.md): Apps, API keys, workflows, webhooks, SSO. (Human-only UI steps.)
 - [Hosted vs Core APIs](https://docs.valyd.work/verify/modes.md): Decision tree and comparison to choose an integration mode.
 - [Account (Managed by Valyd)](https://docs.valyd.work/verify/managed.md): Account vs Non-account model, the proofs-only data rule, hosted + core account APIs, reuse, and the consent Core API for raw KYC.
 - [Hosted Verification](https://docs.valyd.work/verify/hosted.md): Create session, redirect, signed webhooks, decision API, statuses. Base URL https://idp.valyd.work.
 - [Core APIs](https://docs.valyd.work/verify/standalone.md): Server-to-server checks — ID, liveness, face match, age, credential, KYC+credential.
-- [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init valyd-verify-sdk, resources, types, error handling, Express webhook handler.
+- [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.
 - [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it.
 
-## Valyd Verify — API Reference
+## Verification APIs — API Reference
 
 - [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, Core checks, Decision, and Errors & rate limits. All calls use `X-API-Key`.
 
@@ -328,20 +330,20 @@ IF you closed the modal without copying the Client Secret                       
 ### Prerequisites
 
 - Node.js 18+ (the SDK requires it).
-- `valyd-idp-sdk` version `^0.2.0` or later (older versions lack the login-session helpers used here).
+- `@valyd/sdk` version `^0.2.0` or later (older versions lack the login-session helpers used here).
 - A Valyd app with credentials. Obtain `VALYD_CLIENT_ID` and `VALYD_CLIENT_SECRET` from the Valyd developer portal (get these from the developer portal → your project → Credentials). `VALYD_CLIENT_SECRET` is server-side only and must never reach a browser.
 - A redirect URI registered in the portal that exactly matches `VALYD_REDIRECT_URI` (no trailing slash).
 - Scopes enabled in the portal: any of `profile`, `verifications`, `doctor_license`, `zkp`, `mcp`.
 
 ### Steps
 
-1. **Install the SDK.** Run the install command (the official `valyd-idp-sdk` handles the full TPSSO/OAuth2 flow, login sessions for CSRF protection, and typed resource calls).
+1. **Install the SDK.** Run the install command (the official `@valyd/sdk` handles the full TPSSO/OAuth2 flow, login sessions for CSRF protection, and typed resource calls).
 
    ```bash
-   npm install valyd-idp-sdk@^0.2.0
+   npm install @valyd/sdk@^0.2.0
    ```
 
-   **Expected output:** npm adds `valyd-idp-sdk` (a `0.2.x` or newer release) to `dependencies` in `package.json` and reports the package was added with no error exit code.
+   **Expected output:** npm adds `@valyd/sdk` (a `0.2.x` or newer release) to `dependencies` in `package.json` and reports the package was added with no error exit code.
 
 2. **Create the `.env` file.** Use `KEY=value` with no spaces around `=`. The values shown are examples — substitute your own.
 
@@ -362,7 +364,7 @@ IF you closed the modal without copying the Client Secret                       
 
    ```typescript
    // server.ts
-   import { ValydClient } from "valyd-idp-sdk";
+   import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
      clientId: process.env.VALYD_CLIENT_ID!,
@@ -465,10 +467,10 @@ IF you closed the modal without copying the Client Secret                       
 - Confirm the SDK installed at the required version:
 
   ```bash
-  npm ls valyd-idp-sdk
+  npm ls @valyd/sdk
   ```
 
-  **Expected output:** `valyd-idp-sdk@0.2.x` (or newer) listed. If it shows below `0.2.0`, the login-session helpers (`createLoginSession`, `verifyLoginSession`) will be missing.
+  **Expected output:** `@valyd/sdk@0.2.x` (or newer) listed. If it shows below `0.2.0`, the login-session helpers (`createLoginSession`, `verifyLoginSession`) will be missing.
 
 - Run the full round trip: start the server, visit the `/login` route in a browser, complete login at Valyd, and confirm the `/callback` route reaches step 6. A successful run sets the `valyd_login` cookie on `/login`, passes `verifyLoginSession` on the callback, and returns a populated `profile` from `getUserInfo`.
 
@@ -503,7 +505,7 @@ IF you closed the modal without copying the Client Secret                       
 - Estimated steps: 2
 - Can complete without human input: YES — this is a code-only CSRF mechanism using SDK methods; no portal action is required for the mechanism itself (though the `valyd` client must already be configured with credentials).
 - Prerequisites:
-  - A configured `valyd` client (`new ValydClient({...})`) from `valyd-idp-sdk` version `^0.2.0` or later.
+  - A configured `valyd` client (`new ValydClient({...})`) from `@valyd/sdk` version `^0.2.0` or later.
   - Server-side storage available for the marker (httpOnly cookie, encrypted session, or KV store).
 
 The classic OAuth CSRF check — generate a random `state`, then compare what the IdP echoes — does NOT work for Valyd TPSSO, because Valyd returns its own session id on the callback. The SDK ships with a purpose-built mechanism: **login sessions**.
@@ -514,7 +516,7 @@ The classic OAuth CSRF check — generate a random `state`, then compare what th
 
 ### Prerequisites
 
-- A configured `valyd` client instance from `valyd-idp-sdk` (`^0.2.0`+), constructed with your `clientId`, `clientSecret`, and `redirectUri` (get the client ID and secret from the Valyd developer portal → your project → Credentials).
+- A configured `valyd` client instance from `@valyd/sdk` (`^0.2.0`+), constructed with your `clientId`, `clientSecret`, and `redirectUri` (get the client ID and secret from the Valyd developer portal → your project → Credentials).
 - Server-side storage for the marker: an `httpOnly` cookie, an encrypted server session, or a KV store. The marker must never be exposed to client-side JavaScript.
 
 ### Steps
@@ -610,7 +612,7 @@ A full Express example is available in the SDK repo: https://github.com/valyd/id
   - A Valyd application registered in the Developer Portal (https://dev.valyd.work) with a Client ID and Client Secret.
   - The exact callback/redirect URL (e.g. `https://yourapp.com/callback`) registered on that application — it must match the `redirect_url` you send.
   - A server-side environment that can keep `VALYD_CLIENT_SECRET` private (token exchange MUST happen server-side).
-  - (Recommended) Node project with the official SDK: `npm install valyd-idp-sdk@^0.2.0`
+  - (Recommended) Node project with the official SDK: `npm install @valyd/sdk@^0.2.0`
 
 ---
 
@@ -652,7 +654,7 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
 2. **Issue a login session and redirect (recommended: use the SDK).** On your login route, create a login session, store its marker (httpOnly cookie or server session), build the authorization URL, and redirect the user:
 
    ```javascript
-   import { ValydClient } from "valyd-idp-sdk";
+   import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
      clientId: process.env.VALYD_CLIENT_ID!,
@@ -707,8 +709,8 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
 
    ```javascript
    // Recommended: use the official SDK.
-   //   npm install valyd-idp-sdk@^0.2.0
-   import { ValydClient } from "valyd-idp-sdk";
+   //   npm install @valyd/sdk@^0.2.0
+   import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
      clientId: process.env.VALYD_CLIENT_ID!,
@@ -2480,10 +2482,10 @@ This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality),
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#intro
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: IntroSection.tsx
 
-# Valyd Verify
+# Verification APIs
 
 ## Agent Quick-Start
 - Source URL: https://docs.valyd.work/verify#intro
@@ -2493,7 +2495,7 @@ This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality),
 - Can complete without human input: YES — reading/reference only, no actions required
 - Prerequisites: none
 
-Valyd Verify is an identity-verification platform with two integration modes. Pick Hosted if you want Valyd to handle the camera capture and UI, or Core APIs if you want to call REST endpoints server-to-server with your own UI and data.
+Verification APIs is an identity-verification platform with two integration modes. Pick Hosted if you want Valyd to handle the camera capture and UI, or Core APIs if you want to call REST endpoints server-to-server with your own UI and data.
 
 ## Integration modes
 
@@ -2543,10 +2545,10 @@ Note: the `error` object is only included in the response when `success` is `fal
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#quickstart
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: QuickstartSection.tsx
 
-# Valyd Verify Quickstart
+# Verification APIs Quickstart
 
 ## Agent Quick-Start
 - Source URL: https://docs.valyd.work/verify#quickstart
@@ -2669,7 +2671,7 @@ Note: the `error` object is only included in the response when `success` is `fal
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#console
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: ConsoleSection.tsx
 
 # The Developer Portal
@@ -2738,7 +2740,7 @@ IF you will use Core APIs mode only:
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#modes
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: ModesSection.tsx
 
 # Hosted vs Core APIs
@@ -2751,7 +2753,7 @@ IF you will use Core APIs mode only:
 - Can complete without human input: YES — choosing a mode is a decision based on your requirements; no actions required
 - Prerequisites: none
 
-Valyd Verify offers two integration modes. Use the decision tree to pick one, then follow the matching path.
+Verification APIs offers two integration modes. Use the decision tree to pick one, then follow the matching path.
 
 ## Decision tree
 
@@ -2787,7 +2789,7 @@ IF unsure:
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#hosted
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: HostedSection.tsx
 
 # Hosted Verification
@@ -2802,7 +2804,7 @@ IF unsure:
   - An App API key (`X-API-Key`) — server-side only, never exposed to the browser. Get this from the Developer Portal: https://dev.valyd.work
   - A webhook signing secret (`VALYD_WEBHOOK_SECRET`) — get this from the Developer Portal: https://dev.valyd.work
   - A `workflow_id` — create the workflow in the Developer Portal (Workflows → "License Verification" or "KYC + License" preset) or via the API, then copy its `workflow_id`.
-  - Node.js project with `valyd-verify-sdk` installed (for the SDK examples).
+  - Node.js project with `@valyd/sdk` installed (for the SDK examples).
 
 > ALL server-to-server calls use the header `X-API-Key: <App API key>`. Keep this key SERVER-SIDE ONLY — never expose it to the browser. Every response uses the envelope `{ success, data, error: { code, message } }`.
 
@@ -2814,18 +2816,18 @@ IF unsure:
 
 Hosted Verification lets you create a session, redirect the user to a Valyd-hosted page that captures everything, and receive the result via a signed webhook plus the decision API. No UI to build, no PII handled by you.
 
-The official Node SDK is `valyd-verify-sdk` (https://www.npmjs.com/package/valyd-verify-sdk). It wraps sessions, workflows, webhooks, and the decision API.
+The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). It wraps sessions, workflows, webhooks, and the decision API.
 
 Install it:
 
 ```bash
-npm i valyd-verify-sdk
+npm i @valyd/sdk
 ```
 
 Initialize the client:
 
 ```javascript
-import { VerifyClient } from "valyd-verify-sdk";
+import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -3027,7 +3029,7 @@ SDK (Node) — verify and handle the webhook:
 
 ```javascript
 import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -3222,7 +3224,7 @@ Full set of check status values: `pending`, `running`, `passed`, `failed`, `revi
 
 ```javascript
 import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const app = express();
 const verify = new VerifyClient({
@@ -3276,7 +3278,7 @@ app.listen(3000);
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#standalone
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: StandaloneSection.tsx
 
 # Core APIs (server-to-server verification)
@@ -3290,7 +3292,7 @@ app.listen(3000);
 - Prerequisites:
   - A Valyd App API key. Pass it as the HTTP header `X-API-Key: <App API key>` on every request. Get this from the Developer Portal → your project → Credentials: https://dev.valyd.work
   - A server/backend to make the call from (these are server-to-server APIs; never call them from the browser, because the API key would be exposed).
-  - (SDK path only) Node.js with the `valyd-verify-sdk` npm package installed.
+  - (SDK path only) Node.js with the `@valyd/sdk` npm package installed.
 
 ## Overview
 
@@ -3322,18 +3324,18 @@ The JSON blocks shown under each endpoint below are the contents of `check.data`
 
 ## SDK quick start
 
-The official Node SDK is published on npm as `valyd-verify-sdk` (https://www.npmjs.com/package/valyd-verify-sdk). Image fields accept a file path via `readImage("./x.jpg")`, a `Buffer`, or a base64 / data-URL string. Over plain HTTP, send images as a base64 string in the JSON field (or as a multipart file under the same field name).
+The official Node SDK is published on npm as `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). Image fields accept a file path via `readImage("./x.jpg")`, a `Buffer`, or a base64 / data-URL string. Over plain HTTP, send images as a base64 string in the JSON field (or as a multipart file under the same field name).
 
 Install:
 
 ```bash
-npm i valyd-verify-sdk
+npm i @valyd/sdk
 ```
 
 Create a client (do this once and reuse it):
 
 ```javascript
-import { VerifyClient, readImage } from "valyd-verify-sdk";
+import { VerifyClient, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 // keep VALYD_API_KEY on the server — never in browser code
@@ -3372,7 +3374,7 @@ curl -X POST https://idp.valyd.work/api/v2/id-verification \
 **Request (SDK, Node):**
 
 ```javascript
-import { VerifyClient, readImage } from "valyd-verify-sdk";
+import { VerifyClient, readImage } from "@valyd/sdk";
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
 const { check } = await verify.standalone.idVerification({
@@ -3744,7 +3746,7 @@ Over HTTP, failures return the envelope `{ success: false, error: { code, messag
 In the SDK, the same failures throw `ValydVerifyError` with `{ code, status, message }`. Credential registry lookups can take **10–60 seconds** — configure a generous client timeout.
 
 ```javascript
-import { VerifyClient, ValydVerifyError, readImage } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey: process.env.VALYD_API_KEY!,
@@ -3784,7 +3786,7 @@ try {
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#sdk
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: SdkSection.tsx
 
 # Node SDK
@@ -3797,11 +3799,11 @@ try {
 - Can complete without human input: NO — you must first obtain an API key, a webhook secret, and a workflow ID from the Valyd Developer Portal (https://dev.valyd.work); these cannot be generated programmatically here.
 - Prerequisites:
   - Node 18+ (the SDK relies on the built-in `fetch` and `crypto`)
-  - A Valyd Verify API key (X-API-Key) — get it from the dashboard: https://dev.valyd.work
+  - A Verification API key (X-API-Key) — get it from the dashboard: https://dev.valyd.work
   - For hosted/webhook flows: a webhook secret and a workflow ID from the dashboard
   - Server-side runtime only — the API key must never reach the browser
 
-The official Node SDK for Valyd Verify: `valyd-verify-sdk` on npm (https://www.npmjs.com/package/valyd-verify-sdk). Zero-dependency, dual ESM + CJS, fully typed TypeScript. Requires Node 18+ (built-in `fetch` / `crypto`).
+The official Node SDK for Verification APIs: `@valyd/sdk` on npm (https://www.npmjs.com/package/@valyd/sdk). Zero-dependency, dual ESM + CJS, fully typed TypeScript. Requires Node 18+ (built-in `fetch` / `crypto`).
 
 > Server-side only. Your API key must never reach the browser. The hosted flow is just a redirect to `session.url` — there is no browser SDK.
 
@@ -3831,9 +3833,9 @@ IF unsure which credentials you have:
 
 1. **Install the SDK.**
    ```bash
-   npm i valyd-verify-sdk
+   npm i @valyd/sdk
    ```
-   **Expected output:** npm adds `valyd-verify-sdk` to `dependencies` in `package.json` and reports `added 1 package`. Versions follow semver and are pinned per release — lock to `^x.y.z` for backwards-compatible upgrades.
+   **Expected output:** npm adds `@valyd/sdk` to `dependencies` in `package.json` and reports `added 1 package`. Versions follow semver and are pinned per release — lock to `^x.y.z` for backwards-compatible upgrades.
 
 2. **Set environment variables** (e.g. in a `.env` file or your process environment). Get each value from the Valyd Developer Portal: https://dev.valyd.work.
    ```bash
@@ -3845,7 +3847,7 @@ IF unsure which credentials you have:
 
 3. **Initialise the client** in your server code.
    ```javascript
-   import { VerifyClient } from "valyd-verify-sdk";
+   import { VerifyClient } from "@valyd/sdk";
 
    const verify = new VerifyClient({
      apiKey: process.env.VALYD_API_KEY!,
@@ -3906,7 +3908,7 @@ Also exported as top-level `constructEvent` / `verify`. When `webhookSecret` is 
 `readImage` and `ImageInput` cover all the ways an image can be supplied:
 
 ```typescript
-import { readImage, type ImageInput } from "valyd-verify-sdk";
+import { readImage, type ImageInput } from "@valyd/sdk";
 
 // ImageInput accepted everywhere an image is required:
 //   Buffer | Uint8Array | base64 string | data-URL string
@@ -3929,7 +3931,7 @@ import type {
   CredentialState,
   CredentialProvider,
   WebhookEvent,
-} from "valyd-verify-sdk";
+} from "@valyd/sdk";
 ```
 
 ### Error handling
@@ -3942,7 +3944,7 @@ Every failure throws `ValydVerifyError` with `{ code, status?, data? }`. The `co
 - `config_error` — missing `apiKey` / `webhookSecret`.
 
 ```javascript
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY!, timeoutMs: 90_000 });
 
@@ -3966,7 +3968,7 @@ try {
 #### Hosted quickstart
 
 ```javascript
-import { VerifyClient } from "valyd-verify-sdk";
+import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -3995,7 +3997,7 @@ const decision = await verify.sessions.decision(event.session_id);
 #### Core APIs quickstart
 
 ```javascript
-import { VerifyClient, readImage } from "valyd-verify-sdk";
+import { VerifyClient, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
@@ -4022,7 +4024,7 @@ Use `express.raw()` so the body bytes match what Valyd signed.
 
 ```javascript
 import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const app = express();
 const verify = new VerifyClient({
@@ -4054,12 +4056,12 @@ app.post(
 ### Verification
 - Confirm the SDK is installed:
   ```bash
-  npm ls valyd-verify-sdk
+  npm ls @valyd/sdk
   ```
-  **Expected output:** a line like `valyd-verify-sdk@x.y.z`.
+  **Expected output:** a line like `@valyd/sdk@x.y.z`.
 - Confirm credentials are wired (Core APIs path, only needs `VALYD_API_KEY`):
   ```javascript
-  import { VerifyClient } from "valyd-verify-sdk";
+  import { VerifyClient } from "@valyd/sdk";
   const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
   const { states } = await verify.credentials.states();
   console.log(states.length); // > 0 means the API key works
@@ -4085,7 +4087,7 @@ app.post(
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#webhooks
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: WebhooksSection.tsx
 
 # Webhooks
@@ -4234,7 +4236,7 @@ Field notes:
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#statuses
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: StatusesSection.tsx
 
 # Statuses & decisioning
@@ -4317,7 +4319,7 @@ Relationship between check status and session status:
 ================================================================================
 
 > Source: https://docs.valyd.work/verify#api-sessions
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: ApiReferenceSection.tsx
 
 # API Reference

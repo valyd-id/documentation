@@ -62,7 +62,7 @@ const Field = ({ name, required, type, desc }: { name: string; required?: boolea
   </li>
 );
 
-const INIT = `import { Valyd, readImage } from "valyd-verify-sdk";
+const INIT = `import { Valyd, readImage } from "@valyd/sdk";
 
 const valyd = new Valyd({
   apiKey: process.env.VALYD_API_KEY,   // vrf_… from ${CONSOLE_HOST} — server-side only
@@ -88,17 +88,17 @@ export const StandaloneSection = () => (
       <p className="text-sm text-muted-foreground">
         The official Node SDK is{" "}
         <a
-          href="https://www.npmjs.com/package/valyd-verify-sdk"
+          href="https://www.npmjs.com/package/@valyd/sdk"
           target="_blank"
           rel="noreferrer"
           className="text-primary hover:underline"
         >
-          <code>valyd-verify-sdk</code>
+          <code>@valyd/sdk</code>
         </a>
         . Image fields accept a file path via <code>readImage("./x.jpg")</code>, a <code>Buffer</code>, or a base64 /
         data-URL string. Over plain HTTP, send images as base64 in the JSON field (or multipart under the same name).
       </p>
-      <CodeBlock language="bash" code={`npm i valyd-verify-sdk`} />
+      <CodeBlock language="bash" code={`npm i @valyd/sdk`} />
       <CodeBlock language="javascript" code={INIT} />
     </div>
 
@@ -541,7 +541,7 @@ await standalone.locationMatch({ latitude, longitude, accuracy });`}
           </div>
           <p className="text-xs text-muted-foreground">
             Capture a trustworthy fix in the browser with <code>captureLocation()</code> from{" "}
-            <code>valyd-verify-js</code>. Anti-spoof note: Core-API coordinates are client-supplied (your trust
+            the browser's native camera + geolocation. Anti-spoof note: Core-API coordinates are client-supplied (your trust
             boundary); the Hosted flow additionally cross-checks the user's real IP against the GPS.
           </p>
         </div>
@@ -668,7 +668,7 @@ await standalone.locationMatch({ latitude, longitude, accuracy });`}
       </p>
       <CodeBlock
         language="javascript"
-        code={`import { Valyd, ValydVerifyError } from "valyd-verify-sdk";
+        code={`import { Valyd, ValydVerifyError } from "@valyd/sdk";
 
 const valyd = new Valyd({
   apiKey: process.env.VALYD_API_KEY,

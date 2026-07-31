@@ -18,23 +18,23 @@ const PRODUCTS: {
 }[] = [
   {
     key: "id",
-    label: "Valyd ID",
+    label: "Login with Valyd",
     to: "/docs",
-    description: "Identity & OAuth",
+    description: "Authentication — OAuth & OIDC",
     icon: <Shield className="h-4 w-4" />,
   },
   {
     key: "verify",
-    label: "Valyd Verify",
-    to: "/verify",
+    label: "Verification APIs",
+    to: "/verifications",
     description: "KYC, licenses & biometrics",
     icon: <ScanFace className="h-4 w-4" />,
   },
   {
     key: "mcp",
-    label: "Valyd MCP",
+    label: "MCP",
     to: "/mcp",
-    description: "AI agent tools over MCP",
+    description: "Tools for AI agents",
     icon: <Cpu className="h-4 w-4" />,
   },
 ];

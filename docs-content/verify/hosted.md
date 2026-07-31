@@ -1,5 +1,5 @@
 > Source: https://{{DOCS_BASE_URL}}/verify#hosted
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: HostedSection.tsx
 
 # Hosted Verification
@@ -16,7 +16,7 @@
   - An App API key (`X-API-Key`) — server-side only, never exposed to the browser. Get this from the Developer Portal: https://{{DEV_PORTAL_URL}}
   - A webhook signing secret (`VALYD_WEBHOOK_SECRET`) — get this from the Developer Portal: https://{{DEV_PORTAL_URL}}
   - A `workflow_id` — create the workflow in the Developer Portal (Workflows → "License Verification" or "KYC + License" preset) or via the API, then copy its `workflow_id`.
-  - Node.js project with `valyd-verify-sdk` installed (for the SDK examples).
+  - Node.js project with `@valyd/sdk` installed (for the SDK examples).
 
 > ALL server-to-server calls use the header `X-API-Key: <App API key>`. Keep this key SERVER-SIDE ONLY — never expose it to the browser. Every response uses the envelope `{ success, data, error: { code, message } }`.
 
@@ -28,18 +28,18 @@
 
 Hosted Verification lets you create a session, redirect the user to a Valyd-hosted page that captures everything, and receive the result via a signed webhook plus the decision API. No UI to build, no PII handled by you.
 
-The official Node SDK is `valyd-verify-sdk` (https://www.npmjs.com/package/valyd-verify-sdk). It wraps sessions, workflows, webhooks, and the decision API.
+The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). It wraps sessions, workflows, webhooks, and the decision API.
 
 Install it:
 
 ```bash
-npm i valyd-verify-sdk
+npm i @valyd/sdk
 ```
 
 Initialize the client:
 
 ```javascript
-import { VerifyClient } from "valyd-verify-sdk";
+import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -241,7 +241,7 @@ SDK (Node) — verify and handle the webhook:
 
 ```javascript
 import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey:        process.env.VALYD_API_KEY!,
@@ -436,7 +436,7 @@ Full set of check status values: `pending`, `running`, `passed`, `failed`, `revi
 
 ```javascript
 import express from "express";
-import { VerifyClient, ValydVerifyError } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const app = express();
 const verify = new VerifyClient({

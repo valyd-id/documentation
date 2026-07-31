@@ -1,8 +1,8 @@
 > Source: https://{{DOCS_BASE_URL}}/verify#quickstart
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: QuickstartSection.tsx
 
-# Valyd Verify Quickstart
+# Verification APIs Quickstart
 
 ## Agent Quick-Start
 - Source URL: https://{{DOCS_BASE_URL}}/verify#quickstart
@@ -23,7 +23,7 @@
 
 ### Steps
 
-1. Sign in to the Developer Portal with Valyd SSO. The Developer Portal is the ONE console: the same sign-in issues your OAuth app (client_id / client_secret), your Verify app (API key) and your workflows. (Human-only step.)
+1. Sign in to the Developer Portal with Valyd SSO and create an app — owned by your individual account or your organization. That ONE app issues your OAuth credentials (client_id / client_secret, used for BOTH login and verification), a project API key for verification-only use, and your workflows. One SDK (@valyd/sdk), one host (the Valyd IdP), no second dashboard. (Human-only step.)
 
    ```text
    Open https://{{DEV_PORTAL_URL}} and sign in with Valyd SSO.

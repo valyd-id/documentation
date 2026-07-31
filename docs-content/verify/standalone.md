@@ -1,5 +1,5 @@
 > Source: https://{{DOCS_BASE_URL}}/verify#standalone
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: StandaloneSection.tsx
 
 # Core APIs (server-to-server verification)
@@ -15,7 +15,7 @@
 - Prerequisites:
   - A Valyd App API key. Pass it as the HTTP header `X-API-Key: <App API key>` on every request. Get this from the Developer Portal → your project → Credentials: https://{{DEV_PORTAL_URL}}
   - A server/backend to make the call from (these are server-to-server APIs; never call them from the browser, because the API key would be exposed).
-  - (SDK path only) Node.js with the `valyd-verify-sdk` npm package installed.
+  - (SDK path only) Node.js with the `@valyd/sdk` npm package installed.
 
 ## Overview
 
@@ -47,18 +47,18 @@ The JSON blocks shown under each endpoint below are the contents of `check.data`
 
 ## SDK quick start
 
-The official Node SDK is published on npm as `valyd-verify-sdk` (https://www.npmjs.com/package/valyd-verify-sdk). Image fields accept a file path via `readImage("./x.jpg")`, a `Buffer`, or a base64 / data-URL string. Over plain HTTP, send images as a base64 string in the JSON field (or as a multipart file under the same field name).
+The official Node SDK is published on npm as `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). Image fields accept a file path via `readImage("./x.jpg")`, a `Buffer`, or a base64 / data-URL string. Over plain HTTP, send images as a base64 string in the JSON field (or as a multipart file under the same field name).
 
 Install:
 
 ```bash
-npm i valyd-verify-sdk
+npm i @valyd/sdk
 ```
 
 Create a client (do this once and reuse it):
 
 ```javascript
-import { VerifyClient, readImage } from "valyd-verify-sdk";
+import { VerifyClient, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 // keep VALYD_API_KEY on the server — never in browser code
@@ -97,7 +97,7 @@ curl -X POST https://{{VERIFY_BASE_URL}}/api/v2/id-verification \
 **Request (SDK, Node):**
 
 ```javascript
-import { VerifyClient, readImage } from "valyd-verify-sdk";
+import { VerifyClient, readImage } from "@valyd/sdk";
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
 const { check } = await verify.standalone.idVerification({
@@ -469,7 +469,7 @@ Over HTTP, failures return the envelope `{ success: false, error: { code, messag
 In the SDK, the same failures throw `ValydVerifyError` with `{ code, status, message }`. Credential registry lookups can take **10–60 seconds** — configure a generous client timeout.
 
 ```javascript
-import { VerifyClient, ValydVerifyError, readImage } from "valyd-verify-sdk";
+import { VerifyClient, ValydVerifyError, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({
   apiKey: process.env.VALYD_API_KEY!,

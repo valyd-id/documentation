@@ -1,5 +1,5 @@
 > Source: https://{{DOCS_BASE_URL}}/verify#modes
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: ModesSection.tsx
 
 # Hosted vs Core APIs
@@ -12,7 +12,7 @@
 - Can complete without human input: YES — choosing a mode is a decision based on your requirements; no actions required
 - Prerequisites: none
 
-Valyd Verify offers two integration modes. Use the decision tree to pick one, then follow the matching path.
+Verification APIs offers two integration modes. Use the decision tree to pick one, then follow the matching path.
 
 ## The full model: two API types × two modes (2×2)
 

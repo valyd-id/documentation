@@ -16,7 +16,6 @@ import {
   Lock,
   Terminal,
 } from "lucide-react";
-import headerGradient from "@/assets/header-gradient.webp";
 import { CredentialsBlock } from "@/components/docs/sandbox/CredentialsBlock";
 import { DemoUserPicker } from "@/components/docs/sandbox/DemoUserPicker";
 import { ScopePicker } from "@/components/docs/sandbox/ScopePicker";
@@ -255,28 +254,15 @@ export const TryApisContent = () => {
   return (
     <>
       {/* Hero header */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-primary/[0.06] via-primary/[0.02] to-background">
+        {/* Soft accent glow, no image — keeps the page light and consistent. */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-90"
-          style={{ backgroundImage: `url(${headerGradient})` }}
+          className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[42rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl"
           aria-hidden
         />
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: "radial-gradient(rgba(0, 0, 0, 0) 1.5px, #fff 1px)",
-            backgroundSize: "4px 4px",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,1) 100%)",
-            maskImage:
-              "linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,1) 100%)",
-          }}
-          aria-hidden
-        />
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-background" aria-hidden />
 
         <motion.div
-          className="relative max-w-[1500px] mx-auto px-6 pt-16 pb-20 sm:pt-20 sm:pb-24"
+          className="relative max-w-5xl mx-auto px-6 pt-14 pb-14 sm:pt-16 sm:pb-16"
           initial="hidden"
           animate="show"
           variants={containerVariants}
@@ -309,7 +295,7 @@ export const TryApisContent = () => {
         </motion.div>
       </section>
 
-      <div className="max-w-[1500px] mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {/* Protocol picker */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-3 gap-4"
@@ -395,7 +381,7 @@ export const TryApisContent = () => {
                 Want the real OAuth flow? Clone the SDK starter.
               </h2>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                A minimal Express app wired up with <code className="font-mono">valyd-idp-sdk@^0.2.0</code> —
+                A minimal Express app wired up with <code className="font-mono">@valyd/sdk@^0.2.0</code> —
                 including <code className="font-mono">createLoginSession</code> /{" "}
                 <code className="font-mono">verifyLoginSession</code> for CSRF. The full redirect-and-consent
                 flow on your localhost in three commands.

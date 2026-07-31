@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api-config";
 
 export const QuickStartSection = () => {
-  const installCmd = `npm install valyd-idp-sdk@^0.2.0`;
+  const installCmd = `npm install @valyd/sdk@^0.2.0`;
 
   const quickStartCode = `// server.ts
-import { ValydClient } from "valyd-idp-sdk";
+import { ValydClient } from "@valyd/sdk";
 
 const valyd = new ValydClient({
   clientId: process.env.VALYD_CLIENT_ID!,
@@ -72,7 +72,7 @@ VALYD_REDIRECT_URI=http://localhost:8080/callback`;
           <Package className="h-6 w-6 text-primary" /> Installation
         </h2>
         <p className="text-muted-foreground mb-4">
-          The official <code className="bg-muted px-1.5 py-0.5 rounded">valyd-idp-sdk</code> handles
+          The official <code className="bg-muted px-1.5 py-0.5 rounded">@valyd/sdk</code> handles
           the full TPSSO/OAuth2 flow, login sessions for CSRF protection, and typed resource calls.
         </p>
 

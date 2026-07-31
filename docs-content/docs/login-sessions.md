@@ -11,7 +11,7 @@
 - Estimated steps: 2
 - Can complete without human input: YES — this is a code-only CSRF mechanism using SDK methods; no portal action is required for the mechanism itself (though the `valyd` client must already be configured with credentials).
 - Prerequisites:
-  - A configured `valyd` client (`new ValydClient({...})`) from `valyd-idp-sdk` version `^0.2.0` or later.
+  - A configured `valyd` client (`new ValydClient({...})`) from `@valyd/sdk` version `^0.2.0` or later.
   - Server-side storage available for the marker (httpOnly cookie, encrypted session, or KV store).
 
 The classic OAuth CSRF check — generate a random `state`, then compare what the IdP echoes — does NOT work for Valyd TPSSO, because Valyd returns its own session id on the callback. The SDK ships with a purpose-built mechanism: **login sessions**.
@@ -22,7 +22,7 @@ The classic OAuth CSRF check — generate a random `state`, then compare what th
 
 ### Prerequisites
 
-- A configured `valyd` client instance from `valyd-idp-sdk` (`^0.2.0`+), constructed with your `clientId`, `clientSecret`, and `redirectUri` (get the client ID and secret from the Valyd developer portal → your project → Credentials).
+- A configured `valyd` client instance from `@valyd/sdk` (`^0.2.0`+), constructed with your `clientId`, `clientSecret`, and `redirectUri` (get the client ID and secret from the Valyd developer portal → your project → Credentials).
 - Server-side storage for the marker: an `httpOnly` cookie, an encrypted server session, or a KV store. The marker must never be exposed to client-side JavaScript.
 
 ### Steps

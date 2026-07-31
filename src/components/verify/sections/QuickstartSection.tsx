@@ -5,7 +5,7 @@ import { Zap } from "lucide-react";
 
 const BASE = VERIFY_CONFIG.API_BASE_URL;
 
-const SDK_SESSION = `import { Valyd } from "valyd-verify-sdk";
+const SDK_SESSION = `import { Valyd } from "@valyd/sdk";
 
 const valyd = new Valyd({
   apiKey: process.env.VALYD_API_KEY,          // vrf_… from ${CONSOLE_HOST} (server-side only)
@@ -34,7 +34,7 @@ const CURL_SESSION = `curl -X POST ${BASE}/api/v2/session \\
   }'
 # → { success: true, data: { session_id, url, … } }   Redirect the user to data.url`;
 
-const SDK_CHECK = `import { Valyd } from "valyd-verify-sdk";
+const SDK_CHECK = `import { Valyd } from "@valyd/sdk";
 const valyd = new Valyd({ apiKey: process.env.VALYD_API_KEY });
 
 // A Core API check — synchronous, no session, no UI.
@@ -56,12 +56,15 @@ export const QuickstartSection = () => (
     </h2>
 
     <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
-      <strong>One console.</strong> Everything — the OAuth <code>client_id</code>/<code>client_secret</code>, the Verify{" "}
-      <code>API key</code>, and your <code>workflow_id</code> — comes from the Developer Portal at{" "}
+      <strong>One app, one credential.</strong> Create an app in the Developer Portal at{" "}
       <a href={VERIFY_CONFIG.CONSOLE_URL} target="_blank" rel="noreferrer" className="text-primary underline">
         {CONSOLE_HOST}
-      </a>
-      . There is no second dashboard to sign in to.
+      </a>{" "}
+      — owned by your individual account or your <strong>organization</strong> — and use its{" "}
+      <code>client_id</code>/<code>client_secret</code> for both login and verification, with a{" "}
+      <code>workflow_id</code> for hosted flows. A project <code>API key</code> is available for
+      verification-only use. One SDK (<code>@valyd/sdk</code>), one host (the Valyd IdP), no second
+      dashboard.
     </div>
 
     <ol className="list-decimal pl-6 space-y-2 text-muted-foreground">
@@ -80,8 +83,8 @@ export const QuickstartSection = () => (
       <li>Install the SDK and make your first call.</li>
     </ol>
 
-    <CodeBlock language="bash" code={`npm i valyd-verify-sdk   # server (Node 18+)
-npm i valyd-verify-js    # browser: hosted modal + camera/GPS capture`} />
+    <CodeBlock language="bash" code={`npm i @valyd/sdk   # server (Node 18+)
+# Browser: no SDK — redirect the user to the hosted session url`} />
 
     <div className="space-y-2">
       <h3 className="font-semibold text-foreground">Hosted — create a session, send the user to it</h3>

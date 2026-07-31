@@ -1,5 +1,5 @@
 > Source: https://docs.valyd.work/verify#statuses
-> Part of: Valyd Verify API documentation — static copy generated for AI agents
+> Part of: Verification API documentation — static copy generated for AI agents
 > Generated from repo component: StatusesSection.tsx
 
 # Statuses & decisioning

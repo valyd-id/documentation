@@ -14,6 +14,8 @@ import { EndpointsSection } from "@/components/docs/sections/EndpointsSection";
 import { ErrorsSection } from "@/components/docs/sections/ErrorsSection";
 import { ChangelogSection } from "@/components/docs/sections/ChangelogSection";
 import { OIDCSection } from "@/components/docs/sections/OIDCSection";
+import { OrganizationsSection } from "@/components/docs/sections/OrganizationsSection";
+import { RequestDataSection } from "@/components/docs/sections/RequestDataSection";
 
 // Each docs group is its own page (one URL, one rendered section).
 // childIds are the in-page anchors the sidebar can scroll to within that page.
@@ -52,7 +54,9 @@ const SECTION_GROUPS: SectionGroup[] = [
       "endpoint-refresh",
     ],
   },
+  { slug: "request-data", Component: RequestDataSection, childIds: [] },
   { slug: "errors", Component: ErrorsSection, childIds: [] },
+  { slug: "organizations", Component: OrganizationsSection, childIds: [] },
   { slug: "changelog", Component: ChangelogSection, childIds: [] },
   {
     slug: "create-project",

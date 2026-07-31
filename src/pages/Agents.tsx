@@ -221,7 +221,7 @@ const Agents = () => (
 
           <ResourceCard
             icon={<FileJson className="h-4 w-4" />}
-            title="Valyd Verify OpenAPI"
+            title="Verification APIs OpenAPI"
             badge="OpenAPI 3.1"
             badgeColor="emerald"
             description="Full OpenAPI 3.1 spec for Sessions, Core checks, Credentials, and Workflows — including the HMAC-SHA256 webhook schema."
@@ -294,7 +294,7 @@ const Agents = () => (
           ← Valyd ID docs
         </Link>
         <Link to="/verify" className="text-muted-foreground hover:text-foreground transition-colors">
-          ← Valyd Verify docs
+          ← Verification APIs docs
         </Link>
         <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
           ← Home

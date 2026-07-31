@@ -9,7 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_DEV_PORTAL_URL?: string;
   /** This docs site's own origin, e.g. https://docs.valyd.work */
   readonly VITE_DOCS_BASE_URL?: string;
-  /** Valyd Verify origin, e.g. https://idp.valyd.work (Verify is merged into the IdP) */
+  /** Verification APIs origin, e.g. https://idp.valyd.work (Verify is merged into the IdP) */
   readonly VITE_VERIFY_BASE_URL?: string;
   /** Verify console URL; defaults to `${VITE_VERIFY_BASE_URL}/dashboard` */
   readonly VITE_VERIFY_CONSOLE_URL?: string;
