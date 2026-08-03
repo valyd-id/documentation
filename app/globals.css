@@ -292,6 +292,295 @@ article pre:hover {
   color: var(--vd-primary);
 }
 
+/* ------------------------------------------------------------- ask ai */
+.vd-ask-ai-navbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.65rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: inherit;
+  transition:
+    background-color var(--vd-speed) var(--vd-ease),
+    color var(--vd-speed) var(--vd-ease);
+}
+
+.vd-ask-ai-navbar-button:hover {
+  background: var(--vd-primary-soft);
+  color: var(--vd-primary);
+}
+
+@media (max-width: 640px) {
+  .vd-ask-ai-navbar-label {
+    display: none;
+  }
+
+  .vd-ask-ai-navbar-button {
+    width: 2rem;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+.vd-ask-ai-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--vd-primary);
+  color: white;
+  box-shadow: var(--vd-shadow);
+  transition:
+    transform var(--vd-speed) var(--vd-ease),
+    box-shadow var(--vd-speed) var(--vd-ease);
+}
+
+.vd-ask-ai-fab:hover {
+  transform: translateY(-2px);
+}
+
+.vd-ask-ai-panel {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 5rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(28rem, calc(100vw - 2.5rem));
+  height: min(40rem, calc(100vh - 6rem));
+  background: var(--vd-surface);
+  border: 1px solid var(--vd-border);
+  border-radius: var(--vd-radius);
+  box-shadow: var(--vd-shadow);
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .vd-ask-ai-panel {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+}
+
+.vd-ask-ai-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--vd-border);
+  flex-shrink: 0;
+}
+
+.vd-ask-ai-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.vd-ask-ai-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
+  color: inherit;
+  transition: background-color var(--vd-speed) var(--vd-ease);
+}
+
+.vd-ask-ai-panel-close:hover {
+  background: var(--vd-primary-soft);
+}
+
+.vd-ask-ai-panel-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vd-ask-ai-empty {
+  font-size: 0.8rem;
+  color: color-mix(in srgb, currentColor 60%, transparent);
+}
+
+.vd-ask-ai-message {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.vd-ask-ai-message-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--vd-primary-soft);
+  color: var(--vd-primary);
+}
+
+.vd-ask-ai-message-body {
+  min-width: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--vd-radius);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.vd-ask-ai-message-user .vd-ask-ai-message-body {
+  background: var(--vd-primary-soft);
+}
+
+.vd-ask-ai-message-body > :first-child {
+  margin-top: 0;
+}
+
+.vd-ask-ai-message-body > :last-child {
+  margin-bottom: 0;
+}
+
+.vd-ask-ai-message-body p,
+.vd-ask-ai-message-body ul,
+.vd-ask-ai-message-body ol {
+  margin: 0.5rem 0;
+}
+
+.vd-ask-ai-message-body ul,
+.vd-ask-ai-message-body ol {
+  padding-left: 1.15rem;
+}
+
+.vd-ask-ai-message-body li {
+  margin: 0.2rem 0;
+}
+
+.vd-ask-ai-message-body h1,
+.vd-ask-ai-message-body h2,
+.vd-ask-ai-message-body h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0.85rem 0 0.35rem;
+}
+
+.vd-ask-ai-message-body hr {
+  border: none;
+  border-top: 1px solid var(--vd-border);
+  margin: 0.75rem 0;
+}
+
+.vd-ask-ai-message-body code {
+  font-size: 0.8em;
+}
+
+.vd-ask-ai-message-body pre {
+  overflow-x: auto;
+  padding: 0.6rem 0.75rem;
+  margin: 0.5rem 0;
+  border-radius: calc(var(--vd-radius) - 2px);
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.vd-ask-ai-message-body pre code {
+  font-size: 0.78em;
+  background: none;
+  padding: 0;
+}
+
+.vd-ask-ai-message-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  border-collapse: collapse;
+}
+
+.vd-ask-ai-message-body th,
+.vd-ask-ai-message-body td {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--vd-border);
+  text-align: left;
+}
+
+.vd-ask-ai-message-body th {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.vd-ask-ai-link {
+  color: var(--vd-primary);
+  text-underline-offset: 2px;
+}
+
+.vd-ask-ai-error {
+  font-size: 0.8rem;
+  color: hsl(0 72% 51%);
+}
+
+.vd-ask-ai-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid var(--vd-border);
+  flex-shrink: 0;
+}
+
+.vd-ask-ai-input {
+  flex: 1;
+  min-width: 0;
+  max-height: 140px;
+  resize: none;
+  overflow-y: auto;
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: inherit;
+  padding: 0.4rem 0;
+}
+
+.vd-ask-ai-input::placeholder {
+  color: color-mix(in srgb, currentColor 50%, transparent);
+}
+
+.vd-ask-ai-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  color: var(--vd-primary);
+  transition: background-color var(--vd-speed) var(--vd-ease);
+}
+
+.vd-ask-ai-send:hover:not(:disabled) {
+  background: var(--vd-primary-soft);
+}
+
+.vd-ask-ai-send:disabled {
+  color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
 /* Docs tables: responsive scroll, stronger header, zebra rows, no wrap-breaks */
 article table {
   display: block;
@@ -406,6 +695,10 @@ article td code {
 
   .vd-spinner {
     animation: vd-spin 0.7s linear infinite;
+  }
+
+  .vd-ask-ai-panel {
+    animation: vd-rise 0.25s var(--vd-ease) both;
   }
 
 }

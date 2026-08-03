@@ -5,6 +5,10 @@ import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { AskAiProvider } from '@/components/ask-ai/ask-ai-provider'
+import { AskAiChatPanel } from '@/components/ask-ai/chat-panel'
+import { FloatingAskAiButton } from '@/components/ask-ai/floating-button'
+import { NavbarAskAiButton } from '@/components/ask-ai/navbar-button'
 import 'nextra-theme-docs/style.css'
 import './globals.css'
 
@@ -47,6 +51,7 @@ const navbar = (
     }
     projectLink="https://dev.valyd.work"
   >
+    <NavbarAskAiButton />
     {/* Single-button light/dark toggle, immediately right of the project link */}
     <ThemeToggle />
   </Navbar>
@@ -68,15 +73,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       {/* Valyd brand cyan as the theme hue — the only visual customization */}
       <Head color={{ hue: 196, saturation: 100 }} />
       <body>
-        <Layout
-          navbar={navbar}
-          pageMap={await getPageMap()}
-          footer={footer}
-          editLink={null}
-          feedback={{ content: null }}
-        >
-          {children}
-        </Layout>
+        <AskAiProvider>
+          <Layout
+            navbar={navbar}
+            pageMap={await getPageMap()}
+            footer={footer}
+            editLink={null}
+            feedback={{ content: null }}
+          >
+            {children}
+          </Layout>
+          <FloatingAskAiButton />
+          <AskAiChatPanel />
+        </AskAiProvider>
       </body>
     </html>
   )

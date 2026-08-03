@@ -38,7 +38,13 @@ Search only works after `npm run build` (the `postbuild` script runs Pagefind ov
 app/
   layout.tsx            # Nextra default Layout + Navbar/Footer, brand hue, root metadata
   [[...mdxPath]]/page.tsx  # renders every page in content/ (Nextra catch-all)
+  api/chat/route.ts     # Ask AI backend — streams a chat completion via OpenRouter
   sitemap.ts            # sitemap.xml
+components/ask-ai/      # Ask AI widget: shared state provider, floating bubble, navbar
+                         #   button, chat panel (floating bubble + navbar button both
+                         #   open the same panel)
+lib/chat/                # docs-context.ts builds the LLM context fresh from content/;
+                         #   complete.ts calls OpenRouter (openai SDK, custom baseURL)
 content/                # ALL documentation pages (Markdown/MDX only — no custom components)
   _meta.ts              # navbar entries + hidden pages
   docs/                 # Valyd ID (login) docs      → /docs/*
@@ -88,6 +94,23 @@ scripts/
 - **Hostnames:** corpus pages carry `docs.valyd.work`-environment hosts. To retarget, edit
   `TOKENS` in `scripts/migrate-content.mjs` and re-run it (hand-authored `.mdx` pages must be
   updated separately).
+
+## Ask AI chat widget
+
+A floating chat bubble (bottom-right, every page) and a navbar button both open the same
+"Ask AI" panel, which answers questions using the docs as context.
+
+- **Setup:** copy `.env.example` to `.env` and set `OPENROUTER_API_KEY` (get one at
+  [openrouter.ai](https://openrouter.ai)). `OPENROUTER_MODEL` is optional — any OpenRouter
+  model id works (e.g. `openai/gpt-4o-mini`), defaults to `anthropic/claude-3.5-sonnet`.
+- **How it works:** `lib/chat/docs-context.ts` reads every file in `content/` plus the two
+  OpenAPI specs in `public/openapi/` at server start and caches it in memory; `lib/chat/complete.ts`
+  sends that as context to OpenRouter (the `openai` SDK pointed at OpenRouter's API) and streams
+  the reply back through `app/api/chat/route.ts`. The corpus is small enough (~44K tokens) to
+  send in full on every request — no vector DB/RAG needed.
+- **Note:** `app/api/chat` is currently unauthenticated with no rate limiting — fine for local
+  testing, but add IP-based rate limiting before this goes to a public prod deployment (there's
+  a `checkRateLimit` stub in `route.ts` marking where to wire it in).
 
 ## Deployment
 
