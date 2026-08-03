@@ -1,0 +1,363 @@
+---
+title: Electronic Visit Verification (EVV)
+description: Prove the right clinician reached the right home — with verified identity, a live medical license, a face match, and geolocation. Built on Managed Identity, so clinicians verify once and reuse everywhere.
+---
+
+import { Callout, Tabs, Steps, Cards } from 'nextra/components'
+
+# Electronic Visit Verification
+
+**Verification APIs · EVV**
+
+Prove the **right clinician** reached the **right home** — with verified identity, a live medical license, a face match, and geolocation. Built on Managed Identity, so clinicians verify once and reuse everywhere.
+
+- [Open the live demo](https://homehealth.valyd.work)
+- [Full Verify docs](/verifications)
+
+Live demo: [homehealth.valyd.work](https://homehealth.valyd.work) · admin + clinician portals, both flows wired end-to-end.
+
+## What an EVV visit proves
+
+<Cards>
+  <Cards.Card title="Identity (KYC)" href="/verifications/managed">
+    Verified once on the clinician's Valyd account. Reused after — never re-done.
+  </Cards.Card>
+  <Cards.Card title="Medical license" href="/verifications/standalone">
+    Checked live against the state board, then stored on the account and re-checked over time.
+  </Cards.Card>
+  <Cards.Card title="Face at the door" href="/verifications/standalone">
+    A live selfie matched against the clinician's stored Valyd face vector.
+  </Cards.Card>
+  <Cards.Card title="Location" href="/verifications/standalone">
+    A real GPS fix is mandatory. Inside the geofence → passed; outside it → failed.
+  </Cards.Card>
+</Cards>
+
+## The flow in four steps
+
+<Steps>
+### Connect Valyd
+
+Clinician logs in — your backend gets their access token.
+
+### Create session
+
+Pass the token + workflow to Verify → binds the `valyd_id`.
+
+### Capture
+
+Returning users just do the face + GPS in the hosted modal.
+
+### Read decision
+
+Your backend reads the result by session id (API key).
+</Steps>
+
+## Before you start
+
+### 1 · Get your keys
+
+**One console.** Sign in at [dev.valyd.work](https://dev.valyd.work) — the dev portal issues *everything*. There is no separate Verify console.
+
+- **OAuth client** (for "Connect Valyd") — register an app → `client_id` + `client_secret`; add your redirect URI and the scopes `profile`, `verifications`, `doctor_license`.
+- **Verify API key + workflow** — in the **same portal**, create a Verify project → copy the `API key` (`vrf_…`, shown once) + `webhook secret`. Then **New workflow → "Home Health · EVV"** (pre-selects ID, liveness, face match, license & location) → copy its `workflow_id`.
+
+Keep `client_secret` and the `API key` server-side only.
+
+### 2 · Install the SDKs
+
+Server (Node 18+) and browser:
+
+```bash
+# server: OAuth + Verify checks (v0.3+ has kyc.redirectUrl, evvPresence, locationMatch)
+npm i @valyd/sdk
+
+# browser: the modal + high-accuracy location capture (v0.2+ has captureLocation)
+# No browser SDK — hosted verification is a redirect to the session url
+```
+
+No bundler? There is no browser SDK to include — hosted verification works by redirecting the user to the hosted session url.
+
+## Quickstart
+
+<Callout type="info">
+**One-time setup, one console:** at [dev.valyd.work](https://dev.valyd.work) register an app (get `client_id`, `client_secret`, `API key`) and build a workflow — pick the **"Home Health · EVV"** campaign (ID + liveness + face_match + credential + location) → `workflow_id`.
+</Callout>
+
+<Callout type="warning">
+**Both modes start the same way — "Connect Valyd".** The clinician logs in with Valyd (OAuth), and your server gets their access token via `exchangeCode`. That token is what identifies the person, gates KYC, and unlocks license/identity reuse — in *both* Hosted and Core.
+</Callout>
+
+<Tabs items={['Hosted by Valyd', 'Core APIs']}>
+<Tabs.Tab>
+
+Valyd renders the UI in a modal. Already-verified clinicians skip KYC + license and do **only the face scan**.
+
+```javascript filename="Backend (Node) — Connect Valyd → session → decision"
+import { Valyd } from "@valyd/sdk";
+const valyd = new Valyd({
+  clientId, clientSecret, apiKey, webhookSecret,
+  env: "development",   // → idp.valyd.work (login + Verify)
+});
+
+// 1) "Connect Valyd" — log the clinician in (OAuth)
+app.get("/evv/login", (req, res) =>
+  res.redirect(valyd.auth.getAuthorizationUrl({ scope: ["profile", "verifications", "doctor_license"] })));
+
+// 2) On callback, create a hosted EVV session bound to their Valyd identity
+app.get("/evv/callback", async (req, res) => {
+  const { accessToken, user } = await valyd.auth.exchangeCode(req.query.code);
+  const session = await valyd.verify.sessions.create({
+    workflowId: EVV_WORKFLOW_ID,          // id + liveness + face_match + credential + location
+    valydAccessToken: accessToken,        // ← identifies the person (→ valyd_id)
+    vendorData: user.valyd_id,
+    metadata: { expected_lat: home.lat, expected_lng: home.lng }, // the assigned home
+  });
+  res.json({ url: session.url });         // returning, verified users → just a face scan
+});
+
+// 3) Get notified + read the result server-side (source of truth)
+app.post("/webhooks/valyd", express.raw({ type: "*/*" }), async (req, res) => {
+  const event = valyd.verify.webhooks.constructEvent(req.body, req.headers); // verifies signature
+  const decision = await valyd.verify.sessions.decision(event.sessionId);
+  if (decision.status === "APPROVED") markVisitVerified(event.vendorData, decision);
+  res.json({ ok: true });
+});
+```
+
+```javascript filename="Browser — the Connect button + the modal"
+// No browser SDK — "Connect Valyd" and the hosted flow are both redirects.
+
+// 1) "Connect Valyd" is a plain link to your OAuth login:
+//    <a href="/evv/login">Connect Valyd</a>
+// 2) Once connected, your server creates a session and returns its url:
+const { url } = await fetch("/evv/session").then(r => r.json());
+window.location.href = url; // Valyd hosts the capture; result via webhook + decision
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+Your own UI calls Verify directly. It still begins with Connect Valyd (to get the token); KYC is a redirect to Valyd (no KYC API); the license and face+location run as Core API calls.
+
+```javascript filename="Backend (Node) — Connect Valyd → KYC gate → license → EVV Presence"
+import { Valyd } from "@valyd/sdk";
+const valyd = new Valyd({
+  clientId, clientSecret, apiKey,
+  env: "development",   // → idp.valyd.work (login + Verify)
+});
+
+// 1) "Connect Valyd" — SAME OAuth step as hosted; this is how you get the token.
+app.get("/evv/login", (req, res) =>
+  res.redirect(valyd.auth.getAuthorizationUrl({ scope: ["profile", "verifications", "doctor_license"] })));
+
+app.get("/evv/callback", async (req, res) => {
+  const { accessToken, user } = await valyd.auth.exchangeCode(req.query.code); // ← the Valyd token
+
+  // 2) KYC gate — read the account's status; if not verified, redirect to Valyd (no KYC API)
+  const v = await valyd.auth.getVerifications(accessToken);
+  if (valyd.verify.kyc.isRequired(v))
+    return res.redirect(valyd.verify.kyc.redirectUrl({ returnTo: "https://app/evv" }));
+
+  // 3) License — just state + type (default MD); the provider is resolved for you.
+  //    Name comes from the connected account — you don't pass it.
+  await valyd.verify.standalone.credentialVerification({
+    licenseState: "CO", licenseType: "MD", licenseNumber: "TL.0011377",
+  });
+  res.json({ ok: true });
+});
+
+// 4) The visit itself — ACCOUNT mode: selfie only (matched to the stored Valyd face
+//    vector) + the location check. No ID image; the browser captures both:
+//    capture with the browser's native camera + geolocation, then POST to your server.
+const face = await valyd.verify.standalone.faceMatch({
+  valydAccessToken: accessToken,               // ← selfie matched to the stored vector
+  selfie: v.selfie,
+});
+
+const loc = await valyd.verify.standalone.locationMatch({
+  latitude: v.latitude, longitude: v.longitude, accuracy: v.accuracy,
+  expectedLatitude: home.lat, expectedLongitude: home.lng, radiusM: 200,
+});
+// A radius was given, so the STATUS is the verdict:
+//   loc.check.status === "passed"  → inside the geofence  (loc.check.data.match === true)
+//   loc.check.status === "failed"  → too far away, with loc.check.error explaining by how much
+const atTheHome = face.check.status === "passed" && loc.check.status === "passed";
+```
+
+```javascript filename="Browser — the Connect Valyd button"
+// The "Connect Valyd" button is just a link to your /evv/login route:
+//   <a href="/evv/login">Connect Valyd</a>
+// or use the browser SDK helper:
+// "Connect Valyd" is a plain link to your OAuth login — no browser SDK.
+connectButton("#connect", { loginUrl: "/evv/login" });
+```
+
+```javascript filename="Browser — capture a trustworthy GPS fix"
+// Building your own capture UI (Core APIs path)? There is no Valyd browser
+// SDK — use the browser's native camera + geolocation, then POST to your server.
+const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+// draw a video frame to a <canvas>, then canvas.toDataURL("image/jpeg") -> selfie
+const pos = await new Promise((res, rej) =>
+  navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true }));
+// POST { selfie, latitude: pos.coords.latitude, longitude: pos.coords.longitude }
+// to YOUR server, which calls valyd.verify.standalone.* with your API key.
+```
+
+</Tabs.Tab>
+</Tabs>
+
+## Reading the result
+
+**Webhooks are optional.** Two ways to get the outcome — pick either. Both end at the same authoritative call: `sessions.decision(id)` (a.k.a. `GET /api/v2/session/{id}/decision`). The decision is the source of truth; the browser `status` and the webhook are just signals to go read it.
+
+### Option A · Poll (no webhook)
+
+Simplest. Read the decision when the user returns / the modal completes.
+
+```javascript
+// NO WEBHOOK NEEDED — read the result when the user returns.
+// Browser: after the modal completes, ask your server for the decision.
+await open({ url, onComplete: async ({ sessionId }) => {
+  const r = await fetch("/evv/result/" + sessionId).then(r => r.json());
+  console.log(r.status, r.checks);   // your /evv/result route calls sessions.decision(id)
+}});
+
+// Server: GET /evv/result/:id
+app.get("/evv/result/:id", async (req, res) =>
+  res.json(await valyd.verify.sessions.decision(req.params.id)));
+```
+
+### Option B · Webhook (push)
+
+More reliable (fires even if the user closes the tab). Configured **per app** in the console, or per session via `callback`.
+
+```json
+// OPTIONAL. Webhooks are set per APP in the console (or per session via `callback`).
+// The event is only a NOTIFICATION — not the full result:
+{
+  "type":        "verification.completed",
+  "session_id":  "ses_8f…",
+  "status":      "APPROVED",      // APPROVED | DECLINED | IN_REVIEW | EXPIRED | ABANDONED
+  "vendor_data": "valyd_225c7f2ac450496f97bbbc57354a5898",
+  "occurred_at": "2026-07-01T18:04:11Z"
+}
+// Signature: HMAC-SHA256 over "timestamp.rawBody" — verify it with
+// valyd.verify.webhooks.constructEvent(rawBody, headers) before trusting it.
+```
+
+### The decision response (what a verification returns)
+
+```json filename="sessions.decision(id)"
+// GET /api/v2/session/{id}/decision   →   valyd.verify.sessions.decision(id)
+// This is the authoritative full result (works with OR without webhooks):
+{
+  "session_id": "ses_8f…",
+  "status":     "APPROVED",
+  "vendor_data":"valyd_225c7f2ac450496f97bbbc57354a5898",
+  "valyd_id":  "valyd_225c7f2ac450496f97bbbc57354a5898",
+  "checks": [
+    { "type": "id_verification", "status": "passed", "data": { "reused": true } },
+    { "type": "liveness",        "status": "passed" },
+    { "type": "face_match",      "status": "passed", "score": 0.98 },
+    { "type": "credential",      "status": "passed", "data": { "license": { "status": "active" } } },
+    // location: a real GPS fix is mandatory. An expected point + radius_m was given, so the
+    // status IS the verdict — "failed" (with an error message) if the clinician is outside it.
+    { "type": "location",        "status": "passed", "data": { "distance_m": 12, "radius_m": 200, "match": true } }
+  ],
+  "identity": {
+    "full_name": "Grace Lee Casado",
+    "licenses": [ { "license_state": "CO", "status": "active", "expire_date": "2027-01-01" } ]
+  },
+  "decided_at": "2026-07-01T18:04:10Z"
+}
+```
+
+`status` is the overall outcome; `checks[]` has one entry per check (with `score`/`data`); `identity` carries the reusable profile + licenses. `reused: true` marks steps skipped from the Valyd account.
+
+## Integrate with your AI assistant
+
+Copy this prompt into **Claude, Cursor, Copilot** or any coding AI. It has the SDKs, the credentials to ask for, the rules, and both flows — the assistant will scaffold the integration in your stack. The URLs below target the **development** environment (idp.valyd.work).
+
+````markdown filename="Prompt — paste into your AI assistant (development)"
+You are integrating Verification APIs — EVV (Electronic Visit Verification) into my app.
+Valyd proves the right, licensed clinician is physically at the right patient's home:
+verified identity (KYC) + live medical license + face match + geolocation. It uses the
+ACCOUNT / Managed-Identity model — the clinician logs in with Valyd once; their KYC and
+license are stored and reused on later visits.
+
+SDKs (install):
+- Server (Node 18+):  npm i @valyd/sdk    // valyd.auth (OAuth) + valyd.verify (checks)
+- Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
+
+Environment (IMPORTANT): you are on DEVELOPMENT — construct the SDK with env="development":
+  new Valyd({ clientId, clientSecret, apiKey, env: "development" })
+  This targets idp.valyd.work (login) + idp.valyd.work (Verify) + KYC. WITHOUT env the SDK defaults to PRODUCTION
+  (valyd.id) and OAuth fails with "client_id/redirect_uri not allowed". One env switch sets IdP + Verify + KYC.
+
+Credentials — ALL from ONE console, the dev portal at dev.valyd.work (there is no separate Verify
+console). Ask me for these; keep all server-side, never in the browser:
+- VALYD_CLIENT_ID / VALYD_CLIENT_SECRET    — your OAuth app
+- VALYD_API_KEY / VALYD_WEBHOOK_SECRET     — your Verify project (API key vrf_…, shown once)
+- VALYD_WORKFLOW_ID                        — a "Home Health · EVV" workflow (id+liveness+face_match+credential+location)
+
+Rules:
+- new Valyd({...}) generates nothing — it only holds config; env picks the environment URLs.
+- Get the Valyd token with valyd.auth.exchangeCode(code) AFTER the user logs in.
+- Pass that token to sessions.create({ valydAccessToken }) — it goes in the SESSION, not the workflow;
+  it identifies the person (valyd_id) and unlocks KYC/license reuse.
+- KYC is NOT an API: if valyd.verify.kyc.isRequired(verifications) -> redirect to
+  valyd.verify.kyc.redirectUrl({ returnTo }). The user completes KYC on Valyd and returns.
+- Expected (patient-home) location is passed PER SESSION via metadata.expected_lat / expected_lng (+ radius_m).
+- Capture GPS in the browser with captureLocation({ maxAccuracyM: 100 }).
+- LOCATION SEMANTICS: a real GPS fix is ALWAYS mandatory — it can never be skipped, and a blocked
+  permission or missing coordinates is a hard "failed". If you pass an expected point AND radius_m, the
+  STATUS IS THE VERDICT: "passed" inside the radius, "failed" outside it (data.match true/false,
+  data.distance_m the distance). Expected point but NO radius -> "passed" with data.match === null and only
+  distance_m reported (you decide). No expected point -> capture-only "passed" with the coordinates.
+  Do NOT treat location as report-only / always-passing.
+- KYC + license are ONE-TIME onboarding steps (redirect to Valyd for KYC, verify license once). Do NOT put a
+  KYC/license button on every visit. The recurring visit action is only: captureVisit() -> faceMatch + locationMatch.
+- Use the SDK capture UI: captureVisit() (selfie + GPS), captureSelfie(), captureLocation() — no file inputs.
+- ACCOUNT face = selfie only (matched to the stored Valyd vector); never ask the user for an ID/reference image.
+- Webhooks are OPTIONAL. Default = poll sessions.decision(id) when the user returns. Add a webhook
+  (constructEvent + decision) only if you want push/extra reliability (fires even if the user closes the tab).
+
+Flow A — Hosted (Valyd renders the UI in a modal):
+1. "Connect Valyd" button -> GET /evv/login -> res.redirect(valyd.auth.getAuthorizationUrl({ scope:["profile","verifications","doctor_license"] }))
+2. GET /evv/callback?code= -> const { accessToken, user } = await valyd.auth.exchangeCode(code)
+3. const s = await valyd.verify.sessions.create({ workflowId: VALYD_WORKFLOW_ID, valydAccessToken: accessToken,
+     vendorData: user.valyd_id, metadata: { expected_lat, expected_lng }, redirectUrl, callback }); send s.url to the browser
+4. Browser: redirect the user to the hosted url (window.location.href = url) — returning users do only the face scan
+5. Webhook POST /webhooks/valyd: const e = valyd.verify.webhooks.constructEvent(raw, headers);
+     const decision = await valyd.verify.sessions.decision(e.sessionId)   // source of truth
+
+Flow B — Core APIs (your own UI):
+1. Same Connect-Valyd login/callback to get accessToken.
+2. KYC gate: if (valyd.verify.kyc.isRequired(await valyd.auth.getVerifications(accessToken))) redirect to kyc.redirectUrl.
+3. License: await valyd.verify.standalone.credentialVerification({ licenseState, licenseType:"MD", licenseNumber })
+     Provider is auto-resolved from state+type (default MD); the NAME comes from the account (don't pass it).
+4. Visit (ACCOUNT = selfie only, matched to the stored Valyd face vector — NO idImage):
+     build your own capture with navigator.mediaDevices + navigator.geolocation
+     const face = await valyd.verify.standalone.faceMatch({ valydAccessToken: accessToken, selfie: v.selfie })
+     const loc  = await valyd.verify.standalone.locationMatch({
+       latitude: v.latitude, longitude: v.longitude, accuracy: v.accuracy,
+       expectedLatitude, expectedLongitude, radiusM: 200 })   // POST /api/v2/location
+     // radius given => loc.check.status is the verdict: "passed" inside, "failed" outside.
+     const verified = face.check.status === "passed" && loc.check.status === "passed"
+
+Reference: docs https://docs.valyd.work/evv · live demo https://homehealth.valyd.work ·
+Verify API base https://idp.valyd.work/api/v2 (header X-API-Key).
+
+Now: ask me for the credentials, then scaffold the server routes + a minimal UI for BOTH flows.
+Put every secret in env vars and make all Valyd calls server-to-server.
+````
+
+## Verify once, reuse forever
+
+<Callout type="info">
+Because EVV runs on **Managed Identity**, the first visit does full KYC + license; every visit after is **just a face + location check**. Licenses are re-checked against the board automatically, and identity/KYC live on Valyd — your app stores proofs, not documents.
+</Callout>
+
+- [See it live](https://homehealth.valyd.work)
+- [Managed Identity guide](/verifications/managed)

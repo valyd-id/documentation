@@ -1,0 +1,235 @@
+---
+title: Verify a professional license
+description: Use Valyd's Core credential-verification API to check whether a professional license (medical, nursing, law, engineering, and more) is active and belongs to the person you expect.
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Verify a professional license
+
+Use Valyd's Core credential-verification API to check whether a professional license
+(medical, nursing, law, engineering, and more) is active and belongs to the person you
+expect. No hosted flow required — your backend calls the API directly and returns the
+result.
+
+`~15 min` · `Express / Node.js` · `server-side only`
+
+## Prerequisites
+
+| Variable | Where to get it |
+| --- | --- |
+| `VALYD_API_KEY` | Developer Portal → your Verify project → API key (shown once) |
+
+```bash filename=".env"
+VALYD_API_KEY=your_api_key
+```
+
+<Steps>
+
+### Discover providers (optional)
+
+If you don't yet know which provider (licensing board) covers your user's license type and
+state, use the discovery endpoints. These are read-only and can be called at setup time or
+cached — they don't change often.
+
+```bash filename="1a — list all supported states"
+curl https://idp.valyd.work/api/v2/credential/states \
+  -H "X-API-Key: $VALYD_API_KEY"
+```
+
+```json filename="Response"
+{
+  "states": [
+    { "state": "CA", "name": "California", "provider_count": 14 },
+    { "state": "NY", "name": "New York",   "provider_count": 11 }
+  ]
+}
+```
+
+```bash filename="1b — list providers for a state"
+curl https://idp.valyd.work/api/v2/credential/states/CA/providers \
+  -H "X-API-Key: $VALYD_API_KEY"
+```
+
+```json filename="Response (excerpt)"
+{
+  "providers": [
+    {
+      "provider_id": "ca_medical_board",
+      "name":        "California Medical Board",
+      "license_types": ["MD", "DO", "PA"]
+    },
+    {
+      "provider_id": "ca_board_rn",
+      "name":        "California Board of Registered Nursing",
+      "license_types": ["RN", "NP", "LVN"]
+    }
+  ]
+}
+```
+
+<Callout type="info">
+  You don't need to pass a `provider_id` to the verification endpoint — Valyd resolves the
+  correct board from the `license_type` and `license_state` automatically. The discovery
+  endpoints are useful when you want to present a provider-aware UI to the user.
+</Callout>
+
+### Submit the verification
+
+Call `POST /api/v2/credential-verification` — just **state + license type (default MD) +
+number**. No `provider_code`; Valyd resolves the board. The check runs synchronously
+(10–60 s) — set your timeout to at least 90 s.
+
+```javascript filename="Valyd SDK (recommended)"
+import { VerifyClient } from "@valyd/sdk";
+const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY, timeoutMs: 90_000 });
+
+const { check } = await verify.standalone.credentialVerification({
+  licenseState:  "CA",
+  licenseType:   "MD",        // default MD; provider auto-resolved — no provider_code
+  licenseNumber: "G12345",
+  fullName:      "Jane Smith", // the board matches on name + number
+});
+// check.status === "passed" · check.data.license.status ("active" | "expired" | …)
+```
+
+```javascript filename="Node.js (fetch)"
+const response = await fetch(
+  "https://idp.valyd.work/api/v2/credential-verification",
+  {
+    method:  "POST",
+    headers: {
+      "X-API-Key":     process.env.VALYD_API_KEY!,
+      "Content-Type":  "application/json",
+    },
+    body: JSON.stringify({
+      first_name:     "Jane",
+      last_name:      "Smith",
+      license_type:   "MD",
+      license_state:  "CA",
+      license_number: "G12345",
+    }),
+    signal: AbortSignal.timeout(90_000),
+  }
+);
+
+const result = await response.json();
+```
+
+```bash filename="cURL"
+curl -X POST https://idp.valyd.work/api/v2/credential-verification \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -H "Content-Type: application/json" \
+  --max-time 90 \
+  -d '{
+    "first_name":     "Jane",
+    "last_name":      "Smith",
+    "license_type":   "MD",
+    "license_state":  "CA",
+    "license_number": "G12345"
+  }'
+```
+
+<Callout type="warning">
+  This endpoint is **server-side only**. Never call it from the browser — your API key would
+  be exposed. Have the user submit their license details to your backend and call Valyd from
+  there.
+</Callout>
+
+### Read the result
+
+A successful response includes a top-level `status` and a `checks` array with per-check
+details. Act on `status`; inspect `checks` for error detail or additional data.
+
+```json filename="Approved response"
+{
+  "verification_id": "ver_…",
+  "status": "APPROVED",
+  "checks": [
+    {
+      "type":   "credential",
+      "status": "passed",
+      "data": {
+        "license_status": "active",
+        "expiry_date":    "2026-12-31",
+        "name_match":     true
+      }
+    }
+  ]
+}
+```
+
+```json filename="Declined response"
+{
+  "verification_id": "ver_…",
+  "status": "DECLINED",
+  "checks": [
+    {
+      "type":   "credential",
+      "status": "failed",
+      "error": {
+        "code":    "name_mismatch",
+        "message": "License belongs to a different name"
+      }
+    }
+  ]
+}
+```
+
+```javascript filename="Handle in Node.js"
+if (result.status === "APPROVED") {
+  // Grant access — store the verification_id against the user record
+  await db.users.update(userId, {
+    verificationId: result.verification_id,
+    licenseVerified: true,
+  });
+} else {
+  // Surface a user-friendly message — don't expose raw error codes
+  const check = result.checks.find(c => c.type === "credential");
+  const reason = check?.error?.code ?? "unknown";
+  // e.g. "name_mismatch", "license_not_found", "license_expired", "license_inactive"
+  throw new VerificationError(reason);
+}
+```
+
+</Steps>
+
+## Status reference
+
+| `status` | Meaning | Action |
+| --- | --- | --- |
+| `APPROVED` | License is active and the name matches. | Grant access. |
+| `DECLINED` | License not found, expired, inactive, or name doesn't match. | Inspect `checks[].error.code` for the specific reason. |
+| `IN_REVIEW` | Board returned data that requires manual review. | Wait for a follow-up webhook or poll until terminal. |
+
+### Decline error codes
+
+| `error.code` | What it means |
+| --- | --- |
+| `license_not_found` | No license matching that number + state + type was found. |
+| `license_expired` | The license number was found but is past its expiry date. |
+| `license_inactive` | The license exists but has been suspended, revoked, or lapsed. |
+| `name_mismatch` | The license is valid but registered to a different person. |
+| `board_unavailable` | The licensing board's system was unreachable. Retry in a few minutes. |
+
+## Common errors
+
+**408 / timeout**
+
+- **Cause:** HTTP client timeout shorter than the board response time.
+- **Fix:** Set your HTTP client timeout to at least 90 seconds. Most boards respond in under 30 s, but some run slower.
+
+**400 invalid_license_type**
+
+- **Cause:** The `license_type` value isn't supported for the given state.
+- **Fix:** Call `GET /api/v2/credential/states/{state}/providers` to see which license types are supported for that state.
+
+**401 Unauthorized**
+
+- **Cause:** `X-API-Key` is missing or incorrect.
+- **Fix:** Check `VALYD_API_KEY` is set and matches the API key of your Verify project in the Developer Portal. Confirm the key is for the correct environment (sandbox vs. production).
+
+**Exposing results to the browser**
+
+- **Cause:** Calling the endpoint client-side or forwarding the raw Valyd response to the frontend.
+- **Fix:** Keep all Valyd API calls server-side. Only send your own derived result (granted / denied) to the browser — never raw check data or error codes.

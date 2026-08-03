@@ -1,0 +1,455 @@
+/*
+ * Valyd brand layer on top of the default Nextra Docs Theme.
+ *
+ * Rules of this file:
+ *  - Only stable hooks: `nextra-*` class names, semantic tags (article, table),
+ *    and our own `vd-*` classes. Never Nextra's hashed/`x:` utility classes.
+ *  - All movement is gated behind `prefers-reduced-motion: no-preference`;
+ *    color/border transitions (non-moving) stay always-on.
+ *  - Brand values live in CSS variables so future tweaks are one-line edits.
+ */
+
+/* Tailwind v4, utilities only — Nextra ships its own preflight, importing
+ * Tailwind's would double-reset the theme. Used by the interactive sandbox
+ * components; documentation pages remain plain Nextra. */
+/* Declare the FULL canonical layer order (even though this sheet only fills
+ * theme + utilities): if this stylesheet is parsed before Nextra's, the first
+ * declaration fixes global layer order — omitting base/components here would
+ * append them after utilities, letting Nextra's preflight reset override its
+ * own heading/typography utilities. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Nextra toggles a `dark` class on <html>; make Tailwind's dark: follow it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------- tokens */
+:root {
+  /* Valyd brand (from the original docs app) */
+  --vd-primary: hsl(196 100% 42%);
+  --vd-primary-soft: hsl(196 100% 42% / 0.1);
+  --vd-primary-border: hsl(196 100% 42% / 0.35);
+  --vd-navy: hsl(222 100% 18%);
+  --vd-surface: hsl(210 40% 98%);
+  --vd-border: hsl(214 32% 91%);
+  --vd-shadow: 0 8px 24px hsl(215 45% 25% / 0.08);
+  --vd-radius: 0.75rem;
+  --vd-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --vd-speed: 0.18s;
+}
+
+.dark {
+  --vd-primary: hsl(196 100% 55%);
+  --vd-primary-soft: hsl(196 100% 55% / 0.12);
+  --vd-primary-border: hsl(196 100% 55% / 0.4);
+  --vd-navy: hsl(222 60% 85%);
+  --vd-surface: hsl(222 40% 11%);
+  --vd-border: hsl(222 28% 20%);
+  --vd-shadow: 0 8px 24px hsl(222 60% 3% / 0.45);
+}
+
+/* --------------------------------------------------- brand fundamentals */
+::selection {
+  background: var(--vd-primary-soft);
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--vd-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------------ content rhythm */
+article h1 {
+  letter-spacing: -0.025em;
+}
+
+article h2 {
+  letter-spacing: -0.015em;
+  margin-top: 2.25rem;
+}
+
+article h3 {
+  letter-spacing: -0.01em;
+}
+
+/* Animated underline on prose links: color + offset ease on hover.
+   (text-decoration transitions are non-moving, so they stay outside the
+   reduced-motion gate.) */
+article a:not(.nextra-card) {
+  text-underline-offset: 2px;
+  transition:
+    color var(--vd-speed) var(--vd-ease),
+    text-underline-offset var(--vd-speed) var(--vd-ease),
+    text-decoration-color var(--vd-speed) var(--vd-ease);
+}
+
+article a:not(.nextra-card):hover {
+  text-underline-offset: 4px;
+}
+
+/* Blockquotes pick up the brand edge */
+article blockquote {
+  border-left: 3px solid var(--vd-primary-border);
+  border-radius: 0 var(--vd-radius) var(--vd-radius) 0;
+  background: var(--vd-surface);
+}
+
+/* Professional tables: tinted header, soft row separators, hover tint */
+article table {
+  border-radius: calc(var(--vd-radius) - 2px);
+  overflow: hidden;
+}
+
+article thead th {
+  background: var(--vd-surface);
+}
+
+article tbody tr {
+  transition: background-color var(--vd-speed) var(--vd-ease);
+}
+
+article tbody tr:hover {
+  background: var(--vd-primary-soft);
+}
+
+/* Code blocks: rounder corners + soft elevation, calm border */
+article pre {
+  border-radius: var(--vd-radius);
+  box-shadow: var(--vd-shadow);
+  transition: border-color var(--vd-speed) var(--vd-ease);
+}
+
+article pre:hover {
+  border-color: var(--vd-primary-border);
+}
+
+/* Callouts inherit the radius scale */
+.nextra-callout {
+  border-radius: var(--vd-radius);
+}
+
+/* ----------------------------------------------------- cards + nav feel */
+.nextra-card {
+  border-radius: var(--vd-radius);
+  transition:
+    border-color var(--vd-speed) var(--vd-ease),
+    box-shadow var(--vd-speed) var(--vd-ease),
+    transform var(--vd-speed) var(--vd-ease),
+    background-color var(--vd-speed) var(--vd-ease);
+}
+
+.nextra-card:hover {
+  border-color: var(--vd-primary-border);
+  box-shadow: var(--vd-shadow);
+}
+
+/* Sidebar + TOC links: smooth color/background shifts */
+.nextra-sidebar a,
+.nextra-toc a {
+  transition:
+    color var(--vd-speed) var(--vd-ease),
+    background-color var(--vd-speed) var(--vd-ease);
+}
+
+.nextra-navbar a {
+  transition: color var(--vd-speed) var(--vd-ease), opacity var(--vd-speed) var(--vd-ease);
+}
+
+/* ------------------------------------------------------------ homepage */
+/* Hero sub-copy: MDX children arrive wrapped in a paragraph */
+.vd-hero-sub {
+  color: color-mix(in srgb, currentColor 72%, transparent);
+}
+
+.vd-hero-sub p {
+  margin: 0;
+}
+
+/* Homepage cards: title row (icon + label) on top, padded description below.
+   Nextra renders children first and the title row last, so column-reverse
+   puts the title visually first without touching the component. */
+.vd-page .nextra-card {
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+}
+
+.vd-page .nextra-card > span {
+  padding: 1.15rem 1.25rem 0.35rem;
+  font-size: 0.975rem;
+  gap: 0.6rem;
+}
+
+.vd-page .nextra-card p {
+  margin: 0;
+  padding: 0 1.25rem 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, currentColor 72%, transparent);
+}
+
+.vd-page .nextra-card svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--vd-primary);
+  flex-shrink: 0;
+  transition: transform var(--vd-speed) var(--vd-ease);
+}
+
+.vd-page .nextra-cards {
+  gap: 1rem;
+}
+
+/* Hero background: subtle brand-cyan glow + faint grid, both modes. Pure CSS
+   gradients — no images, no animation. */
+.vd-hero-bg {
+  /* Some article-header styling shrink-fits width; the hero panel must span
+     the full content width. */
+  width: 100%;
+  background:
+    radial-gradient(52rem 26rem at 78% -10%, var(--vd-primary-soft), transparent 65%),
+    linear-gradient(var(--vd-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--vd-border) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    44px 44px,
+    44px 44px;
+  border: 1px solid var(--vd-border);
+  border-radius: var(--vd-radius);
+  margin-top: 1.25rem;
+}
+
+.dark .vd-hero-bg {
+  background:
+    radial-gradient(52rem 26rem at 78% -10%, hsl(196 100% 50% / 0.12), transparent 65%),
+    linear-gradient(hsl(222 30% 16% / 0.6) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(222 30% 16% / 0.6) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    44px 44px,
+    44px 44px;
+}
+
+/* Navbar logo: full-size brand wordmark, theme-swapped, capped height so the
+   header stays compact. */
+.vd-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.vd-logo img {
+  width: auto;
+  height: 1.75rem;
+}
+
+.vd-logo-dark {
+  display: none;
+}
+
+.dark .vd-logo-light {
+  display: none;
+}
+
+.dark .vd-logo-dark {
+  display: block;
+}
+
+.vd-logo-docs {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, currentColor 55%, transparent);
+  border-left: 1px solid var(--vd-border);
+  padding-left: 0.6rem;
+}
+
+@media (max-width: 640px) {
+  .vd-logo img {
+    height: 1.4rem;
+  }
+}
+
+/* Navbar theme toggle button */
+.vd-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  color: inherit;
+  transition:
+    background-color var(--vd-speed) var(--vd-ease),
+    color var(--vd-speed) var(--vd-ease),
+    transform var(--vd-speed) var(--vd-ease);
+}
+
+.vd-theme-toggle:hover {
+  background: var(--vd-primary-soft);
+  color: var(--vd-primary);
+}
+
+/* Docs tables: responsive scroll, stronger header, zebra rows, no wrap-breaks */
+article table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+article thead th {
+  padding: 0.65rem 1rem;
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  border-bottom: 2px solid var(--vd-primary-border);
+}
+
+article tbody td {
+  padding: 0.6rem 1rem;
+  vertical-align: top;
+}
+
+article tbody tr:nth-child(even) {
+  background: color-mix(in srgb, currentColor 2.5%, transparent);
+}
+
+article td code {
+  white-space: nowrap;
+}
+
+/* Sidebar labels with icons (MetaTitle in _meta.tsx files) */
+.vd-meta-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.vd-meta-title svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+/* ------------------------------------------------- loading primitives */
+.vd-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--vd-radius) - 4px);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.vd-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, currentColor 6%, transparent),
+    transparent
+  );
+}
+
+.vd-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+}
+
+/* ------------------------------------------------------------- motion */
+@media (prefers-reduced-motion: no-preference) {
+  /* Page content fades in on load / route change */
+  article,
+  .vd-page {
+    animation: vd-fade 0.4s var(--vd-ease) both;
+  }
+
+  /* Homepage sections rise in with a soft cascade (set --i per section) */
+  .vd-rise {
+    animation: vd-rise 0.55s var(--vd-ease) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  /* Slight card lift + button lift on hover; icon nudges with it */
+  .nextra-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .vd-page .nextra-card:hover svg {
+    transform: translateY(-1px);
+  }
+
+  /* Staggered entrance for homepage card grids */
+  .vd-page .nextra-cards > a {
+    animation: vd-rise 0.5s var(--vd-ease) both;
+  }
+  .vd-page .nextra-cards > a:nth-child(1) { animation-delay: 60ms; }
+  .vd-page .nextra-cards > a:nth-child(2) { animation-delay: 120ms; }
+  .vd-page .nextra-cards > a:nth-child(3) { animation-delay: 180ms; }
+  .vd-page .nextra-cards > a:nth-child(4) { animation-delay: 240ms; }
+  .vd-page .nextra-cards > a:nth-child(5) { animation-delay: 300ms; }
+  .vd-page .nextra-cards > a:nth-child(6) { animation-delay: 360ms; }
+
+  /* Skeleton shimmer sweep */
+  .vd-skeleton::after {
+    animation: vd-shimmer 1.4s ease infinite;
+  }
+
+  .vd-spinner {
+    animation: vd-spin 0.7s linear infinite;
+  }
+
+}
+
+@keyframes vd-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vd-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes vd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

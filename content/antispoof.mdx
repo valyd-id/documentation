@@ -1,0 +1,166 @@
+---
+title: Anti-spoof / Liveness
+description: A ready-to-go demo — let a user log in with Valyd and share their verified details, then run a passive-liveness check that flags presentation attacks like photos, masks, replays, and deepfakes.
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Prove there's a real, live person
+
+**Anti-spoof · Liveness**
+
+A ready-to-go demo: let a user log in with Valyd and share their verified details, then run a passive-liveness check that flags presentation attacks — photos, masks, replays, deepfakes. Copy the credentials and the snippet below and you're running in minutes.
+
+## Try the live anti-spoof check
+
+Start a session, allow the camera in the tab that opens, and follow the prompts. Valyd runs a passive-liveness / presentation-attack check and tells you whether it's a real, live person.
+
+The demo runs entirely with the **public app key** (`X-API-Key`). The flow is:
+
+1. `POST /api/v2/session` with `{ workflow_id, vendor_data }` → returns a hosted `url`
+2. Open the hosted url — the user does the live face capture there
+3. Poll `GET /api/v2/session/{session_id}/decision` → status + decision
+
+The app key is safe in the browser: it can only start liveness sessions on the capped demo account. The `client_secret` is **never** used by the browser.
+
+You can drive the same flow from your terminal:
+
+```bash
+# 1) Start a liveness-only session (public demo app key)
+curl -X POST "https://idp.valyd.work/api/v2/session" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: pvi34NsFwzlb7u7NDWNcIxpCxy3eCBrd5D-Pyzud3TU" \
+  -d '{ "workflow_id": "cd2e8501-28d0-45cb-aa4a-c11c998a1cf8", "vendor_data": "antispoof-demo-123" }'
+# → { "data": { "session_id": "…", "url": "…", … } } — open `url` in a browser for the capture
+
+# 2) Poll the decision until it reaches a terminal state
+#    (APPROVED | DECLINED | ABANDONED | EXPIRED end the poll; APPROVED = live human)
+curl "https://idp.valyd.work/api/v2/session/SESSION_ID/decision" \
+  -H "X-API-Key: pvi34NsFwzlb7u7NDWNcIxpCxy3eCBrd5D-Pyzud3TU"
+```
+
+- **APPROVED** → Live human confirmed — liveness passed.
+- Any other terminal status → not verified (spoof suspected, abandoned, or expired).
+
+## Demo credentials
+
+Public credentials on a capped demo account, so you can try everything immediately. In your own app, keep the `client_secret` and app key on your server. Create your own from the [Valyd Dev Portal](https://dev.valyd.work).
+
+| Credential | Value |
+| --- | --- |
+| OAuth `client_id` | `d771fc3c206346c4b07c04997882cb53` |
+| OAuth `client_secret` (server-side only) | `0b3ac7e9f3c146709603f25f8f310c30` |
+| Verify app key (server-side only) | `pvi34NsFwzlb7u7NDWNcIxpCxy3eCBrd5D-Pyzud3TU` |
+| Liveness `workflow_id` | `cd2e8501-28d0-45cb-aa4a-c11c998a1cf8` |
+
+<Callout type="info">
+These are public demo credentials on a dedicated, balance-capped Valyd account. They exist so anyone can run the anti-spoof demo end to end. The `client_secret` appears in the server-side snippet only — the in-browser demo authenticates with the public app key alone.
+</Callout>
+
+## The flow
+
+<Steps>
+### Login with Valyd
+
+Redirect to Valyd, the user authorizes, you get a code and exchange it server-side.
+
+### Share details
+
+Read the user's shared profile + proofs (`valyd_id`, name, `human_verified`) from get-userinfo.
+
+### Verify face
+
+Start the liveness workflow, open the hosted capture, poll the decision — human or not.
+</Steps>
+
+## Server (Node) — login, share details, verify face
+
+```javascript filename="server.js"
+// server.js — Node 18+ (Express). Install: npm i express @valyd/sdk
+// The client_secret and app key stay here on the server, never in the browser.
+import express from "express";
+import { ValydClient } from "@valyd/sdk";
+
+const app = express();
+const PORT = 3000;
+
+const idp = new ValydClient({
+  clientId:     "d771fc3c206346c4b07c04997882cb53",
+  clientSecret: "0b3ac7e9f3c146709603f25f8f310c30",
+  redirectUri:  "http://localhost:3000/callback",
+  baseUrl:      "https://idp.valyd.work",
+});
+
+const APP_KEY     = "pvi34NsFwzlb7u7NDWNcIxpCxy3eCBrd5D-Pyzud3TU";
+const WORKFLOW_ID = "cd2e8501-28d0-45cb-aa4a-c11c998a1cf8";
+const IDP         = "https://idp.valyd.work";
+
+// 1) Login button → send the user to Valyd to authorize.
+app.get("/login", (_req, res) => {
+  const url = idp.getAuthorizationUrl({
+    scope: ["profile","verifications"],
+    state: "demo-" + Date.now(),
+  });
+  res.redirect(url);
+});
+
+// 2) Callback → exchange the code, then read the user's shared details/proofs.
+app.get("/callback", async (req, res) => {
+  const { accessToken } = await idp.exchangeCode(String(req.query.code));
+  const me = await idp.getUserInfo(accessToken);   // { success, data: {...} }
+  const u = me.data;
+  res.json({
+    valyd_id:       u.valyd_id,
+    name:           u.full_name,
+    id_verified:    u.id_verified,
+    human_verified: u.verifications?.human_verified,
+  });
+});
+
+// 3) Verify-face button → start a liveness-only session, return the hosted URL.
+app.get("/verify-face", async (_req, res) => {
+  const r = await fetch(IDP + "/api/v2/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": APP_KEY },
+    body: JSON.stringify({ workflow_id: WORKFLOW_ID, vendor_data: "demo-" + Date.now() }),
+  });
+  const { data } = await r.json();
+  // data = { session_id, status, url, session_token, features, expires_at }
+  res.json({ sessionId: data.session_id, open: data.url });  // open this URL for the capture
+});
+
+// 4) Poll the decision until it reaches a terminal state.
+//    status ∈ NOT_STARTED | IN_PROGRESS | IN_REVIEW | APPROVED | DECLINED | ABANDONED | EXPIRED
+app.get("/result/:sessionId", async (req, res) => {
+  const r = await fetch(IDP + "/api/v2/session/" + req.params.sessionId + "/decision", {
+    headers: { "X-API-Key": APP_KEY },
+  });
+  const { data } = await r.json();
+  res.json({
+    status: data.status,
+    human: data.status === "APPROVED",   // APPROVED → a real, live person
+  });
+});
+
+app.listen(PORT, () => console.log("Anti-spoof demo on http://localhost:" + PORT + "/login"));
+```
+
+## Browser — the two buttons
+
+```html filename="index.html"
+<!-- index.html — the two buttons your server backs -->
+<button onclick="location.href='/login'">Login with Valyd</button>
+
+<button onclick="verifyFace()">Verify your face</button>
+<script>
+  async function verifyFace() {
+    const { open } = await (await fetch('/verify-face')).json();
+    window.open(open, '_blank');   // the hosted liveness capture
+  }
+</script>
+```
+
+## Next steps
+
+- [Verify docs](/verifications)
+- [Dev Portal](https://dev.valyd.work)

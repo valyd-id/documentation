@@ -1,0 +1,1274 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Valyd ID API",
+    "version": "1.0.0",
+    "summary": "OAuth2 / OpenID Connect third-party SSO (TPSSO) — verified user profiles, professional licenses, and identity claims.",
+    "description": "REST API for Valyd ID. Two endpoint families share one host:\n\n- **TPSSO** (`/api/auth/tpsso/*`) — Valyd's first-party SSO flow. Responses are wrapped in a `{ success, data }` envelope; errors are `{ success:false, error:{ code, message } }`.\n- **OIDC** (`/api/auth/oidc/*` + discovery) — standards-based OpenID Connect. UserInfo/discovery return bare JSON (no envelope).\n\nCredentials (`client_id` / `client_secret`) cannot be created via API — a human creates them in the Developer Portal. Token exchange and refresh MUST run server-side; never expose `client_secret` to a browser.",
+    "contact": {
+      "name": "Valyd Developer Docs",
+      "url": "https://docs.valyd.work/docs/overview.md"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://docs.valyd.work"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://idp.valyd.work",
+      "description": "Valyd ID host"
+    }
+  ],
+  "tags": [
+    {
+      "name": "TPSSO",
+      "description": "Valyd first-party SSO: token exchange, profile, licenses, verifications."
+    },
+    {
+      "name": "OIDC",
+      "description": "Standards-based OpenID Connect endpoints."
+    },
+    {
+      "name": "Consent",
+      "description": "Consent-gated release of RAW account attributes (Valyd 1.0 §2). Every other Account API returns proofs only (pseudonym, id_verified, badges, age bands) and never raw KYC. This is the only path by which raw attributes leave Valyd, and only after the subject approves in their Valyd app. The payload is sealed to YOUR X25519 public key, so Valyd cannot read it unless you opt into managed custody."
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/auth/tpsso/token": {
+      "post": {
+        "tags": [
+          "TPSSO"
+        ],
+        "summary": "Exchange authorization code for tokens",
+        "description": "Exchange the one-time `code` from your callback for access + refresh tokens. The authorization code is valid for 5 minutes. Call this server-side; it is authenticated by `client_id` + `client_secret` in the body, not a Bearer token.",
+        "operationId": "tpssoToken",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              },
+              "example": {
+                "grant_type": "authorization_code",
+                "client_id": "YOUR_CLIENT_ID",
+                "client_secret": "YOUR_CLIENT_SECRET",
+                "code": "AUTH_CODE_FROM_CALLBACK"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "access_token": "eyJhbGciOi...",
+                    "token_type": "Bearer",
+                    "expires_in": 900,
+                    "refresh_token": "rfrsh_abc123...",
+                    "user": {
+                      "id": 123,
+                      "email": "user@example.com",
+                      "username": "john_doe",
+                      "name": "John Doe",
+                      "valyd_id": "valyd_225c7f2ac450496f97bbbc57354a5898",
+                      "avatar_url": null,
+                      "created_at": "2025-09-11T10:15:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/tpsso/refresh": {
+      "post": {
+        "tags": [
+          "TPSSO"
+        ],
+        "summary": "Refresh access token",
+        "description": "Use a `refresh_token` to obtain a new access token. Set `rotate_refresh: true` to also receive a new refresh token. Note the success payload is nested under `data.tokens`.",
+        "operationId": "tpssoRefresh",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              },
+              "example": {
+                "refresh_token": "rfrsh_abc123...",
+                "rotate_refresh": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New tokens issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "tokens": {
+                      "access_token": "eyJhbGciOi...",
+                      "token_type": "Bearer",
+                      "expires_in": 900,
+                      "refresh_token": "rfrsh_new456..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/api/auth/tpsso/userinfo": {
+      "get": {
+        "tags": [
+          "TPSSO"
+        ],
+        "summary": "Get user profile",
+        "description": "Retrieve the authenticated user's profile. Requires the `profile` scope.",
+        "operationId": "tpssoUserInfo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserInfoResponse"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "sub": "valyd_225c7f2ac450496f97bbbc57354a5898",
+                    "email": "user@example.com",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "full_name": "John Doe",
+                    "valyd_id": "valyd_225c7f2ac450496f97bbbc57354a5898",
+                    "id_verified": true,
+                    "created_at": "2025-09-10T12:00:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/auth/tpsso/licenses": {
+      "get": {
+        "tags": [
+          "TPSSO"
+        ],
+        "summary": "Get professional licenses",
+        "description": "Returns a snapshot of the user's professional licenses verified by Valyd (e.g. nursing, CDL, CPR/BLS, Food Handler). The required scope is not declared in the source docs; `doctor_license` is the likely scope but is unconfirmed.",
+        "operationId": "tpssoLicenses",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "License snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicensesResponse"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "licenses": [
+                      {
+                        "type": "nurse_licenses",
+                        "number": "RN-123456",
+                        "status": "Active",
+                        "expires_on": "2027-06-30",
+                        "issuer": "CA Board of Nursing"
+                      },
+                      {
+                        "type": "cpr_certification",
+                        "number": "CPR-998877",
+                        "status": "Active",
+                        "expires_on": "2026-05-15",
+                        "issuer": "American Heart Association"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/tpsso/verifications": {
+      "get": {
+        "tags": [
+          "TPSSO"
+        ],
+        "summary": "Get identity verifications",
+        "description": "Returns ID-verification status and face-match confidence. Requires the `verifications` scope.",
+        "operationId": "tpssoVerifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationsResponse"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "verifications": {
+                      "id_verified": true,
+                      "face_match": 0.98,
+                      "last_checked": "2025-09-11T12:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/.well-known/openid-configuration": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OIDC discovery document",
+        "description": "OpenID Connect discovery document for auto-configuration. Public; returns bare JSON.",
+        "operationId": "oidcDiscovery",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Discovery document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcDiscovery"
+                },
+                "example": {
+                  "issuer": "https://idp.valyd.work",
+                  "authorization_endpoint": "https://idp.valyd.work/api/auth/oidc/authorize",
+                  "token_endpoint": "https://idp.valyd.work/api/auth/oidc/token",
+                  "userinfo_endpoint": "https://idp.valyd.work/api/auth/oidc/userinfo",
+                  "jwks_uri": "https://idp.valyd.work/api/auth/oidc/jwks.json",
+                  "response_types_supported": [
+                    "code",
+                    "id_token",
+                    "token id_token"
+                  ],
+                  "grant_types_supported": [
+                    "authorization_code",
+                    "refresh_token"
+                  ],
+                  "subject_types_supported": [
+                    "public"
+                  ],
+                  "id_token_signing_alg_values_supported": [
+                    "RS256"
+                  ],
+                  "scopes_supported": [
+                    "openid",
+                    "profile",
+                    "email",
+                    "verifications",
+                    "zkp"
+                  ],
+                  "token_endpoint_auth_methods_supported": [
+                    "client_secret_post",
+                    "client_secret_basic"
+                  ],
+                  "claims_supported": [
+                    "sub",
+                    "iss",
+                    "aud",
+                    "exp",
+                    "iat",
+                    "name",
+                    "email",
+                    "preferred_username",
+                    "first_name",
+                    "last_name"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/oidc/authorize": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OIDC authorization (browser redirect)",
+        "description": "Standard OpenID Connect authorization-code entry point. This is a browser redirect to the Valyd login/consent screen, not a JSON API call. Parameters follow OIDC Core; the docs do not enumerate them, so the standard set is shown for guidance.",
+        "operationId": "oidcAuthorize",
+        "security": [],
+        "parameters": [
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "examples": [
+                "code"
+              ]
+            },
+            "description": "Use `code` for the authorization-code flow."
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Must exactly match a registered redirect URI."
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "examples": [
+                "openid profile email"
+              ]
+            },
+            "description": "Space-separated scopes; must include `openid`."
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nonce",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the Valyd login/consent screen; on completion, redirects back to `redirect_uri` with `code` and `state`."
+          }
+        }
+      }
+    },
+    "/api/auth/oidc/token": {
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OIDC token exchange",
+        "description": "Exchange the OIDC authorization code for `access_token`, `id_token`, and `refresh_token`. Client authentication is `client_secret_post` (shown) or `client_secret_basic`. The docs do not print the exact request/response bodies; the OIDC Core standard shape is shown for guidance.",
+        "operationId": "oidcToken",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "grant_type",
+                  "code",
+                  "redirect_uri",
+                  "client_id"
+                ],
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "examples": [
+                      "authorization_code"
+                    ]
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "client_secret": {
+                    "type": "string",
+                    "description": "Required for client_secret_post."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens issued (bare OIDC token response — not enveloped).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/oidc/userinfo": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OIDC UserInfo",
+        "description": "Returns OIDC claims for the bearer access token. Returns bare JSON (no `{ success, data }` envelope).",
+        "operationId": "oidcUserInfo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OIDC claims.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcUserInfo"
+                },
+                "example": {
+                  "sub": "user_12345",
+                  "preferred_username": "john.doe",
+                  "email": "john.doe@example.com",
+                  "email_verified": true,
+                  "name": "John Doe",
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "picture": "https://example.com/avatar.jpg"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/oidc/jwks.json": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "JSON Web Key Set",
+        "description": "Public keys (RS256) for validating ID-token (JWT) signatures.",
+        "operationId": "oidcJwks",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "JWKS document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "keys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/attribute-request": {
+      "post": {
+        "tags": [
+          "Consent"
+        ],
+        "operationId": "createAttributeRequest",
+        "summary": "Request raw attributes (starts consent)",
+        "description": "Ask the subject to release raw attributes. Creates a PENDING request and pushes a consent prompt to their Valyd app. You then poll the result endpoint. The user must pass a face check before they can approve. Expires in 10 minutes.\n\nSDK: `valyd.attributes.request({ attributes, valydId, purpose })` — it generates the keypair and decrypts the result for you.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "client_id",
+                  "attributes",
+                  "requester_public_key",
+                  "valyd_id"
+                ],
+                "properties": {
+                  "client_id": {
+                    "type": "string",
+                    "description": "Your application client_id."
+                  },
+                  "attributes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Requested attributes. Raw identity: `full_name` (alias `legal_name`), `first_name`, `last_name`, `email`, `phone`, `dob`, `country`. Proofs (non-PII, preferred over raw `dob`): `id_verified`, `is_16_plus`, `is_18_plus`, `is_21_plus`, `is_30_plus`, `is_65_plus`. Unknown values are dropped; if nothing releasable remains you get 400."
+                  },
+                  "requester_public_key": {
+                    "type": "string",
+                    "description": "base64 of your 32-byte X25519 PUBLIC key. The approved payload is sealed to it. SDK: `generateRequesterKeypair()`."
+                  },
+                  "valyd_id": {
+                    "type": "string",
+                    "description": "The subject: the valyd_id you received at login (e.g. valyd_ab12…). Legacy alias: anon_id."
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "description": "Human-readable reason, shown to the user on the consent screen. Be specific — vague purposes get denied."
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "description": "Optional. Where to send the user after they decide."
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "Optional. Echoed back on redirect (CSRF)."
+                  },
+                  "managed_private_key": {
+                    "type": "string",
+                    "description": "Optional. base64 of your 32-byte X25519 SECRET key, handing custody to Valyd so we open the payload for you (stored encrypted) and `result` returns plaintext. OMIT for true end-to-end — then only you can decrypt."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consent requested.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "request_id": {
+                          "type": "string",
+                          "description": "Poll the result endpoint with this."
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "pending"
+                        },
+                        "attributes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "The attributes actually accepted."
+                        },
+                        "expires_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No releasable attributes, or requester_public_key is not base64 of a 32-byte X25519 key."
+          },
+          "401": {
+            "description": "Unknown or missing client_id."
+          }
+        }
+      }
+    },
+    "/api/auth/attribute-request/{requestId}/result": {
+      "parameters": [
+        {
+          "name": "requestId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "request_id from the create call."
+        }
+      ],
+      "get": {
+        "tags": [
+          "Consent"
+        ],
+        "operationId": "getAttributeRequestResult",
+        "summary": "Fetch the sealed payload",
+        "description": "Poll until the user decides. `pending` = not yet. Once approved you get the sealed payload ONCE (single-use, short-lived) — store it immediately.\n\nSelf-custody: decrypt `sealed_payload` with your X25519 secret key (SDK does this automatically). Managed custody: `custody: \"valyd\"` and `attributes` come back as plaintext.",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Your client_id — must match the one that created the request."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "pending, or released.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "released"
+                          ]
+                        },
+                        "custody": {
+                          "type": "string",
+                          "enum": [
+                            "self",
+                            "valyd"
+                          ],
+                          "description": "`valyd` only when you supplied managed_private_key."
+                        },
+                        "attributes": {
+                          "type": "object",
+                          "description": "Plaintext — managed custody only."
+                        },
+                        "sealed_payload": {
+                          "type": "string",
+                          "description": "Self-custody: base64 sealed box, decrypt with your secret key."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User denied the request."
+          },
+          "404": {
+            "description": "Request not found (or not yours)."
+          },
+          "410": {
+            "description": "Expired: the one-time code lapsed or the payload was purged."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "OAuth2 access token from `/api/auth/tpsso/token`. Send as `Authorization: Bearer <access_token>`."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "TPSSO error envelope.",
+        "required": [
+          "success",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid_client",
+                  "invalid_token",
+                  "insufficient_scope",
+                  "invalid_grant",
+                  "invalid_request",
+                  "access_denied"
+                ],
+                "description": "Machine-readable error code."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable message."
+              }
+            }
+          }
+        }
+      },
+      "TokenRequest": {
+        "type": "object",
+        "required": [
+          "grant_type",
+          "client_id",
+          "client_secret",
+          "code"
+        ],
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "const": "authorization_code"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Your Client ID from the Developer Portal."
+          },
+          "client_secret": {
+            "type": "string",
+            "description": "Your Client Secret (server-side only)."
+          },
+          "code": {
+            "type": "string",
+            "description": "One-time authorization code from the callback (valid 5 minutes)."
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "access_token": {
+                "type": "string"
+              },
+              "token_type": {
+                "type": "string",
+                "examples": [
+                  "Bearer"
+                ]
+              },
+              "expires_in": {
+                "type": "integer",
+                "description": "Access-token lifetime in seconds. TPSSO examples show 900 (15m); the OIDC token table cites 3600 (1h) for access tokens.",
+                "examples": [
+                  900
+                ]
+              },
+              "refresh_token": {
+                "type": "string"
+              },
+              "user": {
+                "$ref": "#/components/schemas/TokenUser"
+              }
+            }
+          }
+        }
+      },
+      "TokenUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "username": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "valyd_id": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "properties": {
+          "refresh_token": {
+            "type": "string"
+          },
+          "rotate_refresh": {
+            "type": "boolean",
+            "description": "Set true to also rotate (reissue) the refresh token."
+          }
+        }
+      },
+      "RefreshResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "tokens": {
+                "type": "object",
+                "properties": {
+                  "access_token": {
+                    "type": "string"
+                  },
+                  "token_type": {
+                    "type": "string",
+                    "examples": [
+                      "Bearer"
+                    ]
+                  },
+                  "expires_in": {
+                    "type": "integer",
+                    "examples": [
+                      900
+                    ]
+                  },
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserInfoResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "sub": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "first_name": {
+                "type": "string"
+              },
+              "last_name": {
+                "type": "string"
+              },
+              "full_name": {
+                "type": "string"
+              },
+              "valyd_id": {
+                "type": "string"
+              },
+              "id_verified": {
+                "type": "boolean"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "LicensesResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "licenses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "number": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "expires_on": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "issuer": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "VerificationsResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "verifications": {
+                "type": "object",
+                "properties": {
+                  "id_verified": {
+                    "type": "boolean"
+                  },
+                  "face_match": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Face-match confidence (0–1)."
+                  },
+                  "last_checked": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OidcDiscovery": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorization_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "token_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userinfo_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "jwks_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "response_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grant_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subject_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id_token_signing_alg_values_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_endpoint_auth_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "claims_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OidcTokenResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "id_token": {
+            "type": "string",
+            "description": "Signed JWT (RS256)."
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "examples": [
+              "Bearer"
+            ]
+          },
+          "expires_in": {
+            "type": "integer",
+            "examples": [
+              3600
+            ]
+          }
+        }
+      },
+      "OidcUserInfo": {
+        "type": "object",
+        "properties": {
+          "sub": {
+            "type": "string"
+          },
+          "preferred_username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "picture": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request — e.g. `invalid_grant` (bad/expired/used code or refresh token) or `invalid_request` (missing parameter).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "invalid_grant",
+                "message": "refresh_token is invalid or expired"
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Authentication failed — `invalid_client` (bad client credentials) or `invalid_token` (token invalid/expired).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "invalid_token",
+                "message": "token invalid/expired"
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The access token lacks the scope required by this endpoint.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "insufficient_scope",
+                "message": "The request requires the profile scope"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

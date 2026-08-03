@@ -1,0 +1,123 @@
+---
+title: Valyd Developer Docs
+description: 'Developer documentation for Valyd: Login with Valyd (OAuth 2.0 / OIDC), the identity Verification APIs (KYC, liveness, face match, license), and MCP for AI agents.'
+---
+
+import { Cards } from 'nextra/components'
+import {
+  HeroGrid,
+  Hero,
+  HeroCode,
+  Section,
+  Capabilities,
+  Steps,
+  Resources,
+  SupportBand
+} from '@/components/home'
+import {
+  KeyRound,
+  ScanFace,
+  Sparkles,
+  Rocket,
+  ShieldCheck,
+  Users,
+  Play,
+  Bot,
+  AlertTriangle
+} from 'lucide-react'
+
+<div className="vd-page">
+
+<HeroGrid>
+  <Hero
+    title="Verified identity, built into your product"
+    primary={{ href: '/docs/quick-start', label: 'Get Started' }}
+    secondary={{ href: '/docs/endpoints', label: 'Explore API' }}
+  >
+    Valyd is one platform for identity. Let users **sign in** with an already-verified account,
+    **verify** people with KYC, liveness and license checks, and give **AI agents** a safe way to
+    act on a verified identity. One set of credentials, three ways to use them.
+  </Hero>
+  <HeroCode>
+
+```typescript
+import { ValydClient } from "@valyd/sdk";
+
+const valyd = new ValydClient({
+  clientId: process.env.VALYD_CLIENT_ID!,
+  clientSecret: process.env.VALYD_CLIENT_SECRET!,
+  redirectUri: process.env.VALYD_REDIRECT_URI!,
+  // baseUrl defaults to https://idp.valyd.work
+});
+```
+
+  </HeroCode>
+</HeroGrid>
+
+<Section title="What you can build" index={1}>
+  <Cards>
+    <Cards.Card icon={<KeyRound />} title="Login with Valyd" href="/docs" arrow>
+      OAuth 2.0 and OpenID Connect sign-in with profile, license and verification scopes built in.
+      Your users bring an identity that is already checked.
+    </Cards.Card>
+    <Cards.Card icon={<ScanFace />} title="Verification APIs" href="/verifications" arrow>
+      KYC, document checks, liveness, face match, age and professional-license checks — hosted
+      capture UI or direct REST APIs from your backend.
+    </Cards.Card>
+    <Cards.Card icon={<Sparkles />} title="MCP for AI agents" href="/mcp" arrow>
+      The Valyd MCP server exposes identity and verification as tools an agent can call, with the
+      human staying in control of consent.
+    </Cards.Card>
+  </Cards>
+</Section>
+
+<Section
+  title="API capabilities"
+  sub="The authoritative surface, straight from the reference pages: five TPSSO endpoints for sign-in and data access, plus the verification checks the Core APIs expose."
+  index={2}
+>
+  <Capabilities />
+</Section>
+
+<Section
+  title="How integration works"
+  sub="Three steps from zero to production. The sandbox lets you try every call before you write code."
+  index={1}
+>
+  <Steps />
+</Section>
+
+<Section title="Popular pages" index={1}>
+  <Cards>
+    <Cards.Card icon={<Rocket />} title="Quick start" href="/docs/quick-start" arrow>
+      Add Login with Valyd to your app in minutes.
+    </Cards.Card>
+    <Cards.Card icon={<ShieldCheck />} title="Ship hosted KYC" href="/verify/ship-hosted-kyc" arrow>
+      End-to-end recipe: session, redirect, webhook, decision.
+    </Cards.Card>
+    <Cards.Card icon={<Users />} title="Organizations & teams" href="/docs/organizations" arrow>
+      Invite teammates with roles, share apps, and bill one account.
+    </Cards.Card>
+    <Cards.Card icon={<Play />} title="Try the APIs" href="/sandbox" arrow>
+      Run the full OAuth flow against demo users with shared test credentials.
+    </Cards.Card>
+    <Cards.Card icon={<Bot />} title="For AI agents" href="/agents" arrow>
+      Machine-readable docs, OpenAPI specs, and the MCP server.
+    </Cards.Card>
+    <Cards.Card icon={<AlertTriangle />} title="Errors & troubleshooting" href="/docs/errors" arrow>
+      Error envelope, common causes, and fixes.
+    </Cards.Card>
+  </Cards>
+</Section>
+
+<Section
+  title="Developer resources"
+  sub="Everything machine-readable, ready to download or point your tooling at."
+  index={1}
+>
+  <Resources />
+</Section>
+
+<SupportBand />
+
+</div>

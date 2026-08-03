@@ -1,0 +1,111 @@
+---
+title: Valyd for AI Agents
+description: Machine-readable specs, context files, and tooling so agents can discover, understand, and call the Valyd APIs without scraping the docs site.
+---
+
+# Valyd for AI agents & copilots
+
+Machine-readable specs, context files, and tooling so agents can discover, understand, and call the Valyd APIs without scraping the docs site.
+
+## Quick fetch
+
+```bash
+# Machine-readable docs index
+curl -sL https://docs.valyd.work/llms.txt
+
+# Full corpus — inject into a model context window
+curl -sL https://docs.valyd.work/llms-full.txt
+
+# OpenAPI specs
+curl -sL https://docs.valyd.work/openapi/valyd-id.json
+curl -sL https://docs.valyd.work/openapi/valyd-verify.json
+```
+
+## Resources
+
+### llms.txt — *Standard*
+
+Machine-readable docs index following the llms.txt spec. One fetch gives an agent the full hierarchy, base URLs, credential rules, and links to every page as clean Markdown.
+
+```bash
+curl -sL https://docs.valyd.work/llms.txt
+```
+
+[View llms.txt](https://docs.valyd.work/llms.txt) · [Download](https://docs.valyd.work/llms.txt)
+
+### llms-full.txt
+
+Single-file corpus — every docs page concatenated and delimited. Inject the whole thing into a model context window for offline reasoning without additional fetches.
+
+```bash
+curl -sL https://docs.valyd.work/llms-full.txt
+```
+
+[View llms-full.txt](https://docs.valyd.work/llms-full.txt) · [Download](https://docs.valyd.work/llms-full.txt)
+
+### Valyd ID OpenAPI — *OpenAPI 3.1*
+
+Full OpenAPI 3.1 spec for TPSSO and OIDC endpoints — schemas, auth, error envelopes, and response examples. Use for SDK codegen, Copilot plugins, and endpoint discovery.
+
+```bash
+curl -sL https://docs.valyd.work/openapi/valyd-id.json
+```
+
+[Browse in docs](/docs/api-reference) · [Download JSON](https://docs.valyd.work/openapi/valyd-id.json)
+
+### Verification APIs OpenAPI — *OpenAPI 3.1*
+
+Full OpenAPI 3.1 spec for Sessions, Core checks, Credentials, and Workflows — including the HMAC-SHA256 webhook schema.
+
+```bash
+curl -sL https://docs.valyd.work/openapi/valyd-verify.json
+```
+
+[Browse in docs](/verifications/api) · [Download JSON](https://docs.valyd.work/openapi/valyd-verify.json)
+
+### MCP server — *Preview*
+
+Connect Valyd to any MCP client (Cursor, Claude Desktop, VS Code Copilot) for real-time API execution — authenticate users, run KYC checks, and retrieve verification results without leaving your editor.
+
+```json
+{
+  "mcpServers": {
+    "valyd": {
+      "command": "npx",
+      "args": ["-y", "@valyd/mcp-server"],
+      "env": {
+        "VALYD_CLIENT_ID": "<your-client-id>",
+        "VALYD_CLIENT_SECRET": "<your-client-secret>",
+        "VALYD_API_KEY": "<your-verify-api-key>"
+      }
+    }
+  }
+}
+```
+
+[Join the preview](/mcp)
+
+### Postman collection
+
+Importable Postman collection of Valyd ID API requests. Import into Postman or use with Newman for scripted testing.
+
+```bash
+curl -sL https://docs.valyd.work/valyd-postman-collection.json
+```
+
+[View collection](https://docs.valyd.work/valyd-postman-collection.json) · [Download](https://docs.valyd.work/valyd-postman-collection.json)
+
+## Notes for AI agents
+
+- Fetch `llms.txt` first — it lists every page as a Markdown URL. Fetch individual pages on demand rather than loading the full corpus unless you need everything.
+- **Credentials cannot be created via API.** Pause and ask a human to supply `client_id`, `client_secret`, and `VALYD_API_KEY` before making auth calls.
+- Token exchange and webhook signature verification must run server-side — never expose `client_secret` to a browser.
+- Prefer the clean `.md` URLs listed in `llms.txt` over scraping the HTML pages — each one is a self-contained static copy of the corresponding docs page.
+
+---
+
+[← Valyd ID docs](/docs) · [← Verification APIs docs](/verifications) · [← Home](/)
+
+---
+
+Questions? [support@valyd.id](mailto:support@valyd.id)
