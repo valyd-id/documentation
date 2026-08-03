@@ -381,7 +381,7 @@ export const TryApisContent = () => {
                 Want the real OAuth flow? Clone the SDK starter.
               </h2>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                A minimal Express app wired up with <code className="font-mono">@valyd/sdk@^0.2.0</code> —
+                A minimal Express app wired up with <code className="font-mono">@valyd/sdk</code> —
                 including <code className="font-mono">createLoginSession</code> /{" "}
                 <code className="font-mono">verifyLoginSession</code> for CSRF. The full redirect-and-consent
                 flow on your localhost in three commands.

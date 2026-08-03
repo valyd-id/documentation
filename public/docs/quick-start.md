@@ -19,7 +19,7 @@
 ### Prerequisites
 
 - Node.js 18+ (the SDK requires it).
-- `@valyd/sdk` version `^0.2.0` or later (older versions lack the login-session helpers used here).
+- `@valyd/sdk` (latest — `npm i @valyd/sdk`).
 - A Valyd app with credentials. Obtain `VALYD_CLIENT_ID` and `VALYD_CLIENT_SECRET` from the Valyd developer portal (get these from the developer portal → your project → Credentials). `VALYD_CLIENT_SECRET` is server-side only and must never reach a browser.
 - A redirect URI registered in the portal that exactly matches `VALYD_REDIRECT_URI` (no trailing slash).
 - Scopes enabled in the portal: any of `profile`, `verifications`, `doctor_license`, `zkp`, `mcp`.
@@ -29,7 +29,7 @@
 1. **Install the SDK.** Run the install command (the official `@valyd/sdk` handles the full TPSSO/OAuth2 flow, login sessions for CSRF protection, and typed resource calls).
 
    ```bash
-   npm install @valyd/sdk@^0.2.0
+   npm install @valyd/sdk
    ```
 
    **Expected output:** npm adds `@valyd/sdk` (a `0.2.x` or newer release) to `dependencies` in `package.json` and reports the package was added with no error exit code.
@@ -159,7 +159,7 @@
   npm ls @valyd/sdk
   ```
 
-  **Expected output:** `@valyd/sdk@0.2.x` (or newer) listed. If it shows below `0.2.0`, the login-session helpers (`createLoginSession`, `verifyLoginSession`) will be missing.
+  **Expected output:** a line like `@valyd/sdk@1.5.x` (or newer).
 
 - Run the full round trip: start the server, visit the `/login` route in a browser, complete login at Valyd, and confirm the `/callback` route reaches step 6. A successful run sets the `valyd_login` cookie on `/login`, passes `verifyLoginSession` on the callback, and returns a populated `profile` from `getUserInfo`.
 

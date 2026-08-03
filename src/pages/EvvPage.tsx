@@ -189,7 +189,7 @@ ACCOUNT / Managed-Identity model — the clinician logs in with Valyd once; thei
 license are stored and reused on later visits.
 
 SDKs (install):
-- Server (Node 18+):  npm i @valyd/sdk@^0.5.0    // valyd.auth (OAuth) + valyd.verify (checks)
+- Server (Node 18+):  npm i @valyd/sdk    // valyd.auth (OAuth) + valyd.verify (checks)
 - Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
 
 ${envBlock}
@@ -364,7 +364,7 @@ export default function EvvPage() {
             <p className="mt-3 text-sm text-muted-foreground">Server (Node 18+) and browser:</p>
             <div className="mt-2">
               <CodeBlock language="bash" code={`# server: OAuth + Verify checks (v0.3+ has kyc.redirectUrl, evvPresence, locationMatch)
-npm i @valyd/sdk@^0.5.0
+npm i @valyd/sdk
 
 # browser: the modal + high-accuracy location capture (v0.2+ has captureLocation)
 # No browser SDK — hosted verification is a redirect to the session url`} />

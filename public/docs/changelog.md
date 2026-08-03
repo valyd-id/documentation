@@ -16,6 +16,14 @@ This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality),
 
 ---
 
+## v1.5.1 — Unified SDK + Workforce Members API
+
+- **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).
+- **Added:** One unified package `@valyd/sdk` — `valyd.auth` (Login with Valyd) + `valyd.verify` (verification) + workforce members; one credential, one host.
+- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk` (latest).
+
+---
+
 ## v0.2.0 — Login sessions for TPSSO
 
 - **Added:** `createLoginSession()` and `verifyLoginSession()` helpers.

@@ -27,7 +27,7 @@ res.redirect(url);`;
       language: "javascript",
       label: "Node (Express + SDK)",
       code: `// Recommended: use the official SDK.
-//   npm install @valyd/sdk@^0.2.0
+//   npm install @valyd/sdk
 import { ValydClient } from "@valyd/sdk";
 
 const valyd = new ValydClient({

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { API_CONFIG } from "@/lib/api-config";
 
 export const QuickStartSection = () => {
-  const installCmd = `npm install @valyd/sdk@^0.2.0`;
+  const installCmd = `npm install @valyd/sdk`;
 
   const quickStartCode = `// server.ts
 import { ValydClient } from "@valyd/sdk";
@@ -81,7 +81,7 @@ VALYD_REDIRECT_URI=http://localhost:8080/callback`;
         <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-start gap-2">
           <Info className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
           <div className="text-sm text-blue-700 space-y-1">
-            <div><strong>Minimum version:</strong> <code>^0.2.0</code> (adds login-session helpers).</div>
+            <div><strong>Version:</strong> <code>@valyd/sdk</code> latest (<code>^1.5.1</code>) — login sessions, verification, and the workforce Members API all ship in the current release.</div>
             <div><strong>Runtime:</strong> Node.js 18+.</div>
             <div><strong>Server-side only.</strong> Your <code>clientSecret</code> must never reach a browser.</div>
           </div>

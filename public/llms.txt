@@ -46,7 +46,7 @@
 - [API Reference (endpoints)](https://docs.valyd.work/docs/endpoints.md): POST /token, GET /userinfo, GET /licenses, GET /verifications, POST /refresh — base URL https://idp.valyd.work/api/auth/tpsso.
 - [OAuth2 Scopes](https://docs.valyd.work/docs/scopes.md): profile, verifications, doctor_license, zkp, mcp — what data each unlocks and how to request them.
 - [Errors & troubleshooting](https://docs.valyd.work/docs/errors.md): Every error code with cause and fix, plus the SDK "Invalid login session" failure.
-- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history (v0.2.0 login sessions, v0.1.0 initial client).
+- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd@valyd/sdk release history (v1.5.1 unified SDK + Workforce Members API; v0.2.0 login sessions).
 
 
 - [Request user data (consent)](https://docs.valyd.work/docs/request-data.md): Ask a Valyd user for raw attributes (legal_name, dob, country). The user approves in their Valyd app; values return end-to-end encrypted (X25519 sealed box) via valyd.auth.requestAttributes + getAttributeResult. Needs libsodium-wrappers for self-custody.

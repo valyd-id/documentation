@@ -2,6 +2,15 @@ import { Sparkles } from "lucide-react";
 
 const entries = [
   {
+    version: "v1.5.1",
+    date: "Unified SDK + Workforce Members API",
+    items: [
+      { tag: "Added", text: "Workforce Members API on ValydClient — addMembers() (single or bulk ≤ 500, notify flag), getMembers() (roster with status + valyd_id), getBilling() (seats, price, trial, balance, invoices)." },
+      { tag: "Added", text: "One unified package @valyd/sdk: valyd.auth (Login with Valyd) + valyd.verify (verification) + workforce members — one credential, one host." },
+      { tag: "Docs", text: "Organizations page lists every member operation; install is now `npm install @valyd/sdk` (latest)." },
+    ],
+  },
+  {
     version: "v0.2.0",
     date: "Login sessions for TPSSO",
     items: [

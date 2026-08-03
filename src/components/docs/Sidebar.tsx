@@ -130,6 +130,10 @@ const navItems: NavItem[] = [
     id: "organizations",
     label: "Organizations & teams",
     icon: <Building2 className="h-4 w-4" />,
+    children: [
+      { id: "organizations", label: "Overview & roles" },
+      { id: "org-members-api", label: "Members API" },
+    ],
   },
   {
     id: "oidc",

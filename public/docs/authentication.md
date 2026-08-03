@@ -14,7 +14,7 @@
   - A Valyd application registered in the Developer Portal (https://dev.valyd.work) with a Client ID and Client Secret.
   - The exact callback/redirect URL (e.g. `https://yourapp.com/callback`) registered on that application — it must match the `redirect_url` you send.
   - A server-side environment that can keep `VALYD_CLIENT_SECRET` private (token exchange MUST happen server-side).
-  - (Recommended) Node project with the official SDK: `npm install @valyd/sdk@^0.2.0`
+  - (Recommended) Node project with the official SDK: `npm install @valyd/sdk`
 
 ---
 
@@ -111,7 +111,7 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
 
    ```javascript
    // Recommended: use the official SDK.
-   //   npm install @valyd/sdk@^0.2.0
+   //   npm install @valyd/sdk
    import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
