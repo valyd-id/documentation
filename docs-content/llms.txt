@@ -81,7 +81,7 @@
 
 ## Developer portal — organizations & teams
 
-- [Organizations & teams](https://docs.valyd.work/docs/organizations.md): Individual vs organization accounts, the owner/developer/member roles, shared apps, public vs private apps, adding a workforce by face, and one-account billing.
+- [Organizations & teams](https://{{DOCS_BASE_URL}}/docs/organizations.md): Individual vs organization accounts, the owner/developer/member roles, shared apps, public vs private apps, adding a workforce by face, and one-account billing.
 
 ## Human-only steps (an agent must pause and request these)
 

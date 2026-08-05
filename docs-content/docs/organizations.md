@@ -1,11 +1,11 @@
-> Source: https://docs.valyd.work/docs/organizations
+> Source: https://{{DOCS_BASE_URL}}/docs/organizations
 > Part of: Valyd Developer documentation — static copy generated for AI agents
 > Generated from repo component: OrganizationsSection.tsx
 
 # Organizations & teams
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/organizations
+- Source URL: https://{{DOCS_BASE_URL}}/docs/organizations
 - Credentials / env vars needed: to READ or WRITE members programmatically you need an app's `client_id` + `client_secret` (server-side only). Portal actions are human web steps.
 - Package: `@valyd/sdk` (Node, server-side) — `npm i @valyd/sdk`
 - Can complete without human input: PARTIAL — adding/listing members and reading billing is a real API (`/api/sdk/*`); creating an org, inviting teammates, CSV upload, deactivation and private-app assignment are portal steps.
@@ -81,7 +81,7 @@ const billing = await client.getBilling(); // { seats, pricePerSeat, balance, �
 Raw REST add:
 
 ```bash
-curl -X POST https://dev.valyd.work/api/sdk/members \
+curl -X POST https://{{DEV_PORTAL_URL}}/api/sdk/members \
   -H "X-Client-Id: $VALYD_CLIENT_ID" \
   -H "X-Client-Secret: $VALYD_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
@@ -122,7 +122,7 @@ then every login is a member and the claim tells you which.
 
 ## How to start
 
-1. Sign in to the developer portal (https://dev.valyd.work) and open the **Organizations** tab.
+1. Sign in to the developer portal (https://{{DEV_PORTAL_URL}}) and open the **Organizations** tab.
 2. Create an organization from the selector — you become its owner.
 3. Invite teammates (developer or admin) and create apps under the organization.
 4. Add members (your workforce) by CSV, singly, or with `addMembers()`; they join by scanning their face.
