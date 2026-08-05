@@ -8,7 +8,7 @@ import type { OApiSpec } from "@/lib/openapi";
 
 // Live, no-signup verification sandbox. Each entry deep-links to a specific flow (?flow=<id>) so a
 // reader can run the real experience in a new tab straight from the endpoints panel — no iframe.
-const DEMO_URL = "https://demos.valyd.work";
+const DEMO_URL = import.meta.env.VITE_DEMOS_BASE_URL ?? "https://demos.valyd.work";
 const SIDEBAR_DEMOS = [
   { id: "core-kyc", label: "Core KYC" },
   { id: "kyc-license", label: "KYC + License" },
