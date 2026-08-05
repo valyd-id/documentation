@@ -25,6 +25,39 @@ There are two ways to ask, both using the same keypair + sealed-box mechanism:
 - **Any time after login** — call `requestAttributes` with the user's `valyd_id`; they approve in
   their Valyd app. Use this for data you didn't ask for at login (or that the user unchecked).
 
+## Available attributes
+
+Pass any of these keys in `attributes`. They fall into three groups:
+
+**Proofs** — non-identifying, release on consent alone (no face / vault needed):
+
+| Key | Value |
+|---|---|
+| `id_verified` | boolean — the user has a completed KYC |
+| `is_16_plus` / `is_18_plus` / `is_21_plus` / `is_30_plus` / `is_65_plus` | boolean age bands (derived, no raw DOB) |
+| `preferred_username` | the user's pseudonymous username |
+
+**Raw identity** — real PII kept server-readable; released on a face-assured (or quick in-page face) session:
+
+| Key | Value |
+|---|---|
+| `legal_name` / `full_name` | full legal name |
+| `first_name`, `last_name` | given / family name |
+| `email`, `phone` | contact |
+| `country` | country |
+
+**Vault-only raw KYC** — sealed **on the user's device** from their encrypted identity vault; the server is blind to these. The user must have their identity **vault unlocked** on the device they consent on — if it isn't, the request is refused with an "unlock your vault" prompt (these fields are never silently dropped):
+
+| Key | Value |
+|---|---|
+| `dob` | date of birth (`YYYY-MM-DD`) |
+| `age` | age in years (derived from DOB on-device) |
+| `gender` | gender / sex from the ID |
+| `nationality` | nationality from the ID |
+| `document_number` | ID document number |
+
+> Prefer **proofs** over raw fields where they suffice — e.g. request `is_18_plus` instead of `dob`. Raw fields require face assurance; vault-only fields additionally require the user's device vault.
+
 ## At login: ask on the consent screen (recommended)
 
 Put `attributes` + your X25519 public key on the authorize URL. The consent screen renders each
