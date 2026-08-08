@@ -3,8 +3,8 @@
   "info": {
     "title": "Valyd ID API",
     "version": "1.0.0",
-    "summary": "OAuth2 / OpenID Connect third-party SSO (TPSSO) — verified user profiles, professional licenses, and identity claims.",
-    "description": "REST API for Valyd ID. Two endpoint families share one host:\n\n- **TPSSO** (`/api/auth/tpsso/*`) — Valyd's first-party SSO flow. Responses are wrapped in a `{ success, data }` envelope; errors are `{ success:false, error:{ code, message } }`.\n- **OIDC** (`/api/auth/oidc/*` + discovery) — standards-based OpenID Connect. UserInfo/discovery return bare JSON (no envelope).\n\nCredentials (`client_id` / `client_secret`) cannot be created via API — a human creates them in the Developer Portal. Token exchange and refresh MUST run server-side; never expose `client_secret` to a browser.",
+    "summary": "OAuth2 / OpenID Connect third-party SSO (TPSSO) \u2014 verified user profiles, professional licenses, and identity claims.",
+    "description": "REST API for Valyd ID. Two endpoint families share one host:\n\n- **TPSSO** (`/api/auth/tpsso/*`) \u2014 Valyd's first-party SSO flow. Responses are wrapped in a `{ success, data }` envelope; errors are `{ success:false, error:{ code, message } }`.\n- **OIDC** (`/api/auth/oidc/*` + discovery) \u2014 standards-based OpenID Connect. UserInfo/discovery return bare JSON (no envelope).\n\nCredentials (`client_id` / `client_secret`) cannot be created via API \u2014 a human creates them in the Developer Portal. Token exchange and refresh MUST run server-side; never expose `client_secret` to a browser.",
     "contact": {
       "name": "Valyd Developer Docs",
       "url": "https://{{DOCS_BASE_URL}}/docs/overview.md"
@@ -31,7 +31,7 @@
     },
     {
       "name": "Consent",
-      "description": "Consent-gated release of RAW account attributes (Valyd 1.0 §2). Every other Account API returns proofs only (pseudonym, id_verified, badges, age bands) and never raw KYC. This is the only path by which raw attributes leave Valyd, and only after the subject approves in their Valyd app. The payload is sealed to YOUR X25519 public key, so Valyd cannot read it unless you opt into managed custody."
+      "description": "Consent-gated release of RAW account attributes (Valyd 1.0 \u00a72). Every other Account API returns proofs only (pseudonym, id_verified, badges, age bands) and never raw KYC. This is the only path by which raw attributes leave Valyd, and only after the subject approves in their Valyd app. The payload is sealed to YOUR X25519 public key, so Valyd cannot read it unless you opt into managed custody."
     }
   ],
   "security": [
@@ -60,7 +60,8 @@
                 "grant_type": "authorization_code",
                 "client_id": "YOUR_CLIENT_ID",
                 "client_secret": "YOUR_CLIENT_SECRET",
-                "code": "AUTH_CODE_FROM_CALLBACK"
+                "code": "AUTH_CODE_FROM_CALLBACK",
+                "redirect_uri": "https://yourapp.com/auth/valyd/callback"
               }
             }
           }
@@ -109,7 +110,7 @@
           "TPSSO"
         ],
         "summary": "Refresh access token",
-        "description": "Use a `refresh_token` to obtain a new access token. Set `rotate_refresh: true` to also receive a new refresh token. Note the success payload is nested under `data.tokens`.",
+        "description": "Use a `refresh_token` to obtain a new access token. Requires client authentication (`client_id` + `client_secret`, body or HTTP Basic); the token must belong to that client. Rotation is on by default: the token you send is revoked and a new one returned - store it. Replaying a rotated-away token revokes every refresh token for that user and client.",
         "operationId": "tpssoRefresh",
         "security": [],
         "requestBody": {
@@ -121,7 +122,8 @@
               },
               "example": {
                 "refresh_token": "rfrsh_abc123...",
-                "rotate_refresh": true
+                "client_id": "YOUR_CLIENT_ID",
+                "client_secret": "YOUR_CLIENT_SECRET"
               }
             }
           }
@@ -137,12 +139,10 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "tokens": {
-                      "access_token": "eyJhbGciOi...",
-                      "token_type": "Bearer",
-                      "expires_in": 900,
-                      "refresh_token": "rfrsh_new456..."
-                    }
+                    "access_token": "eyJhbGciOi...",
+                    "token_type": "Bearer",
+                    "expires_in": 900,
+                    "refresh_token": "rfrsh_new456..."
                   }
                 }
               }
@@ -487,7 +487,7 @@
         },
         "responses": {
           "200": {
-            "description": "Tokens issued (bare OIDC token response — not enveloped).",
+            "description": "Tokens issued (bare OIDC token response \u2014 not enveloped).",
             "content": {
               "application/json": {
                 "schema": {
@@ -575,7 +575,7 @@
         ],
         "operationId": "createAttributeRequest",
         "summary": "Request raw attributes (starts consent)",
-        "description": "Ask the subject to release raw attributes. Creates a PENDING request and pushes a consent prompt to their Valyd app. You then poll the result endpoint. The user must pass a face check before they can approve. Expires in 10 minutes.\n\nSDK: `valyd.attributes.request({ attributes, valydId, purpose })` — it generates the keypair and decrypts the result for you.",
+        "description": "Ask the subject to release raw attributes. Creates a PENDING request and pushes a consent prompt to their Valyd app. You then poll the result endpoint. The user must pass a face check before they can approve. Expires in 10 minutes.\n\nSDK: `valyd.attributes.request({ attributes, valydId, purpose })` \u2014 it generates the keypair and decrypts the result for you.",
         "requestBody": {
           "required": true,
           "content": {
@@ -606,11 +606,11 @@
                   },
                   "valyd_id": {
                     "type": "string",
-                    "description": "The subject: the valyd_id you received at login (e.g. valyd_ab12…). Legacy alias: anon_id."
+                    "description": "The subject: the valyd_id you received at login (e.g. valyd_ab12\u2026). Legacy alias: anon_id."
                   },
                   "purpose": {
                     "type": "string",
-                    "description": "Human-readable reason, shown to the user on the consent screen. Be specific — vague purposes get denied."
+                    "description": "Human-readable reason, shown to the user on the consent screen. Be specific \u2014 vague purposes get denied."
                   },
                   "redirect_uri": {
                     "type": "string",
@@ -622,7 +622,7 @@
                   },
                   "managed_private_key": {
                     "type": "string",
-                    "description": "Optional. base64 of your 32-byte X25519 SECRET key, handing custody to Valyd so we open the payload for you (stored encrypted) and `result` returns plaintext. OMIT for true end-to-end — then only you can decrypt."
+                    "description": "Optional. base64 of your 32-byte X25519 SECRET key, handing custody to Valyd so we open the payload for you (stored encrypted) and `result` returns plaintext. OMIT for true end-to-end \u2014 then only you can decrypt."
                   }
                 }
               }
@@ -696,7 +696,7 @@
         ],
         "operationId": "getAttributeRequestResult",
         "summary": "Fetch the sealed payload",
-        "description": "Poll until the user decides. `pending` = not yet. Once approved you get the sealed payload ONCE (single-use, short-lived) — store it immediately.\n\nSelf-custody: decrypt `sealed_payload` with your X25519 secret key (SDK does this automatically). Managed custody: `custody: \"valyd\"` and `attributes` come back as plaintext.",
+        "description": "Poll until the user decides. `pending` = not yet. Once approved you get the sealed payload ONCE (single-use, short-lived) \u2014 store it immediately.\n\nSelf-custody: decrypt `sealed_payload` with your X25519 secret key (SDK does this automatically). Managed custody: `custody: \"valyd\"` and `attributes` come back as plaintext.",
         "parameters": [
           {
             "name": "client_id",
@@ -705,7 +705,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Your client_id — must match the one that created the request."
+            "description": "Your client_id \u2014 must match the one that created the request."
           }
         ],
         "responses": {
@@ -739,7 +739,7 @@
                         },
                         "attributes": {
                           "type": "object",
-                          "description": "Plaintext — managed custody only."
+                          "description": "Plaintext \u2014 managed custody only."
                         },
                         "sealed_payload": {
                           "type": "string",
@@ -838,6 +838,10 @@
           "code": {
             "type": "string",
             "description": "One-time authorization code from the callback (valid 5 minutes)."
+          },
+          "redirect_uri": {
+            "type": "string",
+            "description": "The exact redirect_uri used at /authorize. Validated when supplied."
           }
         }
       },
@@ -916,6 +920,8 @@
       "RefreshRequest": {
         "type": "object",
         "required": [
+          "client_id",
+          "client_secret",
           "refresh_token"
         ],
         "properties": {
@@ -924,7 +930,15 @@
           },
           "rotate_refresh": {
             "type": "boolean",
-            "description": "Set true to also rotate (reissue) the refresh token."
+            "description": "Defaults to true. Set false only if you cannot store the replacement token."
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Your application's client ID."
+          },
+          "client_secret": {
+            "type": "string",
+            "description": "Your client secret (server-side only)."
           }
         }
       },
@@ -1079,7 +1093,7 @@
                     "type": "number",
                     "minimum": 0,
                     "maximum": 1,
-                    "description": "Face-match confidence (0–1)."
+                    "description": "Face-match confidence (0\u20131)."
                   },
                   "last_checked": {
                     "type": "string",
@@ -1219,7 +1233,7 @@
     },
     "responses": {
       "BadRequest": {
-        "description": "Invalid request — e.g. `invalid_grant` (bad/expired/used code or refresh token) or `invalid_request` (missing parameter).",
+        "description": "Invalid request \u2014 e.g. `invalid_grant` (bad/expired/used code or refresh token) or `invalid_request` (missing parameter).",
         "content": {
           "application/json": {
             "schema": {
@@ -1236,7 +1250,7 @@
         }
       },
       "Unauthorized": {
-        "description": "Authentication failed — `invalid_client` (bad client credentials) or `invalid_token` (token invalid/expired).",
+        "description": "Authentication failed \u2014 `invalid_client` (bad client credentials) or `invalid_token` (token invalid/expired).",
         "content": {
           "application/json": {
             "schema": {

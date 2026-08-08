@@ -93,7 +93,7 @@ export const DOCS_SEARCH_INDEX: DocsSearchEntry[] = [
 
   { title: "Full OpenAPI spec (ID)",   icon: "📄", group: "Valyd ID — API",     href: "/docs/api-reference",                        keywords: ["openapi", "swagger", "full spec", "id api", "tpsso", "oidc", "all endpoints"] },
   { title: "TPSSO — Token exchange",  icon: "🔌", group: "Valyd ID — API",     href: "/docs/api-reference#tpssoToken",              keywords: ["POST /token", "authorization_code", "exchange code", "tpsso token"] },
-  { title: "TPSSO — Refresh",         icon: "🔌", group: "Valyd ID — API",     href: "/docs/api-reference#tpssoRefresh",            keywords: ["POST /refresh", "rotate_refresh", "refresh_token"] },
+  { title: "TPSSO — Refresh",         icon: "🔌", group: "Valyd ID — API",     href: "/docs/api-reference#tpssoRefresh",            keywords: ["POST /refresh", "rotate_refresh", "refresh_token", "rotation", "reuse detection", "client_secret"] },
   { title: "TPSSO — UserInfo",        icon: "🔌", group: "Valyd ID — API",     href: "/docs/api-reference#tpssoUserInfo",           keywords: ["GET /userinfo", "profile", "sub", "email"] },
   { title: "TPSSO — Licenses",        icon: "🔌", group: "Valyd ID — API",     href: "/docs/api-reference#tpssoLicenses",           keywords: ["GET /licenses", "nurse", "cpr", "doctor_license"] },
   { title: "TPSSO — Verifications",   icon: "🔌", group: "Valyd ID — API",     href: "/docs/api-reference#tpssoVerifications",      keywords: ["GET /verifications", "id_verified", "face_match"] },

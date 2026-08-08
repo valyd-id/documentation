@@ -81,7 +81,7 @@ VALYD_REDIRECT_URI=http://localhost:8080/callback`;
         <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-start gap-2">
           <Info className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
           <div className="text-sm text-blue-700 space-y-1">
-            <div><strong>Version:</strong> <code>@valyd/sdk</code> latest (<code>^1.5.1</code>) — login sessions, verification, and the workforce Members API all ship in the current release.</div>
+            <div><strong>Version:</strong> <code>@valyd/sdk</code> latest (<code>^1.6.0</code>) — login sessions, verification, and the workforce Members API all ship in the current release. <strong>1.6.0 is required</strong> for token refresh: earlier versions send no client credentials and are rejected.</div>
             <div><strong>Runtime:</strong> Node.js 18+.</div>
             <div><strong>Server-side only.</strong> Your <code>clientSecret</code> must never reach a browser.</div>
           </div>

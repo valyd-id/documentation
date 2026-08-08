@@ -193,14 +193,14 @@ export const postmanTemplate = {
         ],
         body: {
           mode: "raw",
-          raw: "{\n  \"refresh_token\": \"{{refresh_token}}\",\n  \"rotate_refresh\": true\n}"
+          raw: "{\n  \"refresh_token\": \"{{refresh_token}}\",\n  \"client_id\": \"{{client_id}}\",\n  \"client_secret\": \"{{client_secret}}\"\n}"
         },
         url: {
           raw: "{{base_url}}/refresh",
           host: ["{{base_url}}"],
           path: ["refresh"]
         },
-        description: "Use your `refresh_token` to obtain a new `access_token`. If `rotate_refresh` is `true`, a new `refresh_token` is also issued.\n\n**Body fields**:\n- `refresh_token`: your current refresh token\n- `rotate_refresh` (boolean): set to `true` to rotate\n"
+        description: "Use your `refresh_token` to obtain a new `access_token`. Requires client authentication and the token must belong to that client.\n\n**Body fields**:\n- `refresh_token`: your current refresh token\n- `client_id` / `client_secret`: your app credentials (server-side only)\n- `rotate_refresh` (boolean, optional): defaults to `true`\n\nRotation is on by default: the token you send is revoked and a new one returned — store it. Replaying a rotated-away token revokes every refresh token for that user and client.\n"
       },
       response: [
         {

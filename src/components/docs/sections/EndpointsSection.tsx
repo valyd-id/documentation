@@ -414,14 +414,17 @@ HttpResponse<String> response = client.send(request,
       method: "POST" as const,
       path: "/refresh",
       title: "Refresh Access Token",
-      description: "Use your refresh_token to obtain a new access_token when it expires. Optionally rotate the refresh token for enhanced security.",
+      description: "Use your refresh_token to obtain a new access_token. Requires client authentication (client_id + client_secret) and the token must belong to that client. Rotation is on by default: the token you send is revoked and replaced — store the new one. Replaying a rotated-away token revokes every refresh token for that user and client.",
       parameters: [
         { name: "refresh_token", type: "string", required: true, description: "Your current refresh token" },
-        { name: "rotate_refresh", type: "boolean", required: false, description: "Set to true to also get a new refresh token" },
+        { name: "client_id", type: "string", required: true, description: "Your application's client ID" },
+        { name: "client_secret", type: "string", required: true, description: "Your client secret (server-side only)" },
+        { name: "rotate_refresh", type: "boolean", required: false, description: "Defaults to true. Set false only if you cannot store the replacement token" },
       ],
       requestBody: `{
   "refresh_token": "rfrsh_abc123...",
-  "rotate_refresh": true
+  "client_id": "YOUR_CLIENT_ID",
+  "client_secret": "YOUR_CLIENT_SECRET"
 }`,
       responseExample: `{
   "success": true,
@@ -447,7 +450,8 @@ HttpResponse<String> response = client.send(request,
   -H "Accept: application/json" \\
   -d '{
     "refresh_token": "rfrsh_abc123...",
-    "rotate_refresh": true
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
   }'`,
         javascript: `const response = await fetch("${API_CONFIG.API_BASE_URL}/refresh", {
   method: "POST",
@@ -457,23 +461,25 @@ HttpResponse<String> response = client.send(request,
   },
   body: JSON.stringify({
     refresh_token: refreshToken,
-    rotate_refresh: true // Recommended for security
+    client_id: process.env.VALYD_CLIENT_ID,
+    client_secret: process.env.VALYD_CLIENT_SECRET // server-side only
   })
 });
 
 const data = await response.json();
-const { access_token, refresh_token } = data.data.tokens;
+const { access_token, refresh_token } = data.data;
 
-// Update stored tokens
-localStorage.setItem("access_token", access_token);
-localStorage.setItem("refresh_token", refresh_token);`,
+// Rotation is on by default: the token you just sent is now revoked.
+// Persist the replacement, or the next refresh trips reuse detection.
+await saveTokens({ access_token, refresh_token });`,
         python: `import requests
 
 response = requests.post(
     "${API_CONFIG.API_BASE_URL}/refresh",
     json={
         "refresh_token": refresh_token,
-        "rotate_refresh": True  # Recommended for security
+        "client_id": os.environ["VALYD_CLIENT_ID"],
+        "client_secret": os.environ["VALYD_CLIENT_SECRET"],  # server-side only
     },
     headers={
         "Content-Type": "application/json",
@@ -481,8 +487,9 @@ response = requests.post(
     }
 )
 
-tokens = response.json()["data"]["tokens"]
+tokens = response.json()["data"]
 access_token = tokens["access_token"]
+# Rotation is on by default - the token you sent is revoked. Store this one.
 refresh_token = tokens["refresh_token"]`,
         php: `<?php
 $ch = curl_init();
@@ -492,7 +499,8 @@ curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => json_encode([
         "refresh_token" => $refreshToken,
-        "rotate_refresh" => true
+        "client_id" => getenv("VALYD_CLIENT_ID"),
+        "client_secret" => getenv("VALYD_CLIENT_SECRET"), // server-side only
     ]),
     CURLOPT_HTTPHEADER => [
         "Content-Type: application/json",
@@ -502,8 +510,9 @@ curl_setopt_array($ch, [
 ]);
 
 $response = curl_exec($ch);
-$tokens = json_decode($response, true)["data"]["tokens"];
+$tokens = json_decode($response, true)["data"];
 $accessToken = $tokens["access_token"];
+// Rotation is on by default - the token you sent is revoked. Store this one.
 $refreshToken = $tokens["refresh_token"];
 ?>`,
         java: `HttpClient client = HttpClient.newHttpClient();
@@ -511,9 +520,10 @@ $refreshToken = $tokens["refresh_token"];
 String body = """
 {
     "refresh_token": "%s",
-    "rotate_refresh": true
+    "client_id": "%s",
+    "client_secret": "%s"
 }
-""".formatted(refreshToken);
+""".formatted(refreshToken, clientId, clientSecret);
 
 HttpRequest request = HttpRequest.newBuilder()
     .uri(URI.create("${API_CONFIG.API_BASE_URL}/refresh"))
@@ -588,8 +598,12 @@ HttpResponse<String> response = client.send(request,
                   Access tokens expire after <strong>15 minutes</strong> (<code className="font-mono text-xs">expires_in: 900</code>). Call{" "}
                   <code className="font-mono text-xs">POST /refresh</code> before the token expires — don't wait for a 401.
                   In practice: check <code className="font-mono text-xs">expires_in</code> when you store the token and
-                  schedule a refresh ~60 s early. Set <code className="font-mono text-xs">rotate_refresh: true</code> on every
-                  call — the old refresh token is invalidated immediately, which limits the blast radius if it's ever exposed.
+                  schedule a refresh ~60 s early. This call requires your{" "}
+                  <code className="font-mono text-xs">client_id</code> and{" "}
+                  <code className="font-mono text-xs">client_secret</code>, so make it from your backend.
+                  Rotation is on by default: each refresh returns a new{" "}
+                  <code className="font-mono text-xs">refresh_token</code> and revokes the one you sent — always store
+                  the replacement. Replaying an old token revokes every refresh token for that user and client.
                 </p>
               </div>
             </div>

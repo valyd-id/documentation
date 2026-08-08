@@ -527,7 +527,7 @@ apps public/private and assign members to private apps — all in the developer 
   npm ls @valyd/sdk
   ```
 
-  **Expected output:** a line like `@valyd/sdk@1.5.x` (or newer).
+  **Expected output:** a line like `@valyd/sdk@1.6.x` (or newer).
 
 - Run the full round trip: start the server, visit the `/login` route in a browser, complete login at Valyd, and confirm the `/callback` route reaches step 6. A successful run sets the `valyd_login` cookie on `/login`, passes `verifyLoginSession` on the callback, and returns a populated `profile` from `getUserInfo`.
 
@@ -814,11 +814,38 @@ Content-Type: application/json
   "grant_type": "authorization_code",
   "client_id": "YOUR_CLIENT_ID",
   "client_secret": "YOUR_CLIENT_SECRET",
-  "code": "AUTH_CODE_HERE"
+  "code": "AUTH_CODE_HERE",
+  "redirect_uri": "https://yourapp.com/callback"
 }
 ```
 
+Send the **same** `redirect_uri` you used at `/authorize` — Valyd validates it against the code.
+Authorization codes are bound to the client they were issued to, are single-use, and expire in
+about **2 minutes**, so exchange them as soon as your callback fires.
+
 **Expected output:** HTTP 200 with a JSON body whose `data` object contains `access_token` (read it as `response.data.access_token`).
+
+#### Renewing an access token
+
+Access tokens are short-lived. Exchange the `refresh_token` at
+`POST https://idp.valyd.work/api/auth/tpsso/refresh` — from your **backend**, with your client
+credentials:
+
+```json
+{
+  "refresh_token": "rfrsh_abc123...",
+  "client_id": "YOUR_CLIENT_ID",
+  "client_secret": "YOUR_CLIENT_SECRET"
+}
+```
+
+The refresh token is validated against the client it was issued to, so a token leaked from one
+app cannot be used by another. **Rotation is on by default:** each call returns a new
+`refresh_token` and revokes the one you sent, so always store the returned value. Replaying a
+rotated-away token is treated as theft and revokes every refresh token for that user and app.
+
+With the SDK this is one call — `const next = await valyd.auth.refreshToken(stored)` — then
+persist both `next.accessToken` and `next.refreshToken`. Requires `@valyd/sdk` **1.6.0+**.
 
 Python (Flask):
 
@@ -841,6 +868,7 @@ def callback():
             "client_id": "YOUR_CLIENT_ID",
             "client_secret": "YOUR_CLIENT_SECRET",
             "code": code,
+            "redirect_uri": "https://yourapp.com/callback",
         },
     )
     tokens = response.json()["data"]
@@ -1399,6 +1427,10 @@ Validates the marker on the callback, **before** `exchangeCode`. Returns `{ vali
 
 Exchange the one-time authorization code you received on your callback URL for access and refresh tokens. This should be called from your backend server.
 
+> **Authorization codes are bound to the client they were issued to**, are single-use, and expire
+> **2 minutes** after issue. Exchange the code as soon as your callback receives it. A code issued
+> for one application can never be redeemed by another.
+
 ### Parameters
 
 | Name | Type | Required | Description |
@@ -1407,6 +1439,7 @@ Exchange the one-time authorization code you received on your callback URL for a
 | `client_id` | string | Yes | Your assigned Client ID (get this from the Developer Portal → your project → Credentials: https://dev.valyd.work) |
 | `client_secret` | string | Yes | Your Client Secret (server-side only!) (get this from the Developer Portal → your project → Credentials: https://dev.valyd.work) |
 | `code` | string | Yes | The authorization code from callback |
+| `redirect_uri` | string | Recommended | The **exact** `redirect_uri` used at `/authorize`. Validated when supplied; will become required in a future release |
 
 ### Request body (application/json)
 
@@ -1415,7 +1448,8 @@ Exchange the one-time authorization code you received on your callback URL for a
   "grant_type": "authorization_code",
   "client_id": "YOUR_CLIENT_ID",
   "client_secret": "YOUR_CLIENT_SECRET",
-  "code": "AUTH_CODE_FROM_CALLBACK"
+  "code": "AUTH_CODE_FROM_CALLBACK",
+  "redirect_uri": "https://yourapp.com/auth/valyd/callback"
 }
 ```
 
@@ -1953,30 +1987,47 @@ HttpResponse<String> response = client.send(request,
 - **Full URL:** `https://idp.valyd.work/api/auth/tpsso/refresh`
 - **Base URL:** `https://idp.valyd.work/api/auth/tpsso`
 - **Path:** `/refresh`
-- **Auth / required scope:** None (authenticated via the `refresh_token` in the request body)
+- **Auth / required scope:** Client authentication required — `client_id` + `client_secret` (request body, or HTTP Basic)
 - **Required headers:**
   - `Content-Type: application/json`
   - `Accept: application/json`
 
-Use your `refresh_token` to obtain a new `access_token` when it expires. Optionally rotate the refresh token for enhanced security.
+Use your `refresh_token` to obtain a new `access_token` when it expires.
+
+> **Breaking change.** This endpoint now requires your `client_id` and `client_secret`, and the
+> refresh token is validated against the client it was issued to. Calls that send only a
+> `refresh_token` are rejected with `401 invalid_client`. Refresh tokens are **server-side
+> credentials** — perform this exchange from your backend, never from a browser or mobile app.
 
 ### Parameters
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `refresh_token` | string | Yes | Your current refresh token |
-| `rotate_refresh` | boolean | No | Set to true to also get a new refresh token |
+| `client_id` | string | Yes | Your application's client ID |
+| `client_secret` | string | Yes | Your application's client secret (server-side only) |
+| `rotate_refresh` | boolean | No | **Defaults to `true`.** Set to `false` only if you cannot store the replacement token |
 
 ### Request body (application/json)
 
 ```json
 {
   "refresh_token": "rfrsh_abc123...",
-  "rotate_refresh": true
+  "client_id": "your_client_id",
+  "client_secret": "your_client_secret"
 }
 ```
 
-`refresh_token`: the `refresh_token` previously returned by `POST /token` (or by a prior `POST /refresh` when `rotate_refresh` was true).
+`refresh_token`: the `refresh_token` previously returned by `POST /token` or by a prior `POST /refresh`.
+
+### Rotation and reuse detection
+
+Rotation is **on by default**. Each successful refresh returns a **new** `refresh_token` and
+immediately **revokes the one you presented** — always persist the new token and discard the old.
+
+If a token that has already been rotated away is presented again, Valyd treats it as a stolen
+credential and **revokes every refresh token for that user and client**. Both the attacker's copy
+and the legitimate session stop working, and the user simply signs in again.
 
 ### Code examples
 
@@ -1986,7 +2037,8 @@ curl -X POST "https://idp.valyd.work/api/auth/tpsso/refresh" \
   -H "Accept: application/json" \
   -d '{
     "refresh_token": "rfrsh_abc123...",
-    "rotate_refresh": true
+    "client_id": "your_client_id",
+    "client_secret": "your_client_secret"
   }'
 ```
 
@@ -1999,16 +2051,17 @@ const response = await fetch("https://idp.valyd.work/api/auth/tpsso/refresh", {
   },
   body: JSON.stringify({
     refresh_token: refreshToken,
-    rotate_refresh: true // Recommended for security
+    client_id: process.env.VALYD_CLIENT_ID,
+    client_secret: process.env.VALYD_CLIENT_SECRET // server-side only
   })
 });
 
 const data = await response.json();
-const { access_token, refresh_token } = data.data.tokens;
+const { access_token, refresh_token } = data.data;
 
-// Update stored tokens
-localStorage.setItem("access_token", access_token);
-localStorage.setItem("refresh_token", refresh_token);
+// Rotation is on by default: the token you just sent is now revoked.
+// Persist the replacement, or the next refresh will trip reuse detection.
+await saveTokens({ access_token, refresh_token });
 ```
 
 ```python
@@ -2018,7 +2071,8 @@ response = requests.post(
     "https://idp.valyd.work/api/auth/tpsso/refresh",
     json={
         "refresh_token": refresh_token,
-        "rotate_refresh": True  # Recommended for security
+        "client_id": os.environ["VALYD_CLIENT_ID"],
+        "client_secret": os.environ["VALYD_CLIENT_SECRET"],  # server-side only
     },
     headers={
         "Content-Type": "application/json",
@@ -2026,8 +2080,9 @@ response = requests.post(
     }
 )
 
-tokens = response.json()["data"]["tokens"]
+tokens = response.json()["data"]
 access_token = tokens["access_token"]
+# Rotation is on by default - the token you sent is revoked. Store this one.
 refresh_token = tokens["refresh_token"]
 ```
 
@@ -2040,7 +2095,8 @@ curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => json_encode([
         "refresh_token" => $refreshToken,
-        "rotate_refresh" => true
+        "client_id" => getenv("VALYD_CLIENT_ID"),
+        "client_secret" => getenv("VALYD_CLIENT_SECRET"), // server-side only
     ]),
     CURLOPT_HTTPHEADER => [
         "Content-Type: application/json",
@@ -2050,8 +2106,9 @@ curl_setopt_array($ch, [
 ]);
 
 $response = curl_exec($ch);
-$tokens = json_decode($response, true)["data"]["tokens"];
+$tokens = json_decode($response, true)["data"];
 $accessToken = $tokens["access_token"];
+// Rotation is on by default - the token you sent is revoked. Store this one.
 $refreshToken = $tokens["refresh_token"];
 ?>
 ```
@@ -2062,9 +2119,10 @@ HttpClient client = HttpClient.newHttpClient();
 String body = """
 {
     "refresh_token": "%s",
-    "rotate_refresh": true
+    "client_id": "%s",
+    "client_secret": "%s"
 }
-""".formatted(refreshToken);
+""".formatted(refreshToken, clientId, clientSecret);
 
 HttpRequest request = HttpRequest.newBuilder()
     .uri(URI.create("https://idp.valyd.work/api/auth/tpsso/refresh"))
