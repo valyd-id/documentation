@@ -8,7 +8,7 @@ export const ScopesSection = () => {
       id: "scope-profile",
       name: "profile",
       required: true,
-      description: "User profile information including name, photo, and age verification status.",
+      description: "User profile information including name and age verification status. No photo is shared.",
       grantedEndpoints: ["/userinfo"],
       responseFields: [
         { field: "sub", description: "Unique user identifier" },
