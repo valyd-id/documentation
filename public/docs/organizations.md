@@ -51,7 +51,10 @@ never reach a browser. Everything you can do:
 | **Add a member** (emails a face-activation link) | `client.addMembers([{ email, firstName, lastName }])` | `POST /api/sdk/members` |
 | **Add many** (bulk, up to 500; dupes → `skipped`) | `client.addMembers([ …up to 500 ])` | `POST /api/sdk/members` |
 | **Invite silently** (no email; returns each `activationLink`) | `client.addMembers([…], { notify: false })` | `POST /api/sdk/members` with `notify:false` |
-| **Remove a member** (deactivate + revoke app login; Valyd account NOT deleted) | `client.removeMember(memberId)` | `DELETE /api/sdk/members/{memberId}` |
+| **Deactivate a member** (revoke app login; recoverable) | `client.deactivateMember(memberId)` | `PATCH /api/sdk/members/{memberId}/deactivate` |
+| **Remove a member** (default = deactivate; `permanent` deletes the membership) | `client.removeMember(memberId, { permanent: true })` | `DELETE /api/sdk/members/{memberId}?permanent=true` |
+| **Reactivate a member** | `client.reactivateMember(memberId)` | `PATCH /api/sdk/members/{memberId}/reactivate` |
+| **Re-send an activation invite** (Valyd ID not connected yet / link expired) | `client.resendMemberInvite(memberId)` | `POST /api/sdk/members/{memberId}/invite` |
 | **Billing & seats** (seat count, price, balance, invoices) | `client.getBilling()` | `GET /api/sdk/billing` |
 
 ```ts
@@ -96,8 +99,16 @@ curl -X POST https://dev.valyd.work/api/sdk/members \
 - `active` — face-activated and bound to a Valyd identity — the only **billable** state.
 - `deactivated` — removed from the workforce; not billable.
 
-Result sync is by **polling** `getMembers()`. CSV upload is a portal action. `removeMember()`
-deactivates the membership + revokes app login but **never deletes the person's Valyd account**.
+Result sync is by **polling** `getMembers()`. CSV upload is a portal action.
+`deactivateMember()` revokes app login + stops billing but keeps the membership (recoverable with
+`reactivateMember()`); `removeMember()` does the same by default, and with `{ permanent: true }`
+deletes the membership row outright so the email can be re-invited cleanly. Neither **ever deletes
+the person's Valyd account**. If a member's invite expired before they connected their Valyd ID,
+`resendMemberInvite(memberId)` issues + emails a fresh activation link (and returns it),
+superseding the old one; it refuses for already-active or deactivated members. In the developer
+portal, the org owner/admin sees the full roster with each member's status on the
+**Organization → Members** tab, and can re-send invites, deactivate/reactivate, or **Remove** a
+member permanently.
 
 ### Correlate a returning login to the member you added
 

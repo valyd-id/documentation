@@ -89,10 +89,24 @@ const MEMBER_OPS = [
   },
   {
     icon: UserPlus,
+    title: "Deactivate a member",
+    body: "Stop billing + revoke their app login, keeping the membership so it can be reactivated later. Their Valyd account is NOT deleted.",
+    sdk: "client.deactivateMember(memberId)",
+    rest: "PATCH /api/sdk/members/{memberId}/deactivate",
+  },
+  {
+    icon: UserPlus,
     title: "Remove a member",
-    body: "Deactivate a member + revoke their app login. Their Valyd account is NOT deleted — they stay a Valyd user and any other org's member.",
-    sdk: "client.removeMember(memberId)",
-    rest: "DELETE /api/sdk/members/{memberId}",
+    body: "Default = deactivate (recoverable). With permanent:true the membership row is deleted outright — the seat and history go, and the email can be re-invited cleanly. The person's Valyd account is never deleted.",
+    sdk: "client.removeMember(memberId, { permanent: true })",
+    rest: "DELETE /api/sdk/members/{memberId}?permanent=true",
+  },
+  {
+    icon: ScanFace,
+    title: "Re-send an activation invite",
+    body: "For a member whose Valyd ID isn't connected yet (or whose link expired): issues a fresh face-activation link superseding the old one, emails it, and returns it for your own delivery channel.",
+    sdk: "client.resendMemberInvite(memberId)",
+    rest: "POST /api/sdk/members/{memberId}/invite",
   },
 ];
 
@@ -220,8 +234,11 @@ export const OrganizationsSection = () => {
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
             Result sync is by polling <code className="text-[11px]">getMembers()</code>. CSV upload is a
-            portal action. <code className="text-[11px]">removeMember()</code> deactivates + revokes app
-            login but never deletes the person's Valyd account.
+            portal action. <code className="text-[11px]">deactivateMember()</code> /{" "}
+            <code className="text-[11px]">removeMember()</code> revoke app login (the latter deletes the
+            membership with <code className="text-[11px]">permanent:true</code>) but never delete the
+            person's Valyd account. Use <code className="text-[11px]">resendMemberInvite()</code> to
+            re-issue an expired activation link for anyone not yet connected.
           </p>
         </div>
 
