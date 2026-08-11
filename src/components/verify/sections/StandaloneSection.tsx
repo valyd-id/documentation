@@ -78,8 +78,9 @@ export const StandaloneSection = () => (
       Direct, synchronous, server-to-server checks — you build your own UI and call the endpoints from your backend.
       Every request carries <code>X-API-Key: &lt;your Verify API key&gt;</code> (keep it server-side, never ship it to the
       browser). The set: <code>id-verification</code>, <code>liveness</code>, <code>face-match</code>,{" "}
-      <code>age-verification</code>, <code>credential-verification</code> (state + type, auto-resolved),{" "}
-      <code>location</code>, and the combined <code>kyc-credential</code>.
+      <code>face-uniqueness</code> (one face = one user), <code>age-verification</code>,{" "}
+      <code>credential-verification</code> (state + type, auto-resolved), <code>location</code>, and the combined{" "}
+      <code>kyc-credential</code>.
     </p>
 
     {/* SDK first */}
@@ -143,6 +144,9 @@ export const StandaloneSection = () => (
               ["POST /api/v2/liveness",
                "Selfie → live person or spoof. Returns status + score.",
                "Same — liveness is always a live capture."],
+              ["POST /api/v2/face-uniqueness",
+               "Enroll-or-match against the Valyd face registry (single-click selfie or live frames burst). Same face → same valyd_uuid, across every integrator. No user login needed.",
+               "Same — Valyd stores the template either way; a face already on a Valyd account returns that account's id."],
               ["POST /api/v2/credential-verification",
                "You supply the name + licence. Searches the board and returns the raw record.",
                "Matched against the account's real name. The verified badge is stored on the account; you get a licence proof."],
@@ -325,6 +329,65 @@ await standalone.faceMatch({ valydAccessToken, selfie: readImage("./selfie.jpg")
   -F "image1=@./id_portrait.jpg" \\
   -F "image2=@./selfie.jpg"`}
       response={`{ "similarity": 0.973, "threshold": 0.95 }`}
+    />
+
+    {/* 3b. Face uniqueness */}
+    <Endpoint
+      id="core-face-uniqueness"
+      method="POST"
+      path="/api/v2/face-uniqueness"
+      title="Face Uniqueness"
+      description="One face = one user — no Valyd account or user login required. Enrolls the face into the Valyd-stored registry, or returns its existing id if the face is already known: the same face always resolves to the same valyd_ uuid, so a second signup with a different email is caught instantly. Two modes: single-click (one selfie, passive liveness gate) or live verification (a 3–8 frame camera burst, verified with per-frame voting, motion analysis, and same-face consistency — a photo, screen replay, or spliced clip is rejected). Valyd stores the face template; you never handle biometrics."
+      fields={
+        <ul className="space-y-1.5">
+          <Field name="selfie" type="image" desc="Single-click mode: one live selfie. File, Buffer, or base64/data-URL." />
+          <Field name="frames[]" type="image[]" desc="Live verification mode: 3–8 chronological stills from a short camera burst (~1.5s). Send either selfie or frames." />
+          <Field name="external_ref" type="string" desc="Your own user reference, stored on the enrollment link." />
+        </ul>
+      }
+      sdk={`// Single-click verification (one selfie)
+const { check } = await standalone.faceUniqueness({
+  selfie: readImage("./selfie.jpg"),
+  externalRef: "user_842",
+});
+
+// Live verification (3–8 burst frames — strongest guarantee)
+await standalone.faceUniqueness({ frames: burstFrames });
+
+// check.data.valyd_uuid — stable id for this face, same across every integrator
+// check.data.registered — "new" | "existing"`}
+      curl={`# Single-click
+curl -X POST ${BASE}/api/v2/face-uniqueness \\
+  -H "X-API-Key: $VALYD_API_KEY" \\
+  -F "selfie=@./selfie.jpg"
+
+# Live verification
+curl -X POST ${BASE}/api/v2/face-uniqueness \\
+  -H "X-API-Key: $VALYD_API_KEY" \\
+  -F "frames[]=@./f0.jpg" -F "frames[]=@./f1.jpg" \\
+  -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg"`}
+      response={`{
+  "valyd_uuid": "valyd_66e13c6acf1a42229bee0690c6130f77",
+  "registered": "new"        // "existing" when this face was already registered
+}`}
+    />
+
+    <Endpoint
+      id="core-face-uniqueness-delete"
+      method="DELETE"
+      path="/api/v2/face-uniqueness/{valyd_uuid}"
+      title="Face Uniqueness — Unlink"
+      description="GDPR forget: removes YOUR project's link to the face id. When no project links remain (and the face is not a Valyd account), the stored template is deleted entirely — deleted: true."
+      fields={
+        <ul className="space-y-1.5">
+          <Field name="valyd_uuid" required type="string (path)" desc="The id returned by the enroll call." />
+        </ul>
+      }
+      sdk={`const res = await standalone.faceUniquenessUnlink("valyd_66e13c…");
+// res.unlinked === true · res.deleted — template fully erased`}
+      curl={`curl -X DELETE ${BASE}/api/v2/face-uniqueness/valyd_66e13c6acf1a42229bee0690c6130f77 \\
+  -H "X-API-Key: $VALYD_API_KEY"`}
+      response={`{ "valyd_uuid": "valyd_66e13c…", "unlinked": true, "deleted": true }`}
     />
 
     {/* 4. Age */}

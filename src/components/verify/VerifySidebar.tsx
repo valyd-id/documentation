@@ -63,6 +63,7 @@ const guides: Item[] = [
   { id: "core-id-verification", label: "ID Verification", indent: true, modes: ["standalone"] },
   { id: "core-liveness", label: "Liveness", indent: true, modes: ["standalone"] },
   { id: "core-face-match", label: "Face Match", indent: true, modes: ["standalone"] },
+  { id: "core-face-uniqueness", label: "Face Uniqueness", indent: true, modes: ["standalone"] },
   { id: "core-age-verification", label: "Age Verification", indent: true, modes: ["standalone"] },
   { id: "core-credential-verification", label: "Credential Verification", indent: true, modes: ["standalone"] },
   { id: "core-kyc-credential", label: "KYC + Credential", indent: true, modes: ["standalone"] },

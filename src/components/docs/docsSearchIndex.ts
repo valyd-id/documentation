@@ -81,6 +81,7 @@ export const DOCS_SEARCH_INDEX: DocsSearchEntry[] = [
   { title: "Statuses",                icon: "✅", group: "Verification APIs — Hosted", href: "/verify?mode=hosted#hosted-statuses",      keywords: ["pending", "expired", "status"] },
 
   { title: "Core APIs",         icon: "🔧", group: "Verification APIs — Core APIs", href: "/verify?mode=standalone#standalone",  keywords: ["standalone", "custom ui", "manual"] },
+  { title: "Face Uniqueness",   icon: "🔧", group: "Verification APIs — Core APIs", href: "/verify?mode=standalone#core-face-uniqueness", keywords: ["face uniqueness", "one face one user", "duplicate", "dedupe", "valyd_uuid", "enroll", "face registry", "unlink", "gdpr"] },
 
   { title: "Node SDK",                icon: "📦", group: "Verification APIs — SDK",  href: "/verify#sdk",                               keywords: ["node sdk", "npm", "@valyd/sdk"] },
   { title: "Install & init",          icon: "📦", group: "Verification APIs — SDK",  href: "/verify#sdk-install",                       keywords: ["npm install", "initialize", "new VerifyClient"] },

@@ -81,6 +81,8 @@ export const DemoEndpointsSection = () => (
           <tbody>
             <Row method="POST" path="/api/demo/start" desc="Start a demo session — returns { session_id, session_token, features }" />
             <Row method="GET" path="/api/demo/status/{id}" desc="Poll the demo session's decision and per-check results" />
+            <Row method="POST" path="/api/demo/antispoof" desc="Liveness trial — send image or frames[], returns human_score + verdict" />
+            <Row method="POST" path="/api/demo/face-uniqueness" desc="Face uniqueness trial — send selfie or frames[], returns valyd_uuid + registered" />
           </tbody>
         </table>
       </div>
@@ -97,5 +99,27 @@ curl -X POST ${BASE}/api/demo/start \\
 # 2) Drive the session with the hosted API using the session_token, then read the result
 curl ${BASE}/api/demo/status/SESSION_ID`}
     />
+
+    <div className="pt-4">
+      <p className="text-sm font-semibold text-foreground mb-1">Instant trial — Liveness &amp; Face Uniqueness</p>
+      <p className="text-sm text-muted-foreground mb-2">
+        These two checks have a direct no-key trial. Just POST an image (or a 3-8 frame burst) and get
+        the real result back — the same response your integration receives in production. No signup.
+      </p>
+      <CodeBlock
+        language="bash"
+        code={`# Liveness (anti-spoof) — one selfie
+curl -X POST ${BASE}/api/demo/antispoof -F "image=@./selfie.jpg"
+# -> { "check": { "status": "passed", "data": { "human_score": 98.6, "assurance": "upload" } } }
+
+# Liveness — live burst (3-8 frames): the strongest check
+curl -X POST ${BASE}/api/demo/antispoof \\
+  -F "frames[]=@./f0.jpg" -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg"
+
+# Face uniqueness — one face = one user
+curl -X POST ${BASE}/api/demo/face-uniqueness -F "selfie=@./selfie.jpg"
+# -> { "check": { "data": { "valyd_uuid": "valyd_66e13c...", "registered": "new" } } }`}
+      />
+    </div>
   </section>
 );

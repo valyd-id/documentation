@@ -160,6 +160,8 @@ valyd.verify; // Verification APIs (hosted + standalone)`}
           <Method sig="idVerification({ frontImage, backImage? }): Promise<CheckEnvelope>" desc="OCR + authenticity from a government ID." />
           <Method sig="liveness({ image }): Promise<CheckEnvelope>" desc="Passive liveness on a selfie." />
           <Method sig="faceMatch({ idImage, selfie }): Promise<CheckEnvelope>" desc="1:1 face match." />
+          <Method sig="faceUniqueness({ selfie | frames, externalRef? }): Promise<CheckEnvelope>" desc="One face = one user (no user login): selfie = single-click, frames (3–8 stills) = live verification; data carries valyd_uuid + registered." />
+          <Method sig="faceUniquenessUnlink(valydUuid): Promise<{ unlinked, deleted }>" desc="GDPR forget — drops your project's link; last link deletes the template." />
           <Method sig="ageVerification({ dob, bands? }): Promise<CheckEnvelope>" desc='Age + bands (e.g. ["is_18_plus"]).' />
           <Method sig="credentialVerification({ licenseState, licenseType?, licenseNumber, fullName, providerCode? }): Promise<CheckEnvelope>" desc="License lookup — just state + type (default MD) + number; provider auto-resolved (no provider_code)." />
           <Method sig="kycCredential({ frontImage, selfie, backImage?, providerCode, licenseState, licenseNumber, npi? }): Promise<KycCredentialResult>" desc="ID + liveness + face match + license, matched against the OCR'd name." />

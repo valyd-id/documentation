@@ -8,7 +8,7 @@ import { GlobalNav } from "@/components/GlobalNav";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import {
   ANTISPOOF_IDP_BASE_URL, ANTISPOOF_APP_KEY, ANTISPOOF_WORKFLOW_ID,
-  ANTISPOOF_CLIENT_ID, ANTISPOOF_CLIENT_SECRET, ANTISPOOF_SCOPES,
+  ANTISPOOF_CLIENT_ID, ANTISPOOF_CLIENT_SECRET, ANTISPOOF_SCOPES, ANTISPOOF_IDENTITY_WORKFLOW_ID,
 } from "@/components/docs/antispoof/constants";
 
 // ── Live liveness / anti-spoof demo ─────────────────────────────────────────
@@ -37,7 +37,7 @@ function LiveDemo() {
     if (pollRef.current) { window.clearInterval(pollRef.current); pollRef.current = null; }
   };
 
-  const run = useCallback(async () => {
+  const run = useCallback(async (workflowId: string = ANTISPOOF_WORKFLOW_ID) => {
     setDetail("");
     setState("opening");
     const vendorData = `antispoof-demo-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -45,7 +45,7 @@ function LiveDemo() {
       const res = await fetch(`${ANTISPOOF_IDP_BASE_URL}/api/v2/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-API-Key": ANTISPOOF_APP_KEY },
-        body: JSON.stringify({ workflow_id: ANTISPOOF_WORKFLOW_ID, vendor_data: vendorData }),
+        body: JSON.stringify({ workflow_id: workflowId, vendor_data: vendorData }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -77,7 +77,15 @@ function LiveDemo() {
           stopPolling();
           if (isPass(status)) {
             setState("human");
-            setDetail("Live human confirmed — liveness passed.");
+            // Show the interesting response fields right here: liveness score
+            // and — on the uniqueness workflow — the stable valyd_ uuid.
+            const v = pj?.data?.verifications ?? {};
+            const score = v?.liveness?.human_score ?? v?.liveness?.score;
+            const uuid = v?.face_uniqueness?.valyd_uuid;
+            const reg = v?.face_uniqueness?.registered;
+            let msg = `Live human confirmed — liveness passed${typeof score === "number" ? ` (score ${score})` : ""}.`;
+            if (uuid) msg += ` Identity: ${uuid} (${reg === "new" ? "new face" : "already known"}).`;
+            setDetail(msg);
           } else {
             setState("spoof");
             setDetail(`Not verified (status: ${status}).`);
@@ -100,40 +108,54 @@ function LiveDemo() {
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold text-foreground">Try the live anti-spoof check</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
+
+          {/* Result banner FIRST — after a scan this is the thing the user came back to see. */}
+          {state === "human" && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-5 w-5 shrink-0" /> <span className="break-all">{detail}</span>
+            </div>
+          )}
+          {state === "spoof" && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
+              <XCircle className="h-5 w-5 shrink-0" /> {detail}
+            </div>
+          )}
+          {state === "error" && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400">
+              <XCircle className="h-5 w-5 shrink-0" /> {detail}
+            </div>
+          )}
+          {state === "waiting" && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              A new tab opened for the capture. Finish it there — this box updates automatically.
+            </p>
+          )}
+
+          <p className="mt-2 text-sm text-muted-foreground">
             Click below, allow the camera in the tab that opens, and follow the prompts. Valyd runs a
             passive-liveness / presentation-attack check and tells you whether it's a real, live person.
           </p>
 
-          <button
-            onClick={run}
-            disabled={busy}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanFace className="h-4 w-4" />}
-            {state === "waiting" ? "Waiting for your face scan…" : state === "opening" ? "Starting…" : "Verify your face"}
-          </button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => run()}
+              disabled={busy}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanFace className="h-4 w-4" />}
+              {state === "waiting" ? "Waiting for your face scan…" : state === "opening" ? "Starting…" : "Verify your face"}
+            </button>
+            {ANTISPOOF_IDENTITY_WORKFLOW_ID && (
+              <button
+                onClick={() => run(ANTISPOOF_IDENTITY_WORKFLOW_ID)}
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted disabled:opacity-60"
+              >
+                <Fingerprint className="h-4 w-4" /> Verify + identity (valyd_ uuid)
+              </button>
+            )}
+          </div>
 
-          {state === "waiting" && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              A new tab opened for the capture. Finish it there — this box updates automatically.
-            </p>
-          )}
-          {state === "human" && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-5 w-5" /> {detail}
-            </div>
-          )}
-          {state === "spoof" && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
-              <XCircle className="h-5 w-5" /> {detail}
-            </div>
-          )}
-          {state === "error" && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400">
-              <XCircle className="h-5 w-5" /> {detail}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -225,6 +247,68 @@ app.get("/result/:sessionId", async (req, res) => {
 
 app.listen(PORT, () => console.log("Anti-spoof demo on http://localhost:" + PORT + "/login"));`;
 
+// ── Standalone Anti-Spoof API (no hosted UI) ────────────────────────────────
+const apiCode = `# Single image — pixels-only analysis (assurance "upload", score capped at 85)
+curl -X POST ${ANTISPOOF_IDP_BASE_URL}/api/v2/antispoof \\\\
+  -H "X-API-Key: \$APP_KEY" \\\\
+  -F "image=@selfie.jpg"
+
+# Frame burst (recommended) — 3-8 chronological stills captured over ~2s.
+# Adds per-frame voting, motion analysis and same-person consistency.
+curl -X POST ${ANTISPOOF_IDP_BASE_URL}/api/v2/antispoof \\\\
+  -H "X-API-Key: \$APP_KEY" \\\\
+  -F "frames[]=@frame1.jpg" -F "frames[]=@frame2.jpg" -F "frames[]=@frame3.jpg" \\\\
+  -F "frames[]=@frame4.jpg" -F "frames[]=@frame5.jpg"`;
+
+const apiResponse = `{
+  "success": true,
+  "data": {
+    "check": {
+      "type": "antispoof",
+      "status": "passed",            // passed | failed
+      "score": 100,                  // human_score, 0-100
+      "data": {
+        "assurance": "burst",        // upload | burst | captured (hosted flow)
+        "frames_received": 5,
+        "frames_analyzed": 5,
+        "frames_genuine": 5,
+        "frames_spoof": 0,
+        "frames_no_face": 0,
+        "duplicate_frames": 0,
+        "motion": "natural",
+        "face_consistency": "consistent",
+        "human_score": 100
+      },
+      "error": null                  // on fail: human-readable reason
+    }
+  }
+}
+// Failure signals in data.signal: no_face | spoof_detected | low_confidence |
+// duplicate_frames | static_capture | discontinuous_motion | different_faces`;
+
+// ── Anti-spoof + identity — same input, plus the person's stable valyd_ uuid ─
+const identityCode = `# Liveness + WHO: passes the same anti-spoof pipeline first, then resolves the
+# proven-live face against the global gallery. One face = one valyd_ uuid,
+# stable across all your requests — perfect for duplicate-account detection.
+curl -X POST ${ANTISPOOF_IDP_BASE_URL}/api/v2/antispoof/identity \\\\
+  -H "X-API-Key: \$APP_KEY" \\\\
+  -F "frames[]=@frame1.jpg" -F "frames[]=@frame2.jpg" -F "frames[]=@frame3.jpg"`;
+
+const identityResponse = `{
+  "check": {
+    "type": "antispoof",
+    "status": "passed",
+    "data": {
+      "human_score": 100,
+      "identity": {
+        "valyd_uuid": "valyd_f35fecf0f5474a0f94f097497366d881",
+        "registered": "existing"     // "new" = first time we've seen this face
+      }
+    }
+  }
+}
+// If liveness fails, no identity lookup runs (and none is billed).`;
+
 const browserCode = `<!-- index.html — the two buttons your server backs -->
 <button onclick="location.href='/login'">Login with Valyd</button>
 
@@ -251,7 +335,9 @@ export default function AntiSpoofPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
           A ready-to-go demo: let a user log in with Valyd and share their verified details, then run a
-          passive-liveness check that flags presentation attacks — photos, masks, replays, deepfakes.
+          multi-layer liveness check that flags presentation attacks — printed photos, masks, screen
+          replays. The hosted capture adds burst motion analysis and a random on-screen action, so
+          pre-recorded or injected media can't know what to perform.
           Copy the credentials and the snippet below and you're running in minutes.
         </p>
       </section>
@@ -296,6 +382,41 @@ export default function AntiSpoofPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Standalone API */}
+      <section className="max-w-5xl mx-auto px-6 py-6">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">Standalone API — send us the media, get a human score</h2>
+        <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+          No hosted UI: your backend posts a selfie (or, better, a short burst of frames) and receives a{" "}
+          <code className="font-mono text-xs">human_score</code> (0–100) with a passed/failed verdict. Sending
+          3–8 frames captured over ~2 seconds raises detection accuracy significantly — single images are
+          analysis-only and capped at 85. The <code className="font-mono text-xs">assurance</code> field always
+          tells you how the media reached us; only the hosted capture flow can produce{" "}
+          <code className="font-mono text-xs">captured</code>, which adds a random on-screen action the user
+          must perform.
+        </p>
+        <CodeBlock code={apiCode} language="bash" title="POST /api/v2/antispoof" />
+        <div className="mt-4" />
+        <CodeBlock code={apiResponse} language="json" title="Response" />
+      </section>
+
+      {/* Anti-spoof + identity */}
+      <section className="max-w-5xl mx-auto px-6 py-6">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">Anti-spoof + identity — liveness and who it is, in one call</h2>
+        <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+          <code className="font-mono text-xs">POST /api/v2/antispoof/identity</code> runs the identical
+          anti-spoof pipeline, and when it passes, resolves the proven-live face against the global Valyd
+          face gallery: every unique face maps to one stable{" "}
+          <code className="font-mono text-xs">valyd_</code> uuid. Use it to stop duplicate accounts —
+          the same person always resolves to the same uuid, no matter what name or email they sign up
+          with. Available in the hosted flow too: add the{" "}
+          <code className="font-mono text-xs">face_uniqueness</code> feature to your workflow and the
+          session decision carries the uuid.
+        </p>
+        <CodeBlock code={identityCode} language="bash" title="POST /api/v2/antispoof/identity" />
+        <div className="mt-4" />
+        <CodeBlock code={identityResponse} language="json" title="Response" />
       </section>
 
       {/* Snippets */}

@@ -38,8 +38,8 @@ export const ApiReferenceSection = ({ mode }: { mode: VerifyMode }) => (
     <section id="api-workflows" className="scroll-mt-8 space-y-4">
       <h2 className="text-2xl font-bold text-foreground">Workflows</h2>
       <p className="text-sm text-muted-foreground">
-        A workflow bundles services (id_verification, liveness, face_match, age,
-        credential) and exposes a stable <code>workflow_id</code> you pass when creating a
+        A workflow bundles services (id_verification, liveness, face_match, face_uniqueness,
+        age, credential) and exposes a stable <code>workflow_id</code> you pass when creating a
         session. Create them in the Developer Portal, or manage them over the API:
       </p>
       <div className="border border-border rounded-lg overflow-hidden">
@@ -65,6 +65,8 @@ export const ApiReferenceSection = ({ mode }: { mode: VerifyMode }) => (
             <Row method="POST" path="/api/v2/id-verification" desc="OCR + authenticity from a government ID" />
             <Row method="POST" path="/api/v2/liveness" desc="Passive liveness from a selfie" />
             <Row method="POST" path="/api/v2/face-match" desc="Selfie vs reference portrait" />
+            <Row method="POST" path="/api/v2/face-uniqueness" desc="One face = one user — single-click (selfie) or live (frames burst) enroll-or-match, returns a stable valyd_uuid" />
+            <Row method="DELETE" path="/api/v2/face-uniqueness/{valyd_uuid}" desc="GDPR unlink; deletes the template when no links remain" />
             <Row method="POST" path="/api/v2/age-verification" desc="Age bands from a DOB" />
             <Row method="POST" path="/api/v2/credential-verification" desc="Professional license lookup" />
             <Row method="POST" path="/api/v2/location" desc="Mandatory GPS fix; with an expected point + radius_m the status is the geofence verdict" />
