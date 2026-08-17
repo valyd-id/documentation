@@ -36,11 +36,9 @@ jobs:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          # TODO: set the staging (.vip) box. If estate-internal, add proxy_host/
-          # proxy_username/proxy_key (bastion = 96.250.208.62 / javy), like VC.
-          host: STAGING_HOST            # <-- fill: staging box IP/host
-          username: STAGING_USER        # <-- fill: staging box user
-          port: 22
+          host: 149.28.236.135          # staging box (idp.pollus.online), *.valyd.vip
+          username: ahmad
+          port: 2222
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
           command_timeout: 20m
@@ -48,7 +46,7 @@ jobs:
           script: |
             set -euo pipefail
             export DOCS_BRANCH=staging
-            export DOCS_PATH=/var/www/pollus_main_servers/docs-nextra   # <-- adjust if different on box
+            export DOCS_PATH=/var/www/docs-nextra
             export PM2_APP=docs-nextra
             export DOCS_HOST=https://docs.valyd.vip
             cd "$DOCS_PATH"
