@@ -12,6 +12,17 @@ This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality),
 
 ---
 
+## Docs — Anti-spoof, face uniqueness & developer accounts
+
+- **Added (API docs):** `POST /api/v2/antispoof` (single image or live burst → `human_score`),
+  `POST /api/v2/antispoof/identity` (liveness + stable `valyd_` uuid for duplicate detection),
+  `POST /api/v2/face-uniqueness` (+ unlink), and `POST /api/v2/location` are now in the
+  [Core APIs reference](/verifications/standalone).
+- **Added (page):** [Developer accounts & sign-in](/docs/developer-accounts) — passwordless
+  sign-in (magic link or face), connecting a Valyd ID to an email-only account, and one identity
+  owning several console accounts with account switching.
+- **Docs:** every relying party now receives the user's **real legal name** (not the pseudonym).
+
 ## v1.8.0 — Member resolve + reactivate; login-only consent
 
 - **Added:** `resolveMember({ valydId })` / `{ email }` — look up ONE person's membership in your org
