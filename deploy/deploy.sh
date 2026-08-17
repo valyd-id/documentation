@@ -3,18 +3,29 @@
 # by hand. Pulls the branch, installs, builds with the environment's hosts, and
 # restarts the pm2 app. Idempotent and safe to re-run.
 #
-# Required env (CI passes these; export them yourself for a manual run):
-#   DOCS_BRANCH            git branch to deploy (development | staging | main)
-#   DOCS_PATH             absolute path to the checkout on this box
-#   PM2_APP               pm2 app name (e.g. docs-nextra)
-#   NEXT_PUBLIC_DOCS_URL  this env's docs host   (e.g. https://docs.valyd.vip)
-#   NEXT_PUBLIC_IDP_URL   this env's API host    (e.g. https://idp.valyd.vip)
-#   NEXT_PUBLIC_DEV_URL   this env's portal host (e.g. https://dev.valyd.vip)
+# Required env (the workflow exports these per branch; export them yourself for
+# a manual run):
+#   DOCS_BRANCH   git branch to deploy (development | staging | main)
+#   DOCS_PATH     absolute path to the checkout on this box
+#   PM2_APP       pm2 app name (e.g. docs-nextra)
+#   DOCS_HOST     this env's docs URL (e.g. https://docs.valyd.vip)
+#
+# All three NEXT_PUBLIC_* hosts are DERIVED from DOCS_HOST's TLD (work/vip/id):
+#   docs.valyd.<tld> / idp.valyd.<tld> / dev.valyd.<tld>
+# Set NEXT_PUBLIC_* explicitly to override the derivation.
 set -euo pipefail
 
 : "${DOCS_BRANCH:?set DOCS_BRANCH}"
 : "${DOCS_PATH:?set DOCS_PATH}"
 : "${PM2_APP:?set PM2_APP}"
+: "${DOCS_HOST:?set DOCS_HOST (e.g. https://docs.valyd.work)}"
+
+# Derive the environment's hosts from the docs host's TLD (…valyd.work|vip|id).
+TLD="${DOCS_HOST##*valyd.}"; TLD="${TLD%%/*}"
+: "${NEXT_PUBLIC_DOCS_URL:=$DOCS_HOST}"
+: "${NEXT_PUBLIC_IDP_URL:=https://idp.valyd.$TLD}"
+: "${NEXT_PUBLIC_DEV_URL:=https://dev.valyd.$TLD}"
+export NEXT_PUBLIC_DOCS_URL NEXT_PUBLIC_IDP_URL NEXT_PUBLIC_DEV_URL
 
 cd "$DOCS_PATH"
 

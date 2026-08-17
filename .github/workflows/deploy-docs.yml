@@ -1,57 +1,118 @@
 name: Deploy docs
 
-# Branch → environment → host mapping:
-#   development → dev        (*.valyd.work)
-#   staging     → staging    (*.valyd.vip)
-#   main        → production (*.valyd.id)
+# Branch-per-environment (VC-style SSH deploys, one DEPLOY_SSH_KEY secret):
 #
-# Each GitHub Environment (dev / staging / production) supplies its own secrets
-# and variables, so this one workflow deploys all three without hardcoding hosts.
+#   development ->  dev      (docs.valyd.work)
+#   staging     ->  staging  (docs.valyd.vip)
+#   main        ->  prod     (docs.valyd.id)   [default branch = production]
 #
-# Required per-Environment SECRETS:
-#   SSH_HOST, SSH_USER, SSH_KEY   — how CI reaches the box (SSH private key)
-#   SSH_PORT                      — optional (default 22; staging uses 2222)
-# Required per-Environment VARIABLES:
-#   DOCS_PATH                     — checkout path on the box
-#   PM2_APP                       — pm2 app name (e.g. docs-nextra)
-#   NEXT_PUBLIC_DOCS_URL          — this env's docs host
-#   NEXT_PUBLIC_IDP_URL           — this env's API host
-#   NEXT_PUBLIC_DEV_URL           — this env's portal host
-
+# Only ONE repo secret is needed: DEPLOY_SSH_KEY (the private key; its public key
+# is in each box's authorized_keys). Hosts/paths live in the jobs below.
+# deploy/deploy.sh derives idp/dev hosts from DOCS_HOST's TLD.
 on:
   push:
     branches: [development, staging, main]
-  workflow_dispatch: {}   # allow manual re-deploy from the Actions tab
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: deploy-docs-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  # -------------------------------------------------------------- dev (development)
+  deploy-dev:
+    name: Deploy dev (docs.valyd.work)
+    if: github.ref == 'refs/heads/development'
     runs-on: ubuntu-latest
-    # Map the pushed branch to the matching GitHub Environment so its secrets resolve.
-    environment: >-
-      ${{ github.ref_name == 'main' && 'production'
-        || github.ref_name == 'staging' && 'staging'
-        || 'dev' }}
+    environment:
+      name: dev
+      url: https://docs.valyd.work
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          command_timeout: 20m
+          host: 96.250.208.62           # dev box (docs.valyd.work), same box as VC dev
+          username: javi
+          port: 22
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
-          envs: DOCS_BRANCH,DOCS_PATH,PM2_APP,NEXT_PUBLIC_DOCS_URL,NEXT_PUBLIC_IDP_URL,NEXT_PUBLIC_DEV_URL
+          command_timeout: 20m
+          envs: DOCS_BRANCH,DOCS_PATH,PM2_APP,DOCS_HOST
           script: |
-            export DOCS_BRANCH="${{ github.ref_name }}"
-            export DOCS_PATH="${{ vars.DOCS_PATH }}"
-            export PM2_APP="${{ vars.PM2_APP }}"
-            export NEXT_PUBLIC_DOCS_URL="${{ vars.NEXT_PUBLIC_DOCS_URL }}"
-            export NEXT_PUBLIC_IDP_URL="${{ vars.NEXT_PUBLIC_IDP_URL }}"
-            export NEXT_PUBLIC_DEV_URL="${{ vars.NEXT_PUBLIC_DEV_URL }}"
+            set -euo pipefail
+            export DOCS_BRANCH=development
+            export DOCS_PATH=/var/www/pollus_main_servers/docs-nextra
+            export PM2_APP=docs-nextra
+            export DOCS_HOST=https://docs.valyd.work
             cd "$DOCS_PATH"
-            bash deploy/deploy.sh
+            git fetch --prune origin "$DOCS_BRANCH"
+            tmp="$(mktemp)"; git show "origin/$DOCS_BRANCH:deploy/deploy.sh" > "$tmp"
+            bash "$tmp"; rm -f "$tmp"
+
+  # -------------------------------------------------------------- staging
+  deploy-staging:
+    name: Deploy staging (docs.valyd.vip)
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://docs.valyd.vip
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          # TODO: set the staging (.vip) box. If estate-internal, add proxy_host/
+          # proxy_username/proxy_key (bastion = 96.250.208.62 / javy), like VC.
+          host: STAGING_HOST            # <-- fill: staging box IP/host
+          username: STAGING_USER        # <-- fill: staging box user
+          port: 22
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          command_timeout: 20m
+          envs: DOCS_BRANCH,DOCS_PATH,PM2_APP,DOCS_HOST
+          script: |
+            set -euo pipefail
+            export DOCS_BRANCH=staging
+            export DOCS_PATH=/var/www/pollus_main_servers/docs-nextra   # <-- adjust if different on box
+            export PM2_APP=docs-nextra
+            export DOCS_HOST=https://docs.valyd.vip
+            cd "$DOCS_PATH"
+            git fetch --prune origin "$DOCS_BRANCH"
+            tmp="$(mktemp)"; git show "origin/$DOCS_BRANCH:deploy/deploy.sh" > "$tmp"
+            bash "$tmp"; rm -f "$tmp"
+
+  # -------------------------------------------------------------- production
+  deploy-prod:
+    name: Deploy production (docs.valyd.id)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://docs.valyd.id
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          # TODO: set the prod (.id) box. The prod IdP box is 172.22.29.105 (rahmad),
+          # estate-internal — reach it via the bastion (proxy_host 96.250.208.62 / javy).
+          host: PROD_HOST               # <-- fill: prod box IP/host
+          username: PROD_USER           # <-- fill: prod box user
+          port: 22
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # proxy_host: 96.250.208.62   # <-- uncomment if the prod box is estate-internal
+          # proxy_username: javi
+          # proxy_port: 22
+          # proxy_key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          command_timeout: 20m
+          envs: DOCS_BRANCH,DOCS_PATH,PM2_APP,DOCS_HOST
+          script: |
+            set -euo pipefail
+            export DOCS_BRANCH=main
+            export DOCS_PATH=/var/www/pollus_main_servers/docs-nextra   # <-- adjust if different on box
+            export PM2_APP=docs-nextra
+            export DOCS_HOST=https://docs.valyd.id
+            cd "$DOCS_PATH"
+            git fetch --prune origin "$DOCS_BRANCH"
+            tmp="$(mktemp)"; git show "origin/$DOCS_BRANCH:deploy/deploy.sh" > "$tmp"
+            bash "$tmp"; rm -f "$tmp"
