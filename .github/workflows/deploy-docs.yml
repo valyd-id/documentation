@@ -2,16 +2,19 @@ name: Deploy docs
 
 # Branch-per-environment (VC-style SSH deploys, one DEPLOY_SSH_KEY secret):
 #
-#   development ->  dev      (docs.valyd.work)
-#   staging     ->  staging  (docs.valyd.vip)
-#   main        ->  prod     (docs.valyd.id)   [default branch = production]
+#   staging  ->  staging  (docs.valyd.vip)
+#   main     ->  prod     (docs.valyd.id)   [default branch = production]
+#
+# The DEV box is the working machine (you edit + build there directly), so it is
+# NOT auto-deployed — a CI `git reset --hard` would wipe in-progress work. Push
+# `development` freely; only `staging`/`main` trigger a deploy.
 #
 # Only ONE repo secret is needed: DEPLOY_SSH_KEY (the private key; its public key
 # is in each box's authorized_keys). Hosts/paths live in the jobs below.
 # deploy/deploy.sh derives idp/dev hosts from DOCS_HOST's TLD.
 on:
   push:
-    branches: [development, staging, main]
+    branches: [staging, main]
   workflow_dispatch:
 
 concurrency:
@@ -19,36 +22,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # -------------------------------------------------------------- dev (development)
-  deploy-dev:
-    name: Deploy dev (docs.valyd.work)
-    if: github.ref == 'refs/heads/development'
-    runs-on: ubuntu-latest
-    environment:
-      name: dev
-      url: https://docs.valyd.work
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: 96.250.208.62           # dev box (docs.valyd.work), same box as VC dev
-          username: javi
-          port: 22
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          command_timeout: 20m
-          envs: DOCS_BRANCH,DOCS_PATH,PM2_APP,DOCS_HOST
-          script: |
-            set -euo pipefail
-            export DOCS_BRANCH=development
-            export DOCS_PATH=/var/www/pollus_main_servers/docs-nextra
-            export PM2_APP=docs-nextra
-            export DOCS_HOST=https://docs.valyd.work
-            cd "$DOCS_PATH"
-            git fetch --prune origin "$DOCS_BRANCH"
-            tmp="$(mktemp)"; git show "origin/$DOCS_BRANCH:deploy/deploy.sh" > "$tmp"
-            bash "$tmp"; rm -f "$tmp"
-
   # -------------------------------------------------------------- staging
   deploy-staging:
     name: Deploy staging (docs.valyd.vip)
