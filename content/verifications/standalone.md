@@ -169,6 +169,104 @@ const { check } = await verify.standalone.liveness({
 
 ---
 
+## POST /api/v2/antispoof — Anti-spoof (single image or burst)
+
+Answers "is this a live human capture?" and returns a vendor-neutral `human_score`
+(0–100) with a pass/fail verdict. Accepts **either** a single `image` or a short
+**burst** of frames; a burst adds per-frame voting, motion analysis and same-person
+consistency, which is far stronger than a single frame.
+
+**Method:** POST
+**Full URL:** `https://idp.valyd.work/api/v2/antispoof`
+**Auth header:** `X-API-Key: <App API key>`
+
+**Fields (send one of):**
+- `image` (image) — single still. Analysis-only; `human_score` is capped at 85 (`assurance: "upload"`).
+- `frames[]` (3–8 images) — chronological stills captured over ~2s (`assurance: "burst"`).
+
+**Request (cURL — burst):**
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/antispoof \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg" \
+  -F "frames[]=@./f4.jpg" -F "frames[]=@./f5.jpg"
+```
+
+**Expected output:** HTTP 200; `check.type` is `"antispoof"`, `check.score` is the `human_score`. `check.data`:
+
+```json
+{
+  "assurance": "burst",
+  "frames_analyzed": 5,
+  "frames_genuine": 5,
+  "frames_spoof": 0,
+  "motion": "natural",
+  "face_consistency": "consistent",
+  "human_score": 100
+}
+```
+
+On failure `check.data.signal` is one of: `no_face`, `face_unreadable`, `spoof_detected`,
+`low_confidence`, `duplicate_frames`, `static_capture`, `discontinuous_motion`, `different_faces`.
+
+> For the strongest assurance, run anti-spoof through the **hosted flow**, where Valyd
+> captures a live camera burst and issues a random on-screen action (turn head, open
+> mouth, nod, move closer). That path returns `assurance: "captured"` — see
+> [Hosted Verification](/verifications/hosted).
+
+---
+
+## POST /api/v2/antispoof/identity — Anti-spoof + identity
+
+Runs the identical anti-spoof pipeline and, only if it passes, resolves the proven-live
+face against the global Valyd face gallery — returning the person's **stable `valyd_`
+uuid**. The same face always resolves to the same uuid across all your requests, so this
+is duplicate-account / sybil detection. If liveness fails, no identity lookup runs (and
+none is billed).
+
+**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/antispoof/identity` · **Auth:** `X-API-Key`
+
+Same input as `/antispoof` (`image` or `frames[]`). Response adds `identity` to `check.data`:
+
+```json
+{
+  "human_score": 100,
+  "identity": { "valyd_uuid": "valyd_f35fecf0…", "registered": "existing" }
+}
+```
+
+`registered` is `"new"` the first time a face is seen, `"existing"` afterwards.
+
+---
+
+## POST /api/v2/face-uniqueness — Face uniqueness (dedup)
+
+One face = one Valyd uuid. Enrolls or matches a selfie against the global gallery and
+returns the stable `valyd_uuid` plus whether it was newly registered. Accepts a single
+`image`/`selfie` (single-frame liveness gate) or `frames[]` (full live pipeline gate).
+
+**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/face-uniqueness` · **Auth:** `X-API-Key`
+
+```json
+{ "valyd_uuid": "valyd_8f2…", "registered": "existing" }
+```
+
+**Unlink:** `DELETE /api/v2/face-uniqueness/{valyd_uuid}` removes a face from the gallery
+(e.g. to clear test data).
+
+---
+
+## POST /api/v2/location — Location
+
+Records/validates a geolocation fix for a session (used by workflows like EVV).
+
+**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/location` · **Auth:** `X-API-Key`
+
+**Fields:** `latitude`, `longitude` (numbers) **required**; optional `accuracy` (metres).
+
+---
+
 ## POST /api/v2/face-match — Face Match
 
 Compare two images. Passes when similarity ≥ threshold (default ~0.95).

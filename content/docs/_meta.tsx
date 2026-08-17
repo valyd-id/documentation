@@ -12,6 +12,7 @@ import {
   Rocket,
   ShieldCheck,
   Tags,
+  UserCog,
   Users
 } from 'lucide-react'
 import { MetaTitle } from '@/components/meta-title'
@@ -30,6 +31,7 @@ export default {
   errors: { title: <MetaTitle icon={AlertTriangle}>Errors & troubleshooting</MetaTitle> },
   changelog: { title: <MetaTitle icon={History}>Changelog</MetaTitle> },
   'create-project': { title: <MetaTitle icon={LayoutDashboard}>Dev portal setup</MetaTitle> },
+  'developer-accounts': { title: <MetaTitle icon={UserCog}>Accounts & sign-in</MetaTitle> },
   organizations: { title: <MetaTitle icon={Users}>Organizations & teams</MetaTitle> },
   oidc: { title: <MetaTitle icon={Fingerprint}>OIDC Integration</MetaTitle> }
 } satisfies MetaRecord

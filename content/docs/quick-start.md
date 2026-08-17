@@ -155,7 +155,7 @@
   npm ls @valyd/sdk
   ```
 
-  **Expected output:** a line like `@valyd/sdk@1.5.x` (or newer).
+  **Expected output:** a line like `@valyd/sdk@1.6.x` (or newer).
 
 - Run the full round trip: start the server, visit the `/login` route in a browser, complete login at Valyd, and confirm the `/callback` route reaches step 6. A successful run sets the `valyd_login` cookie on `/login`, passes `verifyLoginSession` on the callback, and returns a populated `profile` from `getUserInfo`.
 

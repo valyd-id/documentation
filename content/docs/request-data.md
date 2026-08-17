@@ -1,5 +1,11 @@
 # Request user data (consent)
 
+> **Status (current):** The **at-login** path (releasing attributes on the consent screen with
+> `attr_code`) is **temporarily disabled** — the consent screen is **login-only** right now, so the
+> user just signs in and no data is released there. Use the **after-login** path
+> (`requestAttributes` → the user approves in their Valyd app) for all data requests today. The
+> at-login sections below are retained for when it is re-enabled.
+
 ## Agent Quick-Start
 - Source URL: https://docs.valyd.work/docs/request-data
 - Credentials / env vars needed: VALYD_CLIENT_ID, VALYD_CLIENT_SECRET (server-side); the subject's `valyd_id` (from login)
@@ -15,11 +21,44 @@ you request them explicitly. The user **consents to the release**, and the value
 
 There are two ways to ask, both using the same keypair + sealed-box mechanism:
 
-- **At login (recommended)** — add the attributes to your authorize URL. The user checks/unchecks
-  them on the consent screen and the granted fields are delivered **inline with the login** as
-  `attr_code`. No second step, no mobile face scan.
-- **Any time after login** — call `requestAttributes` with the user's `valyd_id`; they approve in
-  their Valyd app. Use this for data you didn't ask for at login (or that the user unchecked).
+- **Any time after login (use this today)** — call `requestAttributes` with the user's `valyd_id`;
+  they approve in their Valyd app (a notification → face approval). This is the supported path.
+- **At login** *(currently disabled — see the status note above)* — add the attributes to your
+  authorize URL; when enabled, the user checks/unchecks them on the consent screen and the granted
+  fields are delivered **inline with the login** as `attr_code`.
+
+## Available attributes
+
+Pass any of these keys in `attributes`. They fall into three groups:
+
+**Proofs** — non-identifying, release on consent alone (no face / vault needed):
+
+| Key | Value |
+|---|---|
+| `id_verified` | boolean — the user has a completed KYC |
+| `is_16_plus` / `is_18_plus` / `is_21_plus` / `is_30_plus` / `is_65_plus` | boolean age bands (derived, no raw DOB) |
+| `preferred_username` | the user's pseudonymous username |
+
+**Raw identity** — real PII kept server-readable; released on a face-assured (or quick in-page face) session:
+
+| Key | Value |
+|---|---|
+| `legal_name` / `full_name` | full legal name |
+| `first_name`, `last_name` | given / family name |
+| `email`, `phone` | contact |
+| `country` | country |
+
+**Vault-only raw KYC** — sealed **on the user's device** from their encrypted identity vault; the server is blind to these. The user must have their identity **vault unlocked** on the device they consent on — if it isn't, the request is refused with an "unlock your vault" prompt (these fields are never silently dropped):
+
+| Key | Value |
+|---|---|
+| `dob` | date of birth (`YYYY-MM-DD`) |
+| `age` | age in years (derived from DOB on-device) |
+| `gender` | gender / sex from the ID |
+| `nationality` | nationality from the ID |
+| `document_number` | ID document number |
+
+> Prefer **proofs** over raw fields where they suffice — e.g. request `is_18_plus` instead of `dob`. Raw fields require face assurance; vault-only fields additionally require the user's device vault.
 
 ## At login: ask on the consent screen (recommended)
 

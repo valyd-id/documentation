@@ -13,7 +13,9 @@ A ready-to-go demo: let a user log in with Valyd and share their verified detail
 
 ## Try the live anti-spoof check
 
-Start a session, allow the camera in the tab that opens, and follow the prompts. Valyd runs a passive-liveness / presentation-attack check and tells you whether it's a real, live person.
+Start a session, allow the camera in the tab that opens, and follow the prompts. In the hosted capture Valyd **tracks your face, records a short live burst, and asks you to perform one random action** (turn your head, open your mouth, nod, or move a little closer). It then decides whether it's a real, live person — this active, capture-controlled path is what makes a photo, screen replay, or pre-recorded clip fail, because an attacker can't know the action in advance.
+
+> **How the check is graded.** Every frame is scored for passive liveness and the results are combined into a single `human_score` (0–100), together with motion analysis, same-face consistency across frames, and verification that the requested action actually happened. The hosted flow returns the strongest assurance level, `captured`. See the [Anti-spoof API](/verifications/standalone) for the raw `human_score` fields and the standalone `POST /api/v2/antispoof` / `POST /api/v2/antispoof/identity` endpoints.
 
 The demo runs entirely with the **public app key** (`X-API-Key`). The flow is:
 
@@ -160,7 +162,13 @@ app.listen(PORT, () => console.log("Anti-spoof demo on http://localhost:" + PORT
 </script>
 ```
 
+## Anti-spoof + identity (one call)
+
+If you also want to know **who** the live person is, use `POST /api/v2/antispoof/identity`. It runs the same anti-spoof pipeline and, only when it passes, resolves the proven-live face against the global Valyd gallery — returning a **stable `valyd_` uuid**. The same face always maps to the same uuid, so this is duplicate-account / sybil detection in a single request. See [Face uniqueness](/verifications/standalone).
+
 ## Next steps
 
+- [Anti-spoof & face-uniqueness API](/verifications/standalone)
+- [Hosted verification](/verifications/hosted)
 - [Verify docs](/verifications)
 - [Dev Portal](https://dev.valyd.work)

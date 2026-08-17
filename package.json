@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/gen-corpus.mjs && next dev",
+    "gen-corpus": "node scripts/gen-corpus.mjs",
+    "prebuild": "node scripts/gen-corpus.mjs",
     "build": "next build",
     "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind",
     "start": "next start",

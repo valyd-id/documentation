@@ -12,6 +12,20 @@ This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality),
 
 ---
 
+## v1.8.0 — Member resolve + reactivate; login-only consent
+
+- **Added:** `resolveMember({ valydId })` / `{ email }` — look up ONE person's membership in your org
+  at ANY role (returns the `Member` with `role` + `status`, or `null`). Lets you tell a workforce
+  member apart from a developer/admin, or from someone not in your org. (`POST /api/sdk/members/resolve`)
+- **Added:** `reactivateMember(memberId)` — undo a `removeMember`; restores `active` (or `invited` if
+  never activated). (`PATCH /api/sdk/members/{memberId}/reactivate`)
+- **Docs:** the member table now documents `removeMember` (deactivate) and `reactivateMember` — the
+  older "no deactivate over the API" note was stale.
+- **Breaking (behavior):** the **at-login attribute release** on the consent screen (`attr_code`,
+  remembered consent) is **currently disabled** — the consent screen is **login-only**. Request raw
+  data with the **after-login** `requestAttributes` flow (user approves in their Valyd app). See
+  `/docs/request-data`.
+
 ## v1.5.1 — Unified SDK + Workforce Members API
 
 - **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).

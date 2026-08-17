@@ -18,7 +18,7 @@ function getClient(): OpenAI {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey,
     defaultHeaders: {
-      'HTTP-Referer': 'https://docs-nextra.valyd.work',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_DOCS_URL || 'https://docs.valyd.work',
       // Header values must be Latin-1 — no em dash here.
       'X-Title': 'Valyd Docs - Ask AI'
     }

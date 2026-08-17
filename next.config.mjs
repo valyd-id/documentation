@@ -1,7 +1,13 @@
 import nextra from 'nextra'
+import remarkHosts from './lib/remark-hosts.mjs'
 
 const withNextra = nextra({
-  defaultShowCopyCode: true
+  defaultShowCopyCode: true,
+  // Rewrite canonical *.valyd.work hosts in rendered pages to the per-env hosts
+  // (dev=.work, testing=.vip, prod=.id) from NEXT_PUBLIC_* — matches the corpus.
+  mdxOptions: {
+    remarkPlugins: [remarkHosts]
+  }
 })
 
 /**

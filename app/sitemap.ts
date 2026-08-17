@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
+import { SITE } from '@/lib/site'
 
-const BASE = 'https://docs.valyd.work'
+const BASE = SITE.docsUrl
 
 // HTML pages + agent-readable corpus, mirroring the old site's sitemap plus
 // the pages that were missing from it.
@@ -9,6 +10,7 @@ const ROUTES = [
   '/docs',
   '/docs/quick-start',
   '/docs/create-project',
+  '/docs/developer-accounts',
   '/docs/login-sessions',
   '/docs/authentication',
   '/docs/oidc',

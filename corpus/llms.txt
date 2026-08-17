@@ -14,10 +14,13 @@
 - Fetch pages with `curl -sL <url>`; each `.md` is self-contained (prerequisites, steps,
   verification, and common errors).
 - **Base URLs (one canonical host per product — use these exactly):**
-  - Valyd ID / OAuth / OIDC: `https://idp.valyd.work`
-  - Verification API: `https://idp.valyd.work`
-  - Developer Portal (Valyd ID): `https://dev.valyd.work`
-  - Developer Portal: `https://dev.valyd.work`
+  - Valyd ID / OAuth / OIDC (API host): `https://idp.valyd.work`
+  - Verification API (same host): `https://idp.valyd.work`
+  - Developer Portal (human sign-in, projects, keys): `https://dev.valyd.work`
+  - Documentation (this site, `.md` + OpenAPI): `https://docs.valyd.work`
+- **There is NO password login.** Human sign-in to the Developer Portal is passwordless — an emailed
+  magic link OR face ("Login with Valyd"). Never look for, store, or send a password. Portal sign-in,
+  linking a face, and switching accounts are human-only steps an agent cannot perform.
 - **Credentials cannot be created via API.** A human must sign up and generate them in the portal
   (see "Human-only steps" at the bottom). Pause and request these values rather than guessing:
   `client_id`, `client_secret` (Valyd ID); App `API key`, `workflow_id`, webhook signing secret
@@ -59,7 +62,7 @@
 - [Hosted vs Core APIs](https://docs.valyd.work/verify/modes.md): Decision tree and comparison to choose an integration mode.
 - [Account (Managed by Valyd)](https://docs.valyd.work/verify/managed.md): Account vs Non-account model, the proofs-only data rule, hosted + core account APIs, reuse, and the consent Core API for raw KYC.
 - [Hosted Verification](https://docs.valyd.work/verify/hosted.md): Create session, redirect, signed webhooks, decision API, statuses. Base URL https://idp.valyd.work.
-- [Core APIs](https://docs.valyd.work/verify/standalone.md): Server-to-server checks — ID, liveness, face match, age, credential, KYC+credential.
+- [Core APIs](https://docs.valyd.work/verify/standalone.md): Server-to-server checks — ID verification, liveness, **anti-spoof** (`POST /api/v2/antispoof`, single image or burst → `human_score`), **anti-spoof + identity** (`POST /api/v2/antispoof/identity` → stable `valyd_` uuid), **face uniqueness / dedup** (`POST /api/v2/face-uniqueness` + `DELETE .../{valyd_uuid}` → one face = one uuid), face match, age, credential, KYC+credential, and location.
 - [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.
 - [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it.
@@ -79,8 +82,9 @@
 - [Node SDK starter](https://docs.valyd.work/downloads/valyd-sdk-starter.zip): Starter scaffold for integrating Valyd.
 
 
-## Developer portal — organizations & teams
+## Developer portal — accounts, organizations & teams
 
+- [Developer accounts & sign-in](https://docs.valyd.work/docs/developer-accounts.md): Passwordless sign-in (emailed magic link or face / Login with Valyd — there is NO password), connecting a Valyd face identity to an email-only account, and how one identity can own several console accounts (one per company) with an account switcher. Human-only portal actions.
 - [Organizations & teams](https://docs.valyd.work/docs/organizations.md): Individual vs organization accounts, the owner/developer/member roles, shared apps, public vs private apps, adding a workforce by face, and one-account billing.
 
 ## Human-only steps (an agent must pause and request these)

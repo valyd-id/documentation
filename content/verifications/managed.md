@@ -61,12 +61,11 @@ Account ("Managed by Valyd") is one of the two Valyd API types. The other is Non
 
 There are **two ways** to get raw account attributes (full guide: `/docs/request-data`):
 
-- **At login (recommended)** — add `attributes` + your X25519 `requester_public_key` to the
-  authorize URL. The user checks/unchecks them on the Login-with-Valyd consent screen and the
-  granted fields ride back with the login as `attr_code`. Consent is **remembered per app**, so a
-  returning user isn't re-prompted. No mobile step.
-- **Any time after login** — the `attribute-request` flow below; the user approves in their Valyd
-  app. Use it for fields the user didn't grant at login.
+- **Any time after login (use this today)** — the `attribute-request` flow below; the user approves
+  in their Valyd app (notification → face approval). This is the supported path.
+- **At login** *(currently disabled — the consent screen is login-only right now)* — when enabled,
+  add `attributes` + your X25519 `requester_public_key` to the authorize URL and the granted fields
+  ride back with the login as `attr_code`.
 
 After login, request explicitly:
 

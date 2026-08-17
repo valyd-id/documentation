@@ -155,11 +155,38 @@ Content-Type: application/json
   "grant_type": "authorization_code",
   "client_id": "YOUR_CLIENT_ID",
   "client_secret": "YOUR_CLIENT_SECRET",
-  "code": "AUTH_CODE_HERE"
+  "code": "AUTH_CODE_HERE",
+  "redirect_uri": "https://yourapp.com/callback"
 }
 ```
 
+Send the **same** `redirect_uri` you used at `/authorize` — Valyd validates it against the code.
+Authorization codes are bound to the client they were issued to, are single-use, and expire in
+about **2 minutes**, so exchange them as soon as your callback fires.
+
 **Expected output:** HTTP 200 with a JSON body whose `data` object contains `access_token` (read it as `response.data.access_token`).
+
+#### Renewing an access token
+
+Access tokens are short-lived. Exchange the `refresh_token` at
+`POST https://{{IDP_BASE_URL}}/api/auth/tpsso/refresh` — from your **backend**, with your client
+credentials:
+
+```json
+{
+  "refresh_token": "rfrsh_abc123...",
+  "client_id": "YOUR_CLIENT_ID",
+  "client_secret": "YOUR_CLIENT_SECRET"
+}
+```
+
+The refresh token is validated against the client it was issued to, so a token leaked from one
+app cannot be used by another. **Rotation is on by default:** each call returns a new
+`refresh_token` and revokes the one you sent, so always store the returned value. Replaying a
+rotated-away token is treated as theft and revokes every refresh token for that user and app.
+
+With the SDK this is one call — `const next = await valyd.auth.refreshToken(stored)` — then
+persist both `next.accessToken` and `next.refreshToken`. Requires `@valyd/sdk` **1.6.0+**.
 
 Python (Flask):
 
@@ -182,6 +209,7 @@ def callback():
             "client_id": "YOUR_CLIENT_ID",
             "client_secret": "YOUR_CLIENT_SECRET",
             "code": code,
+            "redirect_uri": "https://yourapp.com/callback",
         },
     )
     tokens = response.json()["data"]

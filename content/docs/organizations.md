@@ -47,6 +47,11 @@ never reach a browser. Everything you can do:
 | **Add a member** (emails a face-activation link) | `client.addMembers([{ email, firstName, lastName }])` | `POST /api/sdk/members` |
 | **Add many** (bulk, up to 500; dupes → `skipped`) | `client.addMembers([ …up to 500 ])` | `POST /api/sdk/members` |
 | **Invite silently** (no email; returns each `activationLink`) | `client.addMembers([…], { notify: false })` | `POST /api/sdk/members` with `notify:false` |
+| **Look up one person** (role + status, at any role) | `client.resolveMember({ valydId })` / `{ email }` | `POST /api/sdk/members/resolve` |
+| **Deactivate a member** (revoke app login; recoverable) | `client.deactivateMember(memberId)` | `PATCH /api/sdk/members/{memberId}/deactivate` |
+| **Remove a member** (default = deactivate; `permanent` deletes the membership) | `client.removeMember(memberId, { permanent: true })` | `DELETE /api/sdk/members/{memberId}?permanent=true` |
+| **Reactivate a member** | `client.reactivateMember(memberId)` | `PATCH /api/sdk/members/{memberId}/reactivate` |
+| **Re-send an activation invite** (Valyd ID not connected yet / link expired) | `client.resendMemberInvite(memberId)` | `POST /api/sdk/members/{memberId}/invite` |
 | **Billing & seats** (seat count, price, balance, invoices) | `client.getBilling()` | `GET /api/sdk/billing` |
 
 ```ts
@@ -91,8 +96,21 @@ curl -X POST https://dev.valyd.work/api/sdk/members \
 - `active` — face-activated and bound to a Valyd identity — the only **billable** state.
 - `deactivated` — removed from the workforce; not billable.
 
-Result sync is by **polling** `getMembers()`. There is no member delete/deactivate over the API today
-— deactivate from the portal. CSV upload is a portal action.
+Deactivate/reactivate over the API with `deactivateMember(memberId)` / `reactivateMember(memberId)`
+(each accepts the member's `memberId` `vmem_…`, their Valyd ID, or their email).
+`removeMember(memberId)` is the same deactivation by default; pass `{ permanent: true }` to delete
+the membership row outright — the seat and history go and the email can be re-invited cleanly.
+None of these ever touch the person's Valyd identity or their membership in any other org.
+`reactivateMember` restores a deactivated member to `active` (or `invited` if they never activated).
+If a member's invite expired before they connected their Valyd ID, `resendMemberInvite(memberId)`
+issues + emails a fresh activation link (and returns it), superseding the old one; it refuses for
+already-active or deactivated members. Only `member`-role people are affected — use
+`resolveMember({ valydId })` to check whether someone is a workforce member vs a developer/admin.
+Result sync is by **polling** `getMembers()`. CSV upload is a portal action.
+
+In the developer portal, the org owner/admin sees the full roster with each member's status on the
+**Organization → Members** tab, and can re-send invites, deactivate/reactivate, or **Remove** a
+member outright (permanent, same as the API's `permanent:true`).
 
 ## How to start
 

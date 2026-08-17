@@ -11,10 +11,37 @@ const MAX_MESSAGES = 20
 // answer back as history on the next follow-up message.
 const MAX_USER_MESSAGE_LENGTH = 4000
 
-// This is a public, unauthenticated endpoint calling a paid LLM API. Skipped
-// for now per product decision, but wire real rate limiting (e.g. a per-IP
-// token bucket keyed on `x-forwarded-for`) in here before this goes to prod.
-function checkRateLimit(): void {}
+// This is a public, unauthenticated endpoint calling a paid LLM API. Guard it
+// with a per-IP token bucket so a single client can't rack up model spend.
+// In-memory (per server process) — fine for a single PM2 instance; move to
+// Redis if this ever runs multi-instance. Tunable via env.
+const RATE_MAX = Number(process.env.CHAT_RATE_MAX || 20) // requests per window
+const RATE_WINDOW_MS = Number(process.env.CHAT_RATE_WINDOW_MS || 60_000) // 1 min
+const buckets = new Map<string, { count: number; reset: number }>()
+
+function clientIp(request: NextRequest): string {
+  const fwd = request.headers.get('x-forwarded-for')
+  if (fwd) return fwd.split(',')[0].trim()
+  return request.headers.get('x-real-ip') || 'unknown'
+}
+
+// Returns true when the request is allowed, false when the IP is over its limit.
+function checkRateLimit(request: NextRequest): boolean {
+  const ip = clientIp(request)
+  const now = Date.now()
+  const b = buckets.get(ip)
+  if (!b || now > b.reset) {
+    buckets.set(ip, { count: 1, reset: now + RATE_WINDOW_MS })
+    // Opportunistic sweep so the map can't grow unbounded.
+    if (buckets.size > 5000) {
+      for (const [k, v] of buckets) if (now > v.reset) buckets.delete(k)
+    }
+    return true
+  }
+  if (b.count >= RATE_MAX) return false
+  b.count++
+  return true
+}
 
 function isValidMessages(value: unknown): value is ChatMessage[] {
   return (
@@ -33,7 +60,12 @@ function isValidMessages(value: unknown): value is ChatMessage[] {
 }
 
 export async function POST(request: NextRequest) {
-  checkRateLimit()
+  if (!checkRateLimit(request)) {
+    return new Response('Rate limit exceeded — please wait a moment and try again.', {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil(RATE_WINDOW_MS / 1000)) }
+    })
+  }
 
   let body: unknown
   try {
