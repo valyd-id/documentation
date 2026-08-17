@@ -12,7 +12,9 @@ import { NavbarAskAiButton } from '@/components/ask-ai/navbar-button'
 import 'nextra-theme-docs/style.css'
 import './globals.css'
 
-const SITE_URL = 'https://docs.valyd.work'
+import { SITE } from '@/lib/site'
+
+const SITE_URL = SITE.docsUrl
 const DESCRIPTION =
   'Developer documentation for Valyd: Login with Valyd (OAuth 2.0 / OIDC), the identity Verification APIs (KYC, liveness, face match, license), and MCP for AI agents. Quick starts, SDKs, and full API reference.'
 
@@ -49,7 +51,7 @@ const navbar = (
         <span className="vd-logo-docs">Docs</span>
       </span>
     }
-    projectLink="https://dev.valyd.work"
+    projectLink={SITE.devUrl}
   >
     <NavbarAskAiButton />
     {/* Single-button light/dark toggle, immediately right of the project link */}
@@ -60,7 +62,7 @@ const navbar = (
 const footer = (
   <Footer>
     © {new Date().getFullYear()} Valyd. All rights reserved. ·{' '}
-    <a href="https://dev.valyd.work" target="_blank" rel="noreferrer">
+    <a href={SITE.devUrl} target="_blank" rel="noreferrer">
       Developer Portal
     </a>{' '}
     · <a href="mailto:support@valyd.id">support@valyd.id</a>

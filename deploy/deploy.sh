@@ -38,6 +38,10 @@ echo "==> Installing dependencies"
 npm ci --no-audit --no-fund
 
 echo "==> Building (prebuild regenerates the env-correct corpus)"
+# Clear the Next cache: the host substitution (remark-hosts) reads env at compile
+# time and is NOT part of Next's cache key, so a stale-env build could otherwise
+# be reused. A clean build guarantees the pages match THIS env's hosts.
+rm -rf .next
 npm run build
 
 echo "==> Restarting pm2 app '$PM2_APP'"

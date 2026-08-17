@@ -6,17 +6,18 @@
  * The client id/secret are published shared TEST identifiers, not secrets.
  */
 
-const DOCS_BASE_URL = process.env.NEXT_PUBLIC_DOCS_BASE_URL ?? 'https://docs.valyd.work'
+// Hosts come from the single env-driven source (lib/site.ts) so the sandbox
+// targets THIS environment's docs/API/portal — no separate host vars to drift.
+import { SITE } from '@/lib/site'
 
-export const SANDBOX_BASE_URL =
-  process.env.NEXT_PUBLIC_SANDBOX_BASE_URL ?? 'https://idp.valyd.work'
+export const SANDBOX_BASE_URL = SITE.idpUrl
 export const SANDBOX_CLIENT_ID =
   process.env.NEXT_PUBLIC_SANDBOX_CLIENT_ID ?? 'sandbox_pollus_test'
 export const SANDBOX_CLIENT_SECRET =
   process.env.NEXT_PUBLIC_SANDBOX_CLIENT_SECRET ?? 'sk_test_pollus_xxxxxxxxxxxxxxxx'
-export const SANDBOX_REDIRECT_URI = `${DOCS_BASE_URL}/sandbox/callback`
+export const SANDBOX_REDIRECT_URI = `${SITE.docsUrl}/sandbox/callback`
 
-export const DEV_PORTAL_URL = process.env.NEXT_PUBLIC_DEV_PORTAL_URL ?? 'https://dev.valyd.work'
+export const DEV_PORTAL_URL = SITE.devUrl
 
 export const AVAILABLE_SCOPES = [
   'profile',

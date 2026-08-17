@@ -1,3 +1,4 @@
+import { SITE } from '@/lib/site'
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import {
@@ -244,7 +245,7 @@ export function SupportBand() {
             or manage your apps and credentials in the developer portal.
           </p>
         </div>
-        <ButtonLink href="https://dev.valyd.work" target="_blank" rel="noreferrer">
+        <ButtonLink href={SITE.devUrl} target="_blank" rel="noreferrer">
           Open the Developer Portal
           <ArrowRight className="h-4 w-4" aria-hidden />
         </ButtonLink>
