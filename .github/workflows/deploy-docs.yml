@@ -68,10 +68,8 @@ jobs:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          # TODO: set the prod (.id) box. The prod IdP box is 172.22.29.105 (rahmad),
-          # estate-internal — reach it via the bastion (proxy_host 96.250.208.62 / javy).
-          host: PROD_HOST               # <-- fill: prod box IP/host
-          username: PROD_USER           # <-- fill: prod box user
+          host: 3.139.231.117            # prod box (docs.valyd.id), publicly reachable
+          username: rahmad
           port: 22
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           # proxy_host: 96.250.208.62   # <-- uncomment if the prod box is estate-internal
@@ -84,7 +82,7 @@ jobs:
           script: |
             set -euo pipefail
             export DOCS_BRANCH=main
-            export DOCS_PATH=/var/www/pollus_main_servers/docs-nextra   # <-- adjust if different on box
+            export DOCS_PATH=/var/www/docs-nextra
             export PM2_APP=docs-nextra
             export DOCS_HOST=https://docs.valyd.id
             cd "$DOCS_PATH"
