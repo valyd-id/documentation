@@ -1,9 +1,9 @@
 # Hosted Verification
 
-> **Scope: Non-account (Fresh) hosted.** No Valyd login, nothing retained; the decision returns the **raw** captured data. For the Account variant — result stored on the user's Valyd account, reuse (returning users verify with a selfie only), and **proofs-only** results — see [Account (Managed by Valyd)](https://docs.valyd.work/verify/managed.md). Same hosted page; you additionally pass the user's `valyd_access_token` when creating the session.
+> **Scope: Non-account (Fresh) hosted.** No Valyd login, nothing retained; the decision returns the **raw** captured data. For the Account variant — result stored on the user's Valyd account, reuse (returning users verify with a selfie only), and **proofs-only** results — see [Account (Managed by Valyd)](/verifications/managed). Same hosted page; you additionally pass the user's `valyd_access_token` when creating the session.
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#hosted
+- Source URL: https://docs.valyd.work/verifications/hosted
 - Credentials / env vars needed: VALYD_API_KEY, VALYD_WEBHOOK_SECRET, VALYD_WORKFLOW_ID (workflow created in the Developer Portal: https://dev.valyd.work), APP_URL
 - Files an integrator edits: .env (credentials), server route handlers (session create, redirect callback, webhook receiver)
 - Estimated steps: 4 (create session → redirect → handle redirect-back → read authoritative result)

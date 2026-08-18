@@ -1,7 +1,7 @@
 # Versioning & deprecation
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify/versioning
+- Source URL: https://docs.valyd.work/verifications/versioning
 - Credentials / env vars needed: none — reference only.
 - Can complete without human input: YES — read-only policy.
 

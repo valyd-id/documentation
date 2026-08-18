@@ -1,7 +1,7 @@
 # API Reference
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#api-sessions
+- Source URL: https://docs.valyd.work/verifications/api-reference
 - Credentials / env vars needed: VALYD_API_KEY (your App API key, sent as the `X-API-Key` header)
 - Files an integrator edits: none — reference only (server code uses these endpoints)
 - Estimated steps: 0
@@ -79,6 +79,10 @@ Full URL: `https://idp.valyd.work/api/v2/session/{id}/status`
 
 Manually force a terminal decision. Body must set `status` to `APPROVED` or `DECLINED`.
 
+Use this when a session lands in `IN_REVIEW` (or is otherwise still open) and a human reviewer on your side makes the call — for example approving a borderline document check. The override is authenticated by your project API key, so any holder of that key can perform it; there is no separate reviewer role. The decision is recorded on the session and delivered to your webhook like any other result.
+
+**Rule — override only works before the session is terminal.** It is valid while the session is `NOT_STARTED`, `IN_PROGRESS`, or `IN_REVIEW`. Once a session has already reached a terminal state (`APPROVED` / `DECLINED`), it cannot be flipped — the API returns `409 already_decided`.
+
 ```bash
 curl -X PATCH https://idp.valyd.work/api/v2/session/SES_ID/status \
   -H "X-API-Key: $VALYD_API_KEY" \
@@ -87,6 +91,19 @@ curl -X PATCH https://idp.valyd.work/api/v2/session/SES_ID/status \
 ```
 
 **Expected output:** HTTP 200 with the updated session reflecting the overridden status.
+
+**Already terminal — 409 Conflict:**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "already_decided",
+    "message": "Session is already in a terminal state.",
+    "status": "APPROVED"
+  }
+}
+```
 
 ## Workflows
 

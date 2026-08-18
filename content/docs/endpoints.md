@@ -488,9 +488,21 @@ HttpResponse<String> response = client.send(request,
   - `Accept: application/json`
   - `Authorization: Bearer YOUR_ACCESS_TOKEN`
 
-Returns identity and verification results including ID verification status, face match confidence, and last verification timestamp. Use alongside `/userinfo` for a complete user picture.
+Returns the user's verification status: whether they passed a human (liveness) check, whether they completed identity (KYC) verification, and any professional licenses linked to their Valyd identity. Use alongside `/userinfo` for a complete user picture.
 
 `YOUR_ACCESS_TOKEN`: the `access_token` returned by `POST /token` (or `POST /refresh`).
+
+**Response fields (`data.verifications`):**
+
+| Field | Type | Description |
+|---|---|---|
+| `human_verified` | boolean | The user passed a liveness / anti-spoof human check. Falls back to `id_verified` when no explicit human check is on file. |
+| `id_verified` | boolean | The user completed identity (KYC) document verification. |
+| `licenses` | array | Professional / credential licenses linked to the user. Empty array if none. |
+| `licenses[].license_type` | string | The kind of license (e.g. `drivers_license`, `medical`). |
+| `licenses[].verified` | boolean | Whether that license is currently verified. |
+| `licenses[].verified_from` | string \| null | Source the license was verified against. |
+| `licenses[].expire_at` | string \| null | ISO-8601 expiry timestamp, or `null` if it does not expire. |
 
 ### Code examples
 
@@ -510,10 +522,10 @@ const response = await fetch("https://idp.valyd.work/api/auth/tpsso/verification
 });
 
 const data = await response.json();
-const { id_verified, face_match } = data.data.verifications;
+const { human_verified, id_verified, licenses } = data.data.verifications;
 
-if (id_verified && face_match > 0.9) {
-  console.log("User is fully verified!");
+if (human_verified && id_verified) {
+  console.log("User is a verified human with completed KYC!");
 }
 ```
 
@@ -529,8 +541,8 @@ response = requests.get(
 )
 
 verifications = response.json()["data"]["verifications"]
-if verifications["id_verified"] and verifications["face_match"] > 0.9:
-    print("User is fully verified!")
+if verifications["human_verified"] and verifications["id_verified"]:
+    print("User is a verified human with completed KYC!")
 ```
 
 ```php
@@ -549,8 +561,8 @@ curl_setopt_array($ch, [
 $response = curl_exec($ch);
 $verifications = json_decode($response, true)["data"]["verifications"];
 
-if ($verifications["id_verified"] && $verifications["face_match"] > 0.9) {
-    echo "User is fully verified!";
+if ($verifications["human_verified"] && $verifications["id_verified"]) {
+    echo "User is a verified human with completed KYC!";
 }
 ?>
 ```
@@ -580,9 +592,16 @@ HttpResponse<String> response = client.send(request,
   "success": true,
   "data": {
     "verifications": {
+      "human_verified": true,
       "id_verified": true,
-      "face_match": 0.98,
-      "last_checked": "2025-09-11T12:00:00Z"
+      "licenses": [
+        {
+          "license_type": "drivers_license",
+          "verified": true,
+          "verified_from": "kyc",
+          "expire_at": "2027-03-01T00:00:00+00:00"
+        }
+      ]
     }
   }
 }

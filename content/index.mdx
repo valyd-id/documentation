@@ -47,7 +47,7 @@ const valyd = new ValydClient({
   clientId: process.env.VALYD_CLIENT_ID!,
   clientSecret: process.env.VALYD_CLIENT_SECRET!,
   redirectUri: process.env.VALYD_REDIRECT_URI!,
-  // baseUrl defaults to https://idp.valyd.work
+  // baseUrl defaults to the production Valyd IdP — set it for dev/staging
 });
 ```
 

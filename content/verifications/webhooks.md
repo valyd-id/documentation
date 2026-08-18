@@ -1,7 +1,7 @@
 # Webhooks
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#webhooks
+- Source URL: https://docs.valyd.work/verifications/webhooks
 - Credentials / env vars needed: VALYD_WEBHOOK_SECRET (the webhook signing secret), VALYD_API_KEY (App API key, to fetch the full decision)
 - Files an integrator edits: server route handler (e.g. an Express handler), .env (to store VALYD_WEBHOOK_SECRET and VALYD_API_KEY)
 - Estimated steps: 4
@@ -116,7 +116,7 @@ The decoded JSON event has this shape:
 ```
 
 Field notes:
-- `event_id` — matches the `X-Valyd-Event-Id` header; use it to deduplicate retried deliveries.
+- `event_id` — matches the `X-Valyd-Event-Id` header; use it to deduplicate retried deliveries **and manual resends** (both carry the same id).
 - `type` — the event type. The full set is:
   - `verification.approved` — terminal, passed.
   - `verification.declined` — terminal, failed.
@@ -133,9 +133,36 @@ Field notes:
   more than once, treat delivery as **at-least-once** and **deduplicate on `X-Valyd-Event-Id`**.
 - Verify the HMAC signature and reject stale timestamps (> 5 minutes) on every delivery.
 
-> Coming soon: a documented fixed retry schedule and a Developer-Portal **delivery log with manual
-> resend**. Until then, rely on the decision API (`GET /api/v2/session/{id}/decision`) as the
-> authoritative source if a webhook is ever missed.
+#### Retry schedule
+
+A delivery is attempted up to **10 times**. After a failed attempt Valyd waits, then retries:
+
+| After attempt | Wait before next try |
+|---|---|
+| 1 | 5 seconds |
+| 2 | 30 seconds |
+| 3 | 2 minutes |
+| 4 | 10 minutes |
+| 5 and later | 30 minutes |
+
+So a persistently failing endpoint is retried across roughly **2.5 hours** before Valyd stops. Every
+retry carries the **same** `X-Valyd-Event-Id`, so deduplicating on that header collapses all retries
+of one event into a single unit of work.
+
+#### Delivery log and manual resend (Developer Portal)
+
+Every attempt — successful or failed — is recorded in the **Developer Portal** (https://dev.valyd.work),
+on your application's **Verification** page under **Recent webhook deliveries**. For each attempt you
+can see the destination URL, the exact payload and headers we sent, the receiver's HTTP status and
+response body, and any transport error.
+
+Use the **Resend** button next to a delivery to re-queue that webhook — for example after you've fixed
+a bug in your handler, or if an endpoint was down during the automatic retry window. A manual resend
+carries the **same** `X-Valyd-Event-Id` as the original, so an idempotent handler treats it as the same
+event rather than a new one.
+
+> If a webhook is ever missed entirely, the decision API (`GET /api/v2/session/{id}/decision`) is the
+> authoritative source of the result — poll or fetch it any time.
 
 ### Verification
 - Send a test webhook (or trigger a real terminal session) and confirm your handler logs a valid signature and returns HTTP 200.

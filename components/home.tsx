@@ -44,9 +44,10 @@ export function Hero({
 }) {
   return (
     <div className="vd-rise" style={rise(0)}>
-      {/* Original brand wordmark, theme-swapped (navy on light, white on dark) */}
-      <Image src="/images/valyd-wordmark.png" alt="Valyd" className="vd-logo-light h-9 w-auto sm:h-10" width={574} height={79} priority />
-      <Image src="/images/valyd-mark.png" alt="Valyd" className="vd-logo-dark h-9 w-auto sm:h-10" width={1920} height={691} priority />
+      {/* Same "VALYD + arrow" lockup, theme-swapped (navy on light, white on dark) so it
+          renders at an identical width in both modes — matches the navbar logo. */}
+      <Image src="/images/valyd-lockup-navy.png" alt="Valyd" className="vd-logo-light h-9 w-auto sm:h-10" width={3578} height={447} priority />
+      <Image src="/images/valyd-lockup-white.png" alt="Valyd" className="vd-logo-dark h-9 w-auto sm:h-10" width={3578} height={447} priority />
       <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl">
         {title}
       </h1>

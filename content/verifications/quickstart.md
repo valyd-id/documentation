@@ -1,7 +1,7 @@
 # Verification APIs Quickstart
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#quickstart
+- Source URL: https://docs.valyd.work/verifications/quickstart
 - Credentials / env vars needed: VALYD_API_KEY, VALYD_WORKFLOW_ID (Hosted only)
 - Files an integrator edits: .env (to store VALYD_API_KEY and VALYD_WORKFLOW_ID), server route handler (to make the API call and, for Hosted, handle the webhook)
 - Estimated steps: 6

@@ -1,7 +1,7 @@
 # Statuses & decisioning
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#statuses
+- Source URL: https://docs.valyd.work/verifications/statuses
 - Credentials / env vars needed: none (reference only)
 - Files an integrator edits: none — reference only
 - Estimated steps: 0

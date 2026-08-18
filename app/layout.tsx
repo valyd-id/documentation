@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   authors: [{ name: 'Valyd' }],
-  icons: { icon: '/favicon.png', apple: '/favicon.png' },
+  icons: { icon: '/vid.png', apple: '/vid.png' },
   openGraph: {
     type: 'website',
     url: SITE_URL,
@@ -45,9 +45,10 @@ const navbar = (
   <Navbar
     logo={
       <span className="vd-logo" aria-label="Valyd documentation home">
-        {/* Original brand assets: navy wordmark on light, white mark on dark */}
-        <Image src="/images/valyd-wordmark.png" alt="Valyd" className="vd-logo-light" width={574} height={79} priority />
-        <Image src="/images/valyd-mark.png" alt="Valyd" className="vd-logo-dark" width={1920} height={691} priority />
+        {/* Same "VALYD + arrow" lockup in both themes (navy on light, white on dark) so the
+            logo renders at an identical width regardless of mode. */}
+        <Image src="/images/valyd-lockup-navy.png" alt="Valyd" className="vd-logo-light" width={3578} height={447} priority />
+        <Image src="/images/valyd-lockup-white.png" alt="Valyd" className="vd-logo-dark" width={3578} height={447} priority />
         <span className="vd-logo-docs">Docs</span>
       </span>
     }

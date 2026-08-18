@@ -1,7 +1,7 @@
 # Node SDK
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#sdk
+- Source URL: https://docs.valyd.work/verifications/sdk
 - Credentials / env vars needed: VALYD_API_KEY, VALYD_WEBHOOK_SECRET (for hosted/webhook flows), VALYD_WORKFLOW_ID (for hosted sessions)
 - Files an integrator edits: .env, your server bootstrap (VerifyClient init), and a webhook route handler (e.g. Express)
 - Estimated steps: 3 (install, initialise, call resources)

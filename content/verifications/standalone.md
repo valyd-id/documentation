@@ -1,9 +1,9 @@
 # Core APIs (server-to-server verification)
 
-> **Raw data vs proofs.** Without a Valyd user token these are **Non-account (Fresh)** checks: you did the capture, nothing is retained, and the response contains the **raw** extracted data (document `fields`, `dob`, portrait, OCR). Pass a `valyd_access_token` (or `valyd_id`) and the same endpoints run in **Account (Managed by Valyd)** mode — answering from the user's stored identity and returning **proofs only** (`id_verified`, match + score, license badges, age bands), never raw KYC. Raw account attributes come only from the consent Core API. See [Account (Managed by Valyd)](https://docs.valyd.work/verify/managed.md).
+> **Raw data vs proofs.** Without a Valyd user token these are **Non-account (Fresh)** checks: you did the capture, nothing is retained, and the response contains the **raw** extracted data (document `fields`, `dob`, portrait, OCR). Pass a `valyd_access_token` (or `valyd_id`) and the same endpoints run in **Account (Managed by Valyd)** mode — answering from the user's stored identity and returning **proofs only** (`id_verified`, match + score, license badges, age bands), never raw KYC. Raw account attributes come only from the consent Core API. See [Account (Managed by Valyd)](/verifications/managed).
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#standalone
+- Source URL: https://docs.valyd.work/verifications/standalone
 - Credentials / env vars needed: VALYD_API_KEY (App API key — keep server-side, never ship to the browser)
 - Files an integrator edits: server route handler / backend service, .env (for VALYD_API_KEY)
 - Estimated steps: 3 (install SDK or use cURL, set VALYD_API_KEY, call the endpoint)

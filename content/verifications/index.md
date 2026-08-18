@@ -1,7 +1,7 @@
 # Verification APIs
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#intro
+- Source URL: https://docs.valyd.work/verifications
 - Credentials / env vars needed: none (this is an overview; you need an App API key from the Developer Portal before making calls — get it at https://dev.valyd.work)
 - Files an integrator edits: none — reference only
 - Estimated steps: 0 (conceptual overview)
@@ -15,7 +15,7 @@ Verification APIs has **two API types** — **Account (Managed by Valyd)**, wher
 | **Account (Managed by Valyd)** | Login with Valyd → run a workflow on the hosted page; steps stored on the account; reuse skips already-done steps. **Proofs only.** | Call REST with the user's token — license (badge on the account), face (vs their stored vector), reuse read. KYC redirects to Valyd. **Proofs only.** |
 | **Non-account (Fresh)** | One-shot hosted capture, nothing retained. **Raw data.** | Per-endpoint REST capture in your own UI. **Raw data.** |
 
-**Data-sharing rule.** Account APIs return **proofs only** — a pseudonym, `id_verified`, verified license badges and age bands — and **never** raw KYC (legal name, date of birth, document images). Raw account attributes are released solely through the **consent Core API**, where the user approves the release in their Valyd app and the values are sealed to your public key. Non-account (Fresh) APIs return the captured **raw data as-is**. See [Account (Managed by Valyd)](https://docs.valyd.work/verify/managed.md).
+**Data-sharing rule.** Account APIs return **proofs only** — a pseudonym, `id_verified`, verified license badges and age bands — and **never** raw KYC (legal name, date of birth, document images). Raw account attributes are released solely through the **consent Core API**, where the user approves the release in their Valyd app and the values are sealed to your public key. Non-account (Fresh) APIs return the captured **raw data as-is**. See [Account (Managed by Valyd)](/verifications/managed).
 
 ## Integration modes
 
@@ -25,7 +25,7 @@ Redirect your user to Valyd's hosted page for ID + selfie capture. Receive the r
 ### Core APIs
 Call per-capability REST endpoints server-to-server with your own UI and data. Synchronous JSON result returned on the same request.
 
-To choose between them, see https://docs.valyd.work/verify#modes (modes.md).
+To choose between them, see https://docs.valyd.work/verifications/modes (modes.md).
 
 ## Services
 

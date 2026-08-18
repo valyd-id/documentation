@@ -1,7 +1,7 @@
 # The Developer Portal
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify#console
+- Source URL: https://docs.valyd.work/verifications/console
 - Credentials / env vars needed: none to read this page; using the Console produces the App ID, App API key, `workflow_id`, and webhook signing secret your integration will need
 - Files an integrator edits: none — reference only (the Console is a web UI)
 - Estimated steps: 0 (reference; the actions described are human-only UI steps)
@@ -33,7 +33,7 @@ apps such as Test and Production.
 ## Workflows
 Bundle services (ID, liveness, face match, and the other Verify services) into a reusable Workflow. Each Workflow has a `workflow_id` used when creating Hosted sessions.
 
-- The `workflow_id` is required as the `workflow_id` field when creating a Hosted session (see https://docs.valyd.work/verify#quickstart).
+- The `workflow_id` is required as the `workflow_id` field when creating a Hosted session (see https://docs.valyd.work/verifications/quickstart).
 
 ## Webhooks
 Configure a per-app endpoint URL and signing secret (rotatable). Valyd POSTs signed events to this URL when a session reaches a terminal state.

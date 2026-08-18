@@ -1,7 +1,7 @@
 # Valyd Third-Party SSO API
 
 ## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/overview
+- Source URL: https://docs.valyd.work/docs
 - Credentials / env vars needed: client_id, client_secret (obtain from the Developer Portal — see Prerequisites)
 - Files an integrator edits: none — reference / orientation page only
 - Estimated steps: 6 (the end-to-end OAuth2 SSO flow described below)

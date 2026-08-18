@@ -18,7 +18,7 @@ Valyd uses OAuth2 scope-based access control. When initiating the authorization 
 | Scope | Required | Description | Grants access to |
 | --- | --- | --- | --- |
 | `profile` | Yes (Mandatory) | User profile information including name and age verification status (no photo is shared) | `/userinfo` |
-| `verifications` | Optional | Identity verification data including ID verification status, face match confidence, and verification timestamps | `/verifications` |
+| `verifications` | Optional | Identity verification status: human (liveness) check, ID/KYC verification, and linked professional licenses | `/verifications` |
 | `doctor_license` | Optional | Medical/nursing license details for verified healthcare practitioners | Doctor/nursing license endpoints |
 | `zkp` | Optional | Zero-Knowledge Proof age verification data | ZKP-related endpoints |
 | `mcp` | Optional | Access to Model Context Protocol (MCP) endpoints | MCP endpoints |
@@ -93,7 +93,7 @@ User profile information including name and age verification status. No photo is
 
 ## `verifications` scope (Optional)
 
-Identity verification data including ID verification status, face match confidence, and verification timestamps.
+Identity verification status: whether the user passed a human (liveness) check, whether they completed identity (KYC) verification, and any professional licenses linked to their Valyd identity.
 
 ### Grants access to
 
@@ -103,9 +103,9 @@ Identity verification data including ID verification status, face match confiden
 
 | Field | Description |
 | --- | --- |
-| `id_verified` | Whether the user's ID is verified |
-| `face_match` | Face match confidence score (0-1) |
-| `last_checked` | Timestamp of last verification check |
+| `human_verified` | Whether the user passed a liveness / anti-spoof human check |
+| `id_verified` | Whether the user completed identity (KYC) verification |
+| `licenses` | Array of linked professional licenses (`license_type`, `verified`, `verified_from`, `expire_at`) |
 
 ### Missing scope error (403 Forbidden)
 
