@@ -71,7 +71,7 @@ IF unsure which credentials you have:
 | `apiKey` | string | — | Required. Sent as the `X-API-Key` header on every request. |
 | `baseUrl` | string | `https://idp.valyd.work` | API base URL. Override only for staging/self-hosted. |
 | `webhookSecret` | string | — | Optional. When set, `webhooks.constructEvent` / `verify` can be called without passing the secret explicitly. |
-| `timeoutMs` | number | `15000` | Per-request timeout. Increase for credential lookups (10–60s). |
+| `timeoutMs` | number | `15000` | Per-request timeout. **Credential lookups (`credentialVerification`, `kycCredential`) automatically use at least 60s** — set a higher value here only if you want a bigger floor for all calls. |
 | `fetch` | typeof fetch | — | Custom fetch implementation (proxies, instrumentation, tests). |
 
 ### Authentication
@@ -121,8 +121,8 @@ After initialising `verify`, use these resource namespaces.
 See the Core APIs guide for full field details.
 
 #### `verify.credentials`
-- `states(): Promise<{ states: CredentialState[] }>` — List supported states.
-- `providers(state): Promise<{ providers: CredentialProvider[] }>` — List providers (license types) in a state, with `required_fields`.
+- `states(): Promise<CredentialState[]>` — List supported states.
+- `providers(state): Promise<CredentialProvider[]>` — List providers (license types) in a state, with `required_fields`.
 
 #### `verify.webhooks`
 - `constructEvent(rawBody, headers, secret?, { toleranceSeconds? }): WebhookEvent` — Verifies the HMAC signature and returns the parsed event. Throws `ValydVerifyError` with code `invalid_signature` on mismatch.

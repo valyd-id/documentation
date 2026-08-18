@@ -41,6 +41,25 @@ Every response uses the standard envelope and includes a `check` object:
 
 The JSON blocks shown under each endpoint below are the contents of `check.data` (the per-check details), unless the block is labeled otherwise.
 
+## Idempotency
+
+Every billable `POST /api/v2/*` accepts an **`Idempotency-Key`** header. Send a unique key with each
+logical operation and Valyd stores the first response and **replays it byte-for-byte** for any repeat
+with the same key — so a network retry can never double-charge or double-run a check.
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/liveness \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -H "Idempotency-Key: 5f2c…-your-unique-id" \
+  -F "image=@./selfie.jpg"
+```
+
+- Keys are scoped **per project** and retained for **24 hours**.
+- A replayed response carries the header `Idempotency-Replayed: true`.
+- Reusing a key with a **different request body** returns `422 idempotency_key_reused`.
+- A key whose first request is still in flight returns `409 idempotency_in_progress` — retry shortly.
+- Only successful (2xx) responses are stored; a failed call leaves the key free to retry.
+
 ## SDK quick start
 
 The official Node SDK is published on npm as `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). Image fields accept a file path via `readImage("./x.jpg")`, a `Buffer`, or a base64 / data-URL string. Over plain HTTP, send images as a base64 string in the JSON field (or as a multipart file under the same field name).
