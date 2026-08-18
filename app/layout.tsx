@@ -65,7 +65,7 @@ const footer = (
     <a href={SITE.devUrl} target="_blank" rel="noreferrer">
       Developer Portal
     </a>{' '}
-    · <a href="mailto:support@valyd.id">support@valyd.id</a>
+    · Contact <a href="mailto:support@valyd.id">support@valyd.id</a>
   </Footer>
 )
 
