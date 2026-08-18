@@ -74,6 +74,24 @@ IF unsure which credentials you have:
 | `timeoutMs` | number | `15000` | Per-request timeout. Increase for credential lookups (10–60s). |
 | `fetch` | typeof fetch | — | Custom fetch implementation (proxies, instrumentation, tests). |
 
+### Authentication
+
+Every Verification API call is authenticated by your **App API key** — the `apiKey` you pass to the
+constructor, sent as the `X-API-Key` header on each request (a `Bearer <apiKey>` header is also
+accepted). This is the credential that matters for the SDK; get it from the Developer Portal → your
+project → Credentials.
+
+- **`apiKey` (`vrf_…`)** — authenticates all `verify.*` calls (sessions, standalone checks,
+  workflows). This is the only credential the SDK needs to make requests.
+- **`webhookSecret` (`whsec_…`)** — NOT an auth credential for outbound calls. It is used only to
+  verify the HMAC signature on **incoming** webhooks (`verify.webhooks.constructEvent`).
+- **`client_id` / `client_secret`** — these belong to **Login with Valyd** (OAuth 2.0 / OIDC), a
+  separate product. They do **not** authenticate verification calls; use the App API key for that.
+  (If you build both, you hold both credentials, used independently.)
+
+So: verification-only integrations need just the `apiKey`. There is no constructor form that
+authenticates verify calls without it.
+
 ### Resources
 
 After initialising `verify`, use these resource namespaces.
@@ -97,7 +115,7 @@ After initialising `verify`, use these resource namespaces.
 - `liveness({ image }): Promise<CheckEnvelope>` — Passive liveness on a selfie.
 - `faceMatch({ idImage, selfie }): Promise<CheckEnvelope>` — 1:1 face match.
 - `ageVerification({ dob, bands? }): Promise<CheckEnvelope>` — Age + bands (e.g. `["is_18_plus"]`).
-- `credentialVerification({ firstName, lastName, providerCode, licenseState, licenseNumber, npi? }): Promise<CheckEnvelope>` — Professional license lookup.
+- `credentialVerification({ licenseState, licenseNumber, ...name, ...license, npi? }): Promise<CheckEnvelope>` — Professional license lookup. Give the holder's **name** as `firstName` + `lastName` **or** `fullName`; identify the **license** with `licenseType` (Valyd resolves the provider board for you — no `providerCode` needed) **or** pass `providerCode` directly. `npi?` is optional.
 - `kycCredential({ frontImage, selfie, backImage?, providerCode, licenseState, licenseNumber, npi? }): Promise<KycCredentialResult>` — ID + liveness + face match + license, matched against the OCR'd name.
 
 See the Core APIs guide for full field details.
@@ -197,7 +215,7 @@ const session = await verify.sessions.create({
 const event = verify.webhooks.constructEvent(rawBody, headers); // throws on bad signature
 
 // 3) Pull the authoritative decision
-const decision = await verify.sessions.decision(event.session_id);
+const decision = await verify.sessions.decision(event.sessionId);
 // decision.status, decision.checks[]
 ```
 
@@ -247,8 +265,8 @@ app.post(
   async (req, res) => {
     try {
       const event = verify.webhooks.constructEvent(req.body, req.headers);
-      const decision = await verify.sessions.decision(event.session_id);
-      await persist(event.vendor_data, decision);
+      const decision = await verify.sessions.decision(event.sessionId);
+      await persist(event.vendorData, decision);
       res.json({ ok: true });
     } catch (err) {
       if (err instanceof ValydVerifyError && err.code === "invalid_signature") {

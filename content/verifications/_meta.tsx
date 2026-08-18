@@ -10,6 +10,7 @@ import {
   Package,
   Server,
   Shuffle,
+  Tag,
   Webhook,
   Zap
 } from 'lucide-react'
@@ -29,6 +30,7 @@ export default {
   sdk: { title: <MetaTitle icon={Package}>Node SDK</MetaTitle> },
   webhooks: { title: <MetaTitle icon={Webhook}>Webhooks</MetaTitle> },
   statuses: { title: <MetaTitle icon={ListChecks}>Statuses</MetaTitle> },
+  versioning: { title: <MetaTitle icon={Tag}>Versioning & deprecation</MetaTitle> },
   'api-reference': { title: <MetaTitle icon={Code}>API reference</MetaTitle> },
   api: { title: <MetaTitle icon={Braces}>Full OpenAPI spec</MetaTitle> }
 } satisfies MetaRecord

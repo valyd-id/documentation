@@ -8,7 +8,7 @@
     "gen-corpus": "node scripts/gen-corpus.mjs",
     "prebuild": "node scripts/gen-corpus.mjs",
     "build": "next build",
-    "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind",
+    "postbuild": "node scripts/check-hosts.mjs && pagefind --site .next/server/app --output-path public/_pagefind",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

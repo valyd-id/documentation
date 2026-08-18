@@ -73,6 +73,12 @@ Valyd POSTs to your app or session callback URL when a verification session reac
 
        if (!ok) return res.status(400).send("bad signature");
 
+       // Replay protection: reject deliveries older than 5 minutes. `X-Valyd-Timestamp`
+       // is signed into the HMAC above, so it can't be tampered with.
+       if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) {
+         return res.status(400).send("stale timestamp");
+       }
+
        const event = JSON.parse(raw.toString("utf8"));
        // event = { event_id, type: "verification.approved" | ..., session_id, status, vendor_data, decision, occurred_at }
 
@@ -111,15 +117,25 @@ The decoded JSON event has this shape:
 
 Field notes:
 - `event_id` — matches the `X-Valyd-Event-Id` header; use it to deduplicate retried deliveries.
-- `type` — the event type, e.g. `verification.approved`.
+- `type` — the event type. The full set is:
+  - `verification.approved` — terminal, passed.
+  - `verification.declined` — terminal, failed.
+  - `verification.in_review` — a manual/agent review is pending (not yet terminal).
+  - `verification.abandoned` — the user left the hosted flow without finishing.
+  - `verification.expired` — the session's TTL elapsed before completion.
 - `session_id` — the session that triggered the event; pass it to `GET /api/v2/session/{id}/decision`.
-- `status` — the terminal session status (e.g. `APPROVED`). See statuses.md for every possible value.
-- `decision` — short decision string (e.g. `approved`).
+- `status` — the session status (e.g. `APPROVED`). See statuses.md for every possible value.
+- `decision` — the final business outcome string (`approved` / `declined`).
 
 ### Delivery and retries
 - Your endpoint must return a 2xx status and respond fast — defer heavy work to a background queue.
-- Non-2xx responses are retried with exponential backoff.
-- Use `X-Valyd-Event-Id` for idempotency, since the same event may be delivered more than once.
+- Non-2xx (or timed-out) deliveries are **retried automatically**. Because the same event may arrive
+  more than once, treat delivery as **at-least-once** and **deduplicate on `X-Valyd-Event-Id`**.
+- Verify the HMAC signature and reject stale timestamps (> 5 minutes) on every delivery.
+
+> Coming soon: a documented fixed retry schedule and a Developer-Portal **delivery log with manual
+> resend**. Until then, rely on the decision API (`GET /api/v2/session/{id}/decision`) as the
+> authoritative source if a webhook is ever missed.
 
 ### Verification
 - Send a test webhook (or trigger a real terminal session) and confirm your handler logs a valid signature and returns HTTP 200.

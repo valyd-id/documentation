@@ -58,7 +58,7 @@ const session = await verify.sessions.create({
 });
 
 // session.url        → send the user here (step 2)
-// session.session_id → store this for later lookups
+// session.sessionId → store this for later lookups
 ```
 
 ```bash filename="cURL"
@@ -135,8 +135,8 @@ app.post(
     try {
       const event = verify.webhooks.constructEvent(req.body, req.headers);
       // event.type       → "verification.approved" | "verification.declined" | …
-      // event.session_id → use to fetch the full decision (step 5)
-      // event.vendor_data → your internal user ref
+      // event.sessionId → use to fetch the full decision (step 5)
+      // event.vendorData → your internal user ref
 
       // Deduplicate — idempotency on re-delivery
       if (await alreadyProcessed(event.event_id)) {
@@ -168,7 +168,7 @@ this inside your webhook handler (or from a polling mechanism if the webhook has
 yet).
 
 ```javascript filename="SDK (Node.js)"
-const d = await verify.sessions.decision(event.session_id);
+const d = await verify.sessions.decision(event.sessionId);
 
 // d.status  → "APPROVED" | "DECLINED" | "IN_REVIEW"
 // d.checks  → [{ type, status, score, data, error }]

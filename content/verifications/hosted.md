@@ -16,8 +16,6 @@
 
 > ALL server-to-server calls use the header `X-API-Key: <App API key>`. Keep this key SERVER-SIDE ONLY — never expose it to the browser. Every response uses the envelope `{ success, data, error: { code, message } }`.
 
-> Base URL note: the component resolves the API base URL from `VERIFY_CONFIG.API_BASE_URL` = `https://idp.valyd.work`. The hosted session `url` returned by the API is also under `https://idp.valyd.work/s/…`. This page's canonical doc URL is on a different host (`https://docs.valyd.work`), which is expected for docs vs. API.
-
 ---
 
 ## Overview
@@ -63,12 +61,12 @@ IF unsure which workflow_id to use:                              → open the De
 ```
 
 ### License Verification (badge: Credential only)
-- Services: `[credential]`
+- Checks: `[credential]`
 - Hosted flow: State → license type → name + license number → verify.
 - Fastest path to verify a professional license. No ID scan required.
 
 ### KYC + License (badge: Identity + Credential)
-- Services: `[id_verification, liveness, face_match, credential]`
+- Checks: `[id_verification, liveness, face_match, credential]`
 - Hosted flow: Scan ID + selfie (OCR + liveness + 1:1 face match), then state + license type + license number.
 - The name is taken from the verified ID automatically (the user doesn't type it), so a license belonging to a different person is rejected.
 
@@ -119,7 +117,7 @@ const session = await verify.sessions.create({
 });
 
 // session.url       → redirect the user here
-// session.session_id, session.session_token, session.expires_at
+// session.sessionId, session.sessionToken, session.expiresAt
 ```
 
 Expected output: HTTP 200 with the envelope `{ success: true, data: { … } }`. The `data` object:
@@ -140,7 +138,7 @@ Expected output: HTTP 200 with the envelope `{ success: true, data: { … } }`. 
 
 #### Step 2 — Redirect the user to the hosted page
 
-Send the user's browser to `data.url`. Valyd handles the entire capture and verification UI; the steps auto-adapt to the workflow's services.
+Send the user's browser to `data.url`. Valyd handles the entire capture and verification UI; the steps auto-adapt to the workflow's checks.
 
 ```javascript
 // Express
@@ -251,7 +249,7 @@ app.post(
   async (req, res) => {
     try {
       const event = verify.webhooks.constructEvent(req.body, req.headers);
-      // event.session_id, event.type, event.status, event.decision, event.vendor_data
+      // event.sessionId, event.type, event.status, event.decision, event.vendorData
       await persistDecision(event);
       res.json({ ok: true });
     } catch (err) {
@@ -328,8 +326,8 @@ SDK (Node):
 ```javascript
 const d = await verify.sessions.decision(sessionId);
 
-// d.status     → "APPROVED" | "DECLINED" | "IN_REVIEW"
-// d.decision   → "APPROVED" | "DECLINED" (final business outcome)
+// d.status   → session progress: "APPROVED" | "DECLINED" | "IN_REVIEW" (may still be pending)
+// d.decision → final business outcome, resolved only: "APPROVED" | "DECLINED" (never IN_REVIEW)
 // d.checks     → [{ type, status, score, data, error }]
 // d.decided_at → ISO timestamp
 
@@ -376,7 +374,7 @@ await verify.sessions.updateStatus(sessionId, "APPROVED"); // or "DECLINED" — 
 // Workflows  (↔ /api/v2/workflows)
 const wf = await verify.workflows.create({
   name: "KYC + License",
-  services: ["id_verification", "liveness", "face_match", "credential"],
+  features: ["id_verification", "liveness", "face_match", "credential"],
 });
 await verify.workflows.list();
 await verify.workflows.retrieve(wf.id);
@@ -448,7 +446,7 @@ app.post("/start-verification", express.json(), async (req, res) => {
     callback:    `${process.env.APP_URL}/webhooks/valyd`,
     vendorData:  req.body.userId,
   });
-  res.json({ url: session.url, sessionId: session.session_id });
+  res.json({ url: session.url, sessionId: session.sessionId });
 });
 
 // 2) Redirect-back (status is a hint only)
@@ -465,8 +463,8 @@ app.post(
       const event = verify.webhooks.constructEvent(req.body, req.headers);
 
       // 4) Pull the full decision (webhook is a notification)
-      const decision = await verify.sessions.decision(event.session_id);
-      await persist(event.vendor_data, decision);
+      const decision = await verify.sessions.decision(event.sessionId);
+      await persist(event.vendorData, decision);
 
       res.json({ ok: true });
     } catch (err) {
