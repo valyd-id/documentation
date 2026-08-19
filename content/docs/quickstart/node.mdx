@@ -1,0 +1,153 @@
+---
+title: Node.js (Express) quickstart — Login with Valyd
+description: 'Add Login with Valyd to an Express app in one file with @valyd/sdk: authorization request, server-side transaction, verified callback.'
+---
+
+import { Callout } from 'nextra/components'
+
+# Node.js (Express) quickstart
+
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🟩 Official SDK · ⏱ ~5 minutes
+
+**What you'll build:** a single-file Express app where "Login with Valyd" returns the user's
+pseudonymous `valyd_id` and verification proofs to your backend.
+
+<Callout type="info">
+Your real values are pre-filled on your app's **Quick setup** tab in the
+[Developer Portal](https://dev.valyd.work).
+</Callout>
+
+Prefer to clone instead of typing? [`valyd-sandbox-starter`](https://github.com/valyd-id/valyd-sandbox-starter)
+on GitHub (or [download the zip](/downloads/valyd-sdk-starter.zip)) is this exact app — fill
+`.env`, `npm run dev`.
+
+## 1. Create the app
+
+In the [Developer Portal](https://dev.valyd.work) create an application, enable the `profile`
+[scope](/docs/scopes), and register this exact redirect URI:
+
+```text
+http://localhost:8080/callback
+```
+
+Copy the `client_id` and the one-time `client_secret`. Keep the secret on your server.
+
+## 2. Install
+
+```bash
+mkdir valyd-login && cd valyd-login
+npm init -y
+npm install @valyd/sdk@^1.10.1 express express-session dotenv
+```
+
+**`.env`**
+
+```bash
+VALYD_CLIENT_ID=YOUR_CLIENT_ID
+VALYD_CLIENT_SECRET=YOUR_CLIENT_SECRET
+VALYD_REDIRECT_URI=http://localhost:8080/callback
+VALYD_IDP_URL=https://idp.valyd.work
+SESSION_SECRET=replace_with_at_least_32_random_characters
+```
+
+## 3. Write the server
+
+**`server.mjs`**
+
+```javascript
+import "dotenv/config";
+import express from "express";
+import session from "express-session";
+import { Valyd } from "@valyd/sdk";
+
+const app = express();
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: "lax", secure: false, maxAge: 10 * 60 * 1000 },
+}));
+
+const valyd = new Valyd({
+  clientId: process.env.VALYD_CLIENT_ID,
+  clientSecret: process.env.VALYD_CLIENT_SECRET,
+  redirectUri: process.env.VALYD_REDIRECT_URI,
+  idpBaseUrl: process.env.VALYD_IDP_URL,
+});
+
+app.get("/", (_req, res) => res.type("html").send('<a href="/login">Login with Valyd</a>'));
+
+app.get("/login", (req, res, next) => {
+  try {
+    const transaction = valyd.auth.createAuthorizationRequest({ scope: ["profile"] });
+    req.session.valydOidc = transaction; // server-side: state, nonce, and PKCE verifier
+    req.session.save((error) => error ? next(error) : res.redirect(transaction.url));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/callback", async (req, res, next) => {
+  try {
+    const transaction = req.session.valydOidc;
+    if (!transaction) return res.status(400).send("Login transaction missing or expired");
+
+    delete req.session.valydOidc;
+    await new Promise((resolve, reject) => req.session.save((error) => error ? reject(error) : resolve()));
+
+    const callbackUrl = new URL(req.originalUrl, process.env.VALYD_REDIRECT_URI).toString();
+    const { user, tokens } = await valyd.auth.handleCallback(callbackUrl, { transaction });
+
+    // Create your own app session here. Do not send Valyd tokens to browser storage.
+    res.json({ valydId: user.valyd_id, idVerified: user.id_verified, scopes: tokens.scope });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use((error, _req, res, _next) => {
+  console.error(error.code ?? error.name, error.message);
+  res.status(400).json({ error: error.code ?? "login_failed", message: error.message });
+});
+
+app.listen(8080, () => console.log("Open http://localhost:8080"));
+```
+
+## 4. Run it
+
+```bash
+node server.mjs
+```
+
+Open http://localhost:8080 and click **Login with Valyd**. A successful callback returns the
+user's pseudonymous `valydId`, verification proof, and granted scopes.
+
+<Callout type="info" emoji="✅">
+**Checkpoint:** `GET /login` returns a `302` to `/api/auth/oidc/authorize` whose URL contains
+`state`, `nonce`, `code_challenge`, and `code_challenge_method=S256`; the callback succeeds only
+with the stored server-side transaction; `handleCallback()` verifies state, PKCE, RS256/JWKS,
+issuer, audience, expiry, and nonce; and the `client_secret`, PKCE verifier, and tokens never
+enter browser JavaScript or local storage.
+</Callout>
+
+For production, use a shared session store, set the cookie to `secure: true`, configure trusted
+proxy handling correctly, and use your HTTPS callback URI.
+
+## Troubleshooting
+
+- **`redirect_uri` mismatch** — the URI must match a registered redirect URI exactly (scheme,
+  host, path). See [Errors & troubleshooting](/docs/errors).
+- **"Login transaction missing or expired"** — the session cookie didn't survive the round-trip;
+  keep `sameSite: "lax"` and start login and callback on the same host/port. See
+  [Errors & troubleshooting](/docs/errors).
+- **`invalid_grant` on the exchange** — the code is single-use and short-lived; a double-fired
+  callback or a slow retry consumes it. Restart from `/login`. See
+  [Errors & troubleshooting](/docs/errors).
+
+## Next steps
+
+- [Scopes](/docs/scopes) — request `verifications`, `email`, or license scopes.
+- [Account API](/docs/endpoints) — read userinfo, licenses, and verification proofs with the
+  access token.
+- [Attach a verification](/verifications/quickstart) — run a new KYC or license check with the
+  user's token so the proof saves to their Valyd account.

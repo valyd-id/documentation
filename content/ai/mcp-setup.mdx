@@ -1,0 +1,110 @@
+---
+title: MCP Setup
+description: Connect the Valyd MCP server to Claude Code, Claude Desktop, Cursor, or VS Code — one URL, interactive OAuth on first use, no keys in config files.
+---
+
+import { Callout } from 'nextra/components'
+
+# Connect the Valyd MCP server
+
+One hosted server, one URL, for every client:
+
+```
+https://mcp.valyd.work/verification/mcp
+```
+
+- **Transport:** Streamable HTTP (use **no trailing slash**)
+- **Auth:** OAuth 2.1 + PKCE — the client discovers it automatically and opens a browser; the
+  user signs in with Valyd on first use
+
+<Callout type="info">
+  **No keys go in config files.** The configs below contain only the URL. Authentication is an
+  interactive OAuth login the client runs for you the first time it connects; the client stores
+  and refreshes the token itself. See [How auth works](/ai/mcp-auth).
+</Callout>
+
+## Claude Code
+
+Add the server with HTTP transport:
+
+```bash
+claude mcp add --transport http valyd https://mcp.valyd.work/verification/mcp
+```
+
+Then run `/mcp` inside Claude Code and choose **Authenticate** for `valyd` — a browser opens for
+the Valyd login. Re-run `/mcp` → Authenticate if the token ever expires.
+
+To share the server with a project instead, commit a project-scoped `.mcp.json`:
+
+```json filename=".mcp.json"
+{
+  "mcpServers": {
+    "valyd": {
+      "type": "http",
+      "url": "https://mcp.valyd.work/verification/mcp"
+    }
+  }
+}
+```
+
+## Claude Desktop
+
+Add the server to Claude Desktop's `mcpServers` config:
+
+```json
+{
+  "mcpServers": {
+    "valyd": {
+      "url": "https://mcp.valyd.work/verification/mcp"
+    }
+  }
+}
+```
+
+Restart the app; it prompts you to authorize with Valyd on first use.
+
+## Cursor
+
+Add a remote MCP server in `.cursor/mcp.json` (or **Settings → Tools & MCP**):
+
+```json filename=".cursor/mcp.json"
+{
+  "mcpServers": {
+    "valyd": {
+      "url": "https://mcp.valyd.work/verification/mcp"
+    }
+  }
+}
+```
+
+Restart Cursor; it prompts you to authorize with Valyd on first use.
+
+## VS Code
+
+Add the server to `.vscode/mcp.json` (or your user-level MCP config):
+
+```json filename=".vscode/mcp.json"
+{
+  "servers": {
+    "valyd": {
+      "type": "http",
+      "url": "https://mcp.valyd.work/verification/mcp"
+    }
+  }
+}
+```
+
+Start the server from the MCP view; VS Code walks you through the Valyd sign-in on first use.
+
+## Checkpoint — did it work?
+
+<Callout type="default">
+  After connecting and signing in, your client's tool list should show the `valyd` server with
+  the tools `verification_request`, `verification_status`, and `do_task` (in Claude Code, run
+  `/mcp` to inspect). If you instead see a 401 or an auth prompt, complete the sign-in — that is
+  the expected first-use flow, not an error.
+</Callout>
+
+Next: the [tool reference](/ai/mcp-tools) and [how the OAuth flow works](/ai/mcp-auth). Building
+a code-first client (LangChain, OpenAI SDK)? The full integration snippets live in the
+[MCP integration guide](/mcp).

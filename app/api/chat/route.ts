@@ -5,24 +5,23 @@ import { streamAskAiResponse, type ChatMessage } from '@/lib/chat/complete'
 export const runtime = 'nodejs'
 
 const MAX_MESSAGES = 20
-// Only caps what a user types, to bound cost/abuse. Assistant messages are
-// our own generated answers (can legitimately be long, detailed docs
-// answers) and aren't subject to this — capping them broke sending a long
-// answer back as history on the next follow-up message.
 const MAX_USER_MESSAGE_LENGTH = 4000
+const MAX_ASSISTANT_MESSAGE_LENGTH = 8000
+const MAX_BODY_BYTES = 64 * 1024
+const MAX_HISTORY_LENGTH = 32_000
 
 // This is a public, unauthenticated endpoint calling a paid LLM API. Guard it
 // with a per-IP token bucket so a single client can't rack up model spend.
 // In-memory (per server process) — fine for a single PM2 instance; move to
 // Redis if this ever runs multi-instance. Tunable via env.
-const RATE_MAX = Number(process.env.CHAT_RATE_MAX || 20) // requests per window
-const RATE_WINDOW_MS = Number(process.env.CHAT_RATE_WINDOW_MS || 60_000) // 1 min
+const RATE_MAX = Math.min(100, Math.max(1, Number(process.env.CHAT_RATE_MAX) || 20))
+const RATE_WINDOW_MS = Math.min(3_600_000, Math.max(1_000, Number(process.env.CHAT_RATE_WINDOW_MS) || 60_000))
 const buckets = new Map<string, { count: number; reset: number }>()
 
 function clientIp(request: NextRequest): string {
-  const fwd = request.headers.get('x-forwarded-for')
-  if (fwd) return fwd.split(',')[0].trim()
-  return request.headers.get('x-real-ip') || 'unknown'
+  // The reverse proxy must overwrite this header. Never trust the left-most
+  // X-Forwarded-For value supplied by an internet client.
+  return (request.headers.get('x-real-ip') || 'unknown').slice(0, 64)
 }
 
 // Returns true when the request is allowed, false when the IP is over its limit.
@@ -54,8 +53,10 @@ function isValidMessages(value: unknown): value is ChatMessage[] {
         (message.role === 'user' || message.role === 'assistant') &&
         typeof message.content === 'string' &&
         message.content.length > 0 &&
-        (message.role !== 'user' || message.content.length <= MAX_USER_MESSAGE_LENGTH)
-    )
+        message.content.length <=
+          (message.role === 'user' ? MAX_USER_MESSAGE_LENGTH : MAX_ASSISTANT_MESSAGE_LENGTH)
+    ) &&
+    value.reduce((total, message) => total + message.content.length, 0) <= MAX_HISTORY_LENGTH
   )
 }
 
@@ -69,24 +70,28 @@ export async function POST(request: NextRequest) {
 
   let body: unknown
   try {
-    body = await request.json()
+    const declaredLength = Number(request.headers.get('content-length') || 0)
+    if (declaredLength > MAX_BODY_BYTES) return new Response('Request body is too large', { status: 413 })
+    const raw = await request.text()
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+      return new Response('Request body is too large', { status: 413 })
+    }
+    body = JSON.parse(raw)
   } catch {
     return new Response('Invalid JSON body', { status: 400 })
   }
 
   const messages = (body as { messages?: unknown })?.messages
   if (!isValidMessages(messages)) {
-    console.error('[ask-ai] rejected invalid messages payload', JSON.stringify(messages))
     return new Response('Body must include a non-empty `messages` array', { status: 400 })
   }
 
   let completionStream: Awaited<ReturnType<typeof streamAskAiResponse>>
   try {
     completionStream = await streamAskAiResponse({ messages })
-  } catch (error) {
-    console.error('[ask-ai] upstream request failed', error)
-    const message = error instanceof Error ? error.message : 'Ask AI is unavailable right now.'
-    return new Response(message, { status: 502 })
+  } catch {
+    console.error('[ask-ai] upstream request failed')
+    return new Response('Ask AI is unavailable right now.', { status: 502 })
   }
 
   const encoder = new TextEncoder()
@@ -105,6 +110,10 @@ export async function POST(request: NextRequest) {
   })
 
   return new Response(responseBody, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
+    }
   })
 }

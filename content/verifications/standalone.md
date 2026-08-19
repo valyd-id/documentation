@@ -1,21 +1,21 @@
-# Core APIs (server-to-server verification)
+# Core APIs — run checks with an API key
 
-> **Raw data vs proofs.** Without a Valyd user token these are **Non-account (Fresh)** checks: you did the capture, nothing is retained, and the response contains the **raw** extracted data (document `fields`, `dob`, portrait, OCR). Pass a `valyd_access_token` (or `valyd_id`) and the same endpoints run in **Account (Managed by Valyd)** mode — answering from the user's stored identity and returning **proofs only** (`id_verified`, match + score, license badges, age bands), never raw KYC. Raw account attributes come only from the consent Core API. See [Account (Managed by Valyd)](/verifications/managed).
+> 🔑 **Auth:** App API key (`X-API-Key`) · 👤 **User login:** not required · 🔗 **Account attach:** optional — add `valyd_access_token`
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/standalone
-- Credentials / env vars needed: VALYD_API_KEY (App API key — keep server-side, never ship to the browser)
-- Files an integrator edits: server route handler / backend service, .env (for VALYD_API_KEY)
-- Estimated steps: 3 (install SDK or use cURL, set VALYD_API_KEY, call the endpoint)
-- Can complete without human input: NO — you must obtain an App API key from the Valyd Developer Portal (https://dev.valyd.work) before any call will authenticate.
-- Prerequisites:
-  - A Valyd App API key. Pass it as the HTTP header `X-API-Key: <App API key>` on every request. Get this from the Developer Portal → your project → Credentials: https://dev.valyd.work
-  - A server/backend to make the call from (these are server-to-server APIs; never call them from the browser, because the API key would be exposed).
-  - (SDK path only) Node.js with the `@valyd/sdk` npm package installed.
+Use Core APIs to run a one-off license lookup, ID check, liveness check, face match, age check, or a
+combined KYC + license check. The result is returned to your system and is not added to a Valyd
+account.
+
+> Optional account mode: if a successful result should be saved to a Valyd account, sign the user
+> in first and pass their `valyd_access_token`. See
+> [Account-connected verification](/verifications/managed). Account mode returns proofs, not raw
+> account KYC.
 
 ## Overview
 
-Direct, synchronous, server-to-server checks. You build your own UI and call these endpoints from your backend. Every request uses the header `X-API-Key: <App API key>` — keep this server-side, never ship it to the browser.
+Direct, synchronous, server-to-server checks. You build your own UI and call these endpoints from
+your backend. Every request uses `X-API-Key: <App API key>`—not an OIDC access token. Keep the key
+server-side and never ship it to the browser.
 
 Base URL for every endpoint below: `https://idp.valyd.work`
 
@@ -67,7 +67,7 @@ The official Node SDK is published on npm as `@valyd/sdk` (https://www.npmjs.com
 Install:
 
 ```bash
-npm i @valyd/sdk
+npm i @valyd/sdk@^1.10.1
 ```
 
 Create a client (do this once and reuse it):
@@ -77,7 +77,7 @@ import { VerifyClient, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 // keep VALYD_API_KEY on the server — never in browser code
-// get the API key from the Developer Portal → your project → Credentials: https://dev.valyd.work
+// get the API key from the Developer Portal → your app → Verification → API key: https://dev.valyd.work
 ```
 
 Set the API key in your environment before running:
@@ -240,7 +240,8 @@ On failure `check.data.signal` is one of: `no_face`, `face_unreadable`, `spoof_d
 
 Runs the identical anti-spoof pipeline and, only if it passes, resolves the proven-live
 face against the global Valyd face gallery — returning the person's **stable `valyd_`
-uuid**. The same face always resolves to the same uuid across all your requests, so this
+uuid**. The same face resolves to the same uuid across all your requests (matching is by
+biometric-vector similarity against the gallery), so this
 is duplicate-account / sybil detection. If liveness fails, no identity lookup runs (and
 none is billed).
 
@@ -327,7 +328,12 @@ const { check } = await verify.standalone.faceMatch({
 
 ## POST /api/v2/age-verification — Age Verification
 
-JSON body. Computes age from DOB and verifies the requested age bands (no ZKP).
+JSON body. **Computes age bands from the DOB you supply — it does not independently verify that
+DOB** (no document check, no ZKP). For a *verified* age, either run
+[ID verification](#post-apiv2id-verification--id-verification) first and use the OCR'd DOB, or
+attach a signed-in user's `valyd_access_token`: in account mode the `dob` field is ignored and the
+bands are computed from the **account's KYC-verified date of birth** (a `422
+account_dob_unavailable` is returned if the account holds no verified DOB).
 
 **Method:** POST
 **Full URL:** `https://idp.valyd.work/api/v2/age-verification`
@@ -335,8 +341,8 @@ JSON body. Computes age from DOB and verifies the requested age bands (no ZKP).
 **Content-Type:** `application/json`
 
 **Fields:**
-- `dob` (string, `YYYY-MM-DD`) **required** — Date of birth.
-- `bands` (string[]) **required** — e.g. `["is_18_plus","is_21_plus"]`.
+- `dob` (string, `YYYY-MM-DD`) **required** (omitted in account mode — the account's verified DOB is used) — Date of birth, as supplied by you. Not independently verified.
+- `bands` (string[]) — e.g. `["is_18_plus","is_21_plus"]`. Defaults to `["is_18_plus"]`.
 
 **Request (cURL):**
 
@@ -363,11 +369,18 @@ const { check } = await verify.standalone.ageVerification({
   "age": 30,
   "dob": "1995-06-01",
   "bands": {
-    "is_18_plus": { "verified": true, "min_age": 18 },
-    "is_21_plus": { "verified": true, "min_age": 21 }
+    "is_18_plus": { "satisfied": true, "verified": true, "min_age": 18 },
+    "is_21_plus": { "satisfied": true, "verified": true, "min_age": 21 }
   }
 }
 ```
+
+`satisfied` means the band condition holds for the DOB used — the account's KYC-verified DOB in
+account mode, or the DOB you supplied in direct mode. `verified` is a deprecated alias of
+`satisfied`; prefer `satisfied`.
+
+> `bands.*.verified` means *the DOB used satisfies this band* — in direct mode that DOB is the one
+> you supplied, so the flag is only as trustworthy as your DOB source.
 
 ---
 
@@ -607,7 +620,7 @@ try {
 
 1. **HTTP 401 — invalid or missing API key.**
    - Cause: The `X-API-Key` header is absent or holds a wrong/revoked key.
-   - Fix: Set `X-API-Key: <App API key>` on the request (or `apiKey` in the SDK client). Obtain a valid key from the Developer Portal → your project → Credentials: https://dev.valyd.work
+   - Fix: Set `X-API-Key: <App API key>` on the request (or `apiKey` in the SDK client). Obtain a valid key from the Developer Portal → your app → Verification → API key: https://dev.valyd.work
 
 2. **Client timeout on credential / kyc-credential calls.**
    - Cause: Registry lookups can take 10–60 seconds; the default client timeout aborts first.

@@ -17,8 +17,8 @@ page, receive a signed webhook, and act on the authoritative decision. Covers bo
 
 | Variable | Where to get it |
 | --- | --- |
-| `VALYD_API_KEY` | Developer Portal → your Verify project → API key (shown once) |
-| `VALYD_WEBHOOK_SECRET` | Developer Portal → your Verify project → Webhooks |
+| `VALYD_API_KEY` | Developer Portal → your app's Verification settings (shown as a Verify "project") → API key (shown once) |
+| `VALYD_WEBHOOK_SECRET` | Developer Portal → your app's Verification settings → Webhooks |
 | `VALYD_WORKFLOW_ID` | Developer Portal → Workflows → copy `workflow_id` |
 | `APP_URL` | Your public server URL (e.g. `https://api.example.com`) |
 
@@ -30,7 +30,7 @@ APP_URL=https://api.example.com
 ```
 
 ```bash filename="Install the SDK"
-npm i @valyd/sdk
+npm i @valyd/sdk@^1.10.1
 ```
 
 <Steps>

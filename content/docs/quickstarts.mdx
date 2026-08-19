@@ -1,0 +1,54 @@
+---
+title: Quickstarts — Login with Valyd
+description: 'Pick your stack and add Login with Valyd in minutes: official SDK quickstarts for Node.js and Next.js, plus raw OIDC recipes for Python, PHP, and cURL.'
+---
+
+import { Cards, Callout } from 'nextra/components'
+import { Hexagon, Layers, Terminal, FileCode2, Braces, Plug } from 'lucide-react'
+
+# Quickstarts
+
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · ⏱ 5–10 minutes per path
+
+Pick your stack — every path ends in the same place: a working **Login with Valyd** that hands
+your backend the user's pseudonymous `valyd_id` and verification proofs.
+
+<Callout type="info">
+Every quickstart needs the same two credentials: a `client_id` and a one-time `client_secret`
+from an app in the [Developer Portal](https://dev.valyd.work). Your real values are pre-filled on
+your app's **Quick setup** tab — the [Login with Valyd](/docs) page shows exactly where that
+screen lives.
+</Callout>
+
+## Official SDK
+
+The fastest route — `@valyd/sdk@^1.10.1` generates `state`, `nonce`, and S256 PKCE for you and
+verifies everything on the callback in one call.
+
+<Cards>
+  <Cards.Card icon={<Hexagon />} title="Node.js (Express)" href="/docs/quickstart/node" arrow>
+    One file, two routes with the official SDK — the complete reference example. ~5 minutes.
+  </Cards.Card>
+  <Cards.Card icon={<Layers />} title="Next.js (App Router)" href="/docs/quickstart/nextjs" arrow>
+    Two route handlers with the SDK server-side and the transaction in a cookie. ~10 minutes.
+  </Cards.Card>
+</Cards>
+
+## Raw API recipes
+
+No SDK — plain HTTP against the standard OIDC endpoints, in your framework's own idioms.
+
+<Cards>
+  <Cards.Card icon={<FileCode2 />} title="Python (Flask)" href="/docs/quickstart/python" arrow>
+    Two Flask routes with `requests`: session state, form-encoded token exchange, userinfo. ~10 minutes.
+  </Cards.Card>
+  <Cards.Card icon={<Braces />} title="PHP (Laravel)" href="/docs/quickstart/php" arrow>
+    Two Laravel routes with the `Http` client and a `hash_equals` state check. ~10 minutes.
+  </Cards.Card>
+  <Cards.Card icon={<Terminal />} title="cURL (raw HTTP)" href="/docs/quickstart/curl" arrow>
+    Walk the whole flow by hand — authorize URL, code, token exchange, userinfo. ~5 minutes.
+  </Cards.Card>
+  <Cards.Card icon={<Plug />} title="Any OIDC library" href="/docs/oidc" arrow>
+    Auth.js, Passport, Spring Security, or an SSO console — point it at our discovery URL. ~5 minutes.
+  </Cards.Card>
+</Cards>

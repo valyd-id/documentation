@@ -1,0 +1,163 @@
+---
+title: Next.js (App Router) quickstart — Login with Valyd
+description: 'Add Login with Valyd to a Next.js App Router app: two route handlers with @valyd/sdk server-side and the OIDC transaction in an httpOnly cookie.'
+---
+
+import { Callout } from 'nextra/components'
+
+# Next.js (App Router) quickstart
+
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🟩 Official SDK · ⏱ ~10 minutes
+
+**What you'll build:** two App Router route handlers — `/auth/login` and `/auth/callback` — that
+sign a user in with Valyd and hand your server their pseudonymous `valyd_id`.
+
+<Callout type="info">
+Your real values are pre-filled on your app's **Quick setup** tab in the
+[Developer Portal](https://dev.valyd.work).
+</Callout>
+
+## 1. Create the app
+
+In the [Developer Portal](https://dev.valyd.work) create an application, enable the `profile`
+[scope](/docs/scopes), and register this exact redirect URI:
+
+```text
+http://localhost:3000/auth/callback
+```
+
+Copy the `client_id` and the one-time `client_secret`.
+
+## 2. Install and configure
+
+```bash
+npx create-next-app@latest valyd-login && cd valyd-login
+npm install @valyd/sdk@^1.10.1
+```
+
+**`.env.local`**
+
+```bash
+VALYD_CLIENT_ID=YOUR_CLIENT_ID
+VALYD_CLIENT_SECRET=YOUR_CLIENT_SECRET
+VALYD_REDIRECT_URI=http://localhost:3000/auth/callback
+VALYD_IDP_URL=https://idp.valyd.work
+```
+
+## 3. Share one Valyd client
+
+**`lib/valyd.ts`**
+
+```typescript
+import { Valyd } from "@valyd/sdk";
+
+export const valyd = new Valyd({
+  clientId: process.env.VALYD_CLIENT_ID!,
+  clientSecret: process.env.VALYD_CLIENT_SECRET!, // server-side only — never NEXT_PUBLIC_
+  redirectUri: process.env.VALYD_REDIRECT_URI!,
+  idpBaseUrl: process.env.VALYD_IDP_URL!,
+});
+```
+
+## 4. The login route
+
+Creates the OIDC transaction (`state` + `nonce` + S256 PKCE), stores it in an `httpOnly` cookie,
+and redirects to Valyd.
+
+**`app/auth/login/route.ts`**
+
+```typescript
+import { NextResponse } from "next/server";
+import { valyd } from "@/lib/valyd";
+
+export async function GET() {
+  const transaction = valyd.auth.createAuthorizationRequest({ scope: ["profile"] });
+
+  const response = NextResponse.redirect(transaction.url);
+  response.cookies.set("valyd_txn", JSON.stringify(transaction), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/auth",
+    maxAge: 600, // the login must finish within 10 minutes
+  });
+  return response;
+}
+```
+
+<Callout type="warning">
+A plain `httpOnly` cookie holding the transaction JSON is fine for a quickstart — the browser
+can't read it, and `handleCallback()` still enforces state, PKCE, and nonce. For production,
+encrypt or sign it (for example with [`iron-session`](https://github.com/vvo/iron-session)) or
+keep the transaction in a server-side session store, so the PKCE verifier never leaves your
+infrastructure even in transit.
+</Callout>
+
+## 5. The callback route
+
+Reads the transaction back, lets the SDK verify everything, and clears the cookie.
+
+**`app/auth/callback/route.ts`**
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import { valyd } from "@/lib/valyd";
+
+export async function GET(request: NextRequest) {
+  const raw = request.cookies.get("valyd_txn")?.value;
+  if (!raw) {
+    return new NextResponse("Login transaction missing or expired", { status: 400 });
+  }
+
+  try {
+    const transaction = JSON.parse(raw);
+    const { user, tokens } = await valyd.auth.handleCallback(request.url, { transaction });
+
+    // user.valyd_id — stable pseudonymous ID; user.id_verified — identity proof.
+    // Create your own app session here; keep Valyd tokens server-side.
+    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    response.cookies.delete("valyd_txn"); // one transaction, one callback
+    return response;
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.code ?? "login_failed", message: error.message },
+      { status: 400 },
+    );
+  }
+}
+```
+
+## 6. Run it
+
+```bash
+npm run dev
+```
+
+Point a link or button at `/auth/login` and complete the login.
+
+<Callout type="info" emoji="✅">
+**Checkpoint:** visiting `/auth/login` returns a `307` redirect to
+`https://idp.valyd.work/api/auth/oidc/authorize?...` containing `state`, `nonce`, and
+`code_challenge_method=S256`, with the `valyd_txn` cookie set; after consent, `/auth/callback`
+lands on `/dashboard` and the cookie is gone. Replaying the callback URL fails with
+"Login transaction missing or expired".
+</Callout>
+
+## Troubleshooting
+
+- **`redirect_uri` mismatch** — register `http://localhost:3000/auth/callback` exactly; a
+  different port or path is rejected. See [Errors & troubleshooting](/docs/errors).
+- **"Login transaction missing or expired"** — the `valyd_txn` cookie's `path` must cover the
+  callback route (`/auth` here), and login + callback must be on the same host and scheme. See
+  [Errors & troubleshooting](/docs/errors).
+- **`invalid_grant`** — React strict-mode double-fetches or a prefetched callback URL can consume
+  the single-use code; make sure nothing prefetches `/auth/callback`. See
+  [Errors & troubleshooting](/docs/errors).
+
+## Next steps
+
+- [Scopes](/docs/scopes) — request `verifications`, `email`, or license scopes.
+- [Account API](/docs/endpoints) — read userinfo, licenses, and verification proofs with the
+  access token.
+- [Attach a verification](/verifications/quickstart) — run a new KYC or license check with the
+  user's token so the proof saves to their Valyd account.

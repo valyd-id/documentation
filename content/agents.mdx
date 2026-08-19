@@ -7,6 +7,10 @@ description: Machine-readable specs, context files, and tooling so agents can di
 
 Machine-readable specs, context files, and tooling so agents can discover, understand, and call the Valyd APIs without scraping the docs site.
 
+Keep the two products separate: OIDC is only for signing a user in and accessing their Valyd
+account. Verification calls use an App API key and do not require OIDC unless the result should be
+saved to that signed-in account.
+
 ## Quick fetch
 
 ```bash
@@ -45,7 +49,7 @@ curl -sL https://docs.valyd.work/llms-full.txt
 
 ### Valyd ID OpenAPI — *OpenAPI 3.1*
 
-Full OpenAPI 3.1 spec for TPSSO and OIDC endpoints — schemas, auth, error envelopes, and response examples. Use for SDK codegen, Copilot plugins, and endpoint discovery.
+Full OpenAPI 3.1 spec for the OIDC and resource endpoints — schemas, auth, error envelopes, and response examples. Use for SDK codegen, Copilot plugins, and endpoint discovery.
 
 ```bash
 curl -sL https://docs.valyd.work/openapi/valyd-id.json
@@ -63,27 +67,28 @@ curl -sL https://docs.valyd.work/openapi/valyd-verify.json
 
 [Browse in docs](/verifications/api) · [Download JSON](https://docs.valyd.work/openapi/valyd-verify.json)
 
-### MCP server — *Preview*
+### MCP server
 
-Connect Valyd to any MCP client (Cursor, Claude Desktop, VS Code Copilot) for real-time API execution — authenticate users, run KYC checks, and retrieve verification results without leaving your editor.
+Connect Valyd to any MCP client (Claude Code, Claude Desktop, Cursor, VS Code) for real-time API
+execution — run verification checks and read results as agent tools. It's a **remote** MCP server
+(streamable HTTP) secured with OAuth 2.1 + PKCE; the client discovers auth automatically and the
+user signs in with Valyd on first use — no keys in config files.
+
+```bash
+claude mcp add --transport http valyd https://mcp.valyd.work/verification/mcp
+```
 
 ```json
 {
   "mcpServers": {
     "valyd": {
-      "command": "npx",
-      "args": ["-y", "@valyd/mcp-server"],
-      "env": {
-        "VALYD_CLIENT_ID": "<your-client-id>",
-        "VALYD_CLIENT_SECRET": "<your-client-secret>",
-        "VALYD_API_KEY": "<your-verify-api-key>"
-      }
+      "url": "https://mcp.valyd.work/verification/mcp"
     }
   }
 }
 ```
 
-[Join the preview](/mcp)
+[Setup & tool reference](/mcp)
 
 ### Postman collection
 

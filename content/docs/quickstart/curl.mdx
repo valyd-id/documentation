@@ -1,0 +1,130 @@
+---
+title: cURL quickstart — Login with Valyd
+description: 'Walk the whole OIDC login flow by hand with cURL and a browser: authorize URL anatomy, authorization code, form-encoded token exchange, userinfo.'
+---
+
+import { Callout } from 'nextra/components'
+
+# cURL quickstart
+
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 💻 Raw HTTP, no code · ⏱ ~5 minutes
+
+**What you'll build:** a complete login walked by hand — browser for the consent screen, cURL for
+everything else — so you can see exactly what your server will do.
+
+<Callout type="info">
+Your real values are pre-filled on your app's **Quick setup** tab in the
+[Developer Portal](https://dev.valyd.work).
+</Callout>
+
+Discovery lives at `https://idp.valyd.work/api/.well-known/openid-configuration` — everything
+below is listed there.
+
+## 1. Create the app
+
+In the [Developer Portal](https://dev.valyd.work) create an application, enable the `profile`
+[scope](/docs/scopes), and register a redirect URI. For this walkthrough any URL you can read
+from the address bar works, e.g.:
+
+```text
+http://localhost:8080/callback
+```
+
+Copy the `client_id` and the one-time `client_secret`.
+
+## 2. Build the authorize URL and open it
+
+Generate a random `state` (and `nonce`), then open this URL in a browser:
+
+```bash
+STATE=$(openssl rand -hex 16)   # store it — you compare it on the callback
+NONCE=$(openssl rand -hex 16)
+
+echo "https://idp.valyd.work/api/auth/oidc/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fcallback&response_type=code&scope=openid%20profile&state=$STATE&nonce=$NONCE"
+```
+
+Anatomy: `response_type=code` always; `scope` is space-separated (URL-encoded) and **must include
+`openid`**; `state` is required and echoed back unchanged (your CSRF check); `nonce` is
+recommended and bound into the `id_token`.
+
+## 3. Grab the code from the callback
+
+After you approve the consent screen, the browser lands on your redirect URI:
+
+```text
+http://localhost:8080/callback?code=AUTH_CODE_HERE&state=...
+```
+
+Check that `state` in the URL equals the `$STATE` you generated — then copy the `code`. It is
+single-use and expires in seconds, so exchange it immediately.
+
+## 4. Exchange the code for tokens
+
+Form-encoded POST to the token endpoint (this is the step that must always run server-side —
+it carries your `client_secret`):
+
+```bash
+curl -X POST https://idp.valyd.work/api/auth/oidc/token \
+  -d grant_type=authorization_code \
+  -d code=AUTH_CODE_HERE \
+  -d client_id=YOUR_CLIENT_ID \
+  -d client_secret=YOUR_CLIENT_SECRET \
+  -d redirect_uri=http://localhost:8080/callback
+```
+
+The response is **top-level** token JSON — no `data` wrapper:
+
+```json
+{
+  "access_token": "eyJhbGciOi...",
+  "refresh_token": "rfrsh_abc123...",
+  "id_token": "eyJhbGciOiJSUzI1NiIs...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "scope": "openid profile"
+}
+```
+
+The `id_token` is an RS256 JWT — in production verify it against the JWKS at
+`https://idp.valyd.work/api/auth/oidc/jwks.json` and check its `nonce` claim equals your
+`$NONCE`.
+
+## 5. Read the user
+
+```bash
+curl -H "Authorization: Bearer ACCESS_TOKEN_HERE" \
+  https://idp.valyd.work/api/auth/oidc/userinfo
+```
+
+Returns the profile with `valyd_id` (the stable pseudonymous ID — use it as your user key) and
+`id_verified`. The same Bearer token also reads `/api/auth/oidc/licenses` and
+`/api/auth/oidc/verifications`, gated by the scopes the user approved.
+
+<Callout type="info" emoji="✅">
+**Checkpoint:** the callback's `state` matched yours; the token exchange returned HTTP 200 with
+top-level `access_token`, `refresh_token`, and `id_token`; and the userinfo call returned
+`valyd_id` and `id_verified`. Replaying step 4 with the same code fails with `invalid_grant` —
+codes are single-use.
+</Callout>
+
+Access tokens last ~15 minutes. Renew with `grant_type=refresh_token` at the same endpoint —
+rotation is on, so always persist the new `refresh_token` you get back. Details in
+[Authentication](/docs/authentication).
+
+## Troubleshooting
+
+- **`redirect_uri` mismatch** — the URI at `/authorize` and `/token` must be identical and
+  exactly match a registered redirect URI. See [Errors & troubleshooting](/docs/errors).
+- **`invalid_grant`** — the code expired or was already exchanged; go back to step 2 for a fresh
+  one. See [Errors & troubleshooting](/docs/errors).
+- **`invalid_scope` / missing `openid`** — `scope` must include `openid`, and every requested
+  scope must be enabled on the app in the portal. See [Errors & troubleshooting](/docs/errors).
+
+## Next steps
+
+- [Scopes](/docs/scopes) — request `verifications`, `email`, or license scopes.
+- [Account API](/docs/endpoints) — every endpoint the Bearer token can read.
+- [Attach a verification](/verifications/quickstart) — run a new KYC or license check with the
+  user's token so the proof saves to their Valyd account.
+- Ready to code it? The official SDK (`npm install @valyd/sdk@^1.10.1`) does steps 2–5, plus PKCE
+  and id_token verification, in two calls — see the [Node.js quickstart](/docs/quickstart/node).

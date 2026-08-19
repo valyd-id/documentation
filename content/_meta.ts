@@ -17,10 +17,13 @@ export default {
   },
   docs: { title: 'Valyd ID', type: 'page' },
   verifications: { title: 'Verification APIs', type: 'page' },
-  mcp: { title: 'MCP', type: 'page' },
-  agents: { title: 'For AI agents', type: 'page' },
+  ai: { title: 'AI & Agents', type: 'page' },
+  // Old single-page entries stay reachable by URL but out of the navbar —
+  // superseded by the AI & Agents section.
+  mcp: { display: 'hidden' },
+  agents: { display: 'hidden' },
   // Interactive playground lives at app/sandbox (not in content/)
-  sandbox: { title: 'Try the APIs', type: 'page', href: '/sandbox' },
+  sandbox: { title: 'API Playground', type: 'page', href: '/sandbox' },
   // Recipe + demo pages keep their old URLs but stay out of the navbar;
   // they are linked from within the docs.
   verify: { display: 'hidden' },

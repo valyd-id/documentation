@@ -1,14 +1,5 @@
 # Versioning & deprecation
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/versioning
-- Credentials / env vars needed: none — reference only.
-- Can complete without human input: YES — read-only policy.
-
-The Verification API is versioned in the URL path: every endpoint lives under `/api/v2/…`. This page
-states what we may change without notice, what counts as breaking, and how deprecations are handled,
-so you can integrate with confidence.
-
 ## What is NOT a breaking change (may ship any time)
 
 These are **additive** and safe — your integration must tolerate them:
@@ -20,7 +11,8 @@ These are **additive** and safe — your integration must tolerate them:
 - Bug fixes and performance changes that don't alter the documented contract.
 
 **Build defensively:** ignore unknown response fields, and don't hard-fail on an unrecognized enum
-value — treat it as the closest known category (e.g. an unknown terminal status as "not approved").
+value — treat unknown verification states as **not approved** until your application explicitly
+supports them.
 
 ## What IS a breaking change (gets a new version)
 

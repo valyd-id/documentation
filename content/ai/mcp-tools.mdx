@@ -1,0 +1,98 @@
+---
+title: MCP Tools
+description: Every tool the Valyd MCP server exposes — parameters, returns, statuses, and a worked human-in-the-loop example.
+---
+
+import { Callout } from 'nextra/components'
+
+# MCP tool reference
+
+All tools require an OAuth 2.1 Bearer token with scope `mcp` (see [How auth works](/ai/mcp-auth)).
+The acting user is the token's `sub` — no user id is passed. On failure, every tool returns
+`{"status": "error", "message": "..."}`.
+
+| Tool | What it does | Key params | Returns | Auth |
+| --- | --- | --- | --- | --- |
+| `verification_request` | Asks the signed-in user to approve a sensitive action with a face scan on their Valyd app. Call before anything risky (delete, payment, sharing data). | `action_type` (required), `title` (required), `description` (required) | `valyd_session_id`, `status` (`PENDING`), `expires_at` | Bearer token, scope `mcp` |
+| `verification_status` | Checks the result of a verification started by `verification_request`. Poll until no longer `PENDING`. | `valyd_session_id` (required) | `status` (`PENDING` / `APPROVED` / `DENIED` / `DECLINED` / `EXPIRED`), `result`, `assurance_level`, `expires_at` | Bearer token, scope `mcp` |
+| `do_task` | Runs a web/browser task for the signed-in user via the Valyd agent — open sites, fill forms, complete actions. The browser profile persists per user; may take several minutes. | `task` (required), `start_url` (optional), `user_uuid` (optional profile override) | `uuid`, `response`, `success` | Bearer token, scope `mcp` |
+
+<Callout type="info">
+  If `do_task` needs a login, card, or personal detail, the agent fetches it securely from Valyd
+  (the user approves on their phone) — secrets are never returned to the calling agent in plain
+  text.
+</Callout>
+
+## Parameters in detail
+
+### `verification_request`
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `action_type` | string | Yes | Kind of action, e.g. `"delete"`, `"payment"`, `"update"` |
+| `title` | string | Yes | Short title shown on the approval prompt |
+| `description` | string | Yes | Context the user reads before deciding |
+
+### `verification_status`
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `valyd_session_id` | string | Yes | The id returned by `verification_request` |
+
+### `do_task`
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `task` | string | Yes | What the agent should do, in plain language |
+| `start_url` | string | No | Page to open before starting |
+| `user_uuid` | string | No | Profile override; defaults to the signed-in user |
+
+## Worked example — human-in-the-loop approval
+
+1 — The agent calls `verification_request`:
+
+```json
+{
+  "action_type": "delete",
+  "title": "Delete production database",
+  "description": "The agent wants to drop the prod database. Approve only if you asked for this."
+}
+```
+
+Response — `PENDING` until the user responds:
+
+```json
+{
+  "valyd_session_id": "uuid-string",
+  "status": "PENDING",
+  "expires_at": "2026-06-24T09:10:46+00:00"
+}
+```
+
+2 — The agent polls `verification_status` with the `valyd_session_id` until `status` is no longer
+`PENDING`:
+
+```json
+{
+  "valyd_session_id": "uuid-string",
+  "status": "APPROVED",
+  "result": "...",
+  "assurance_level": "high",
+  "expires_at": "2026-06-24T09:10:46+00:00"
+}
+```
+
+3 — If **APPROVED**, perform the action. If **DENIED** / **DECLINED** / **EXPIRED**, abort and
+tell the user. You can also gate a `do_task` behind an approval for sensitive web actions.
+
+## Status reference
+
+| Status | Meaning |
+| --- | --- |
+| **PENDING** | Waiting for the user to respond on their Valyd app. Keep polling. |
+| **APPROVED** | The user approved (face-verified). Proceed with the action. |
+| **DENIED** | The system/policy denied the request. |
+| **DECLINED** | The user explicitly declined. Do not proceed. |
+| **EXPIRED** | `expires_at` passed without a decision. |
+
+When present, `assurance_level` (e.g. `high`) describes how strongly the user was verified.

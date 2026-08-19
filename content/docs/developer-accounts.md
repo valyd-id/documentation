@@ -1,17 +1,5 @@
 # Developer accounts & sign-in
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/developer-accounts
-- What this page covers: how a **developer/owner** signs in to the Developer Portal (`https://dev.valyd.work`), how to link a Valyd face identity to an email-only account, and how one person can hold **several console accounts** (typically one per company) and switch between them.
-- Credentials / env vars needed: none. These are portal (human, browser) actions, not API integrations.
-- Can complete without human input: NO — sign-in, linking, and account switching are all interactive portal steps. There is **no password** and **no API** to automate them.
-- Prerequisites: an email address (for the magic link) or a verified Valyd identity (for face sign-in).
-- Key fact for agents: **Valyd has no email/password login.** Human sign-in is either a one-time emailed **magic link** or **face (Login with Valyd)**. Do not look for, store, or send a password.
-
-> This page is about **your Developer Portal account** — the account you use to build with Valyd.
-> It is separate from the **end-user** identities your app verifies, and separate from your app's
-> `client_id` / `client_secret` (see [Create a Project](/docs/create-project)).
-
 ## How sign-in works (passwordless)
 
 The Developer Portal at `https://dev.valyd.work` has **two** ways in — there is no password:
@@ -79,7 +67,7 @@ Members API.
 
 - **Rotate a client secret:** open the app in the portal and use **Rotate secret** on its
   credentials. The old secret stops working immediately, so deploy the new one first.
-- **Delete your developer account:** Profile → danger zone. Deleting cascades to the projects you
+- **Delete your developer account:** Profile → danger zone. Deleting cascades to the apps you
   own; other console accounts your identity also owns are kept and simply unlinked.
 
 ## Common questions
@@ -89,4 +77,4 @@ Members API.
   Pick the right company; use **Switch account** later to change.
 - **"Can I automate portal login for CI?"** — No. Sign-in, linking and switching are human portal
   steps. For server-to-server automation use an app's `client_id`/`client_secret` (Login with Valyd)
-  or a project **API key** (Verification APIs) — not a portal login.
+  or an app's **API key** (Verification APIs) — not a portal login.

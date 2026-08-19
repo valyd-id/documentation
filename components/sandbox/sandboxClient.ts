@@ -32,13 +32,16 @@ function networkError(e: unknown): ApiResult {
 
 export async function issueCode(demoUser: DemoUser, scopes: string[]): Promise<ApiResult> {
   try {
+    // `openid` is required by the OIDC resource endpoints (userinfo etc.) — always
+    // include it, exactly like the SDK's getAuthorizationUrl does automatically.
+    const withOpenid = scopes.includes('openid') ? scopes : ['openid', ...scopes]
     const res = await fetch(`${SANDBOX_BASE_URL}/api/auth/sandbox/issue-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         client_id: SANDBOX_CLIENT_ID,
         client_secret: SANDBOX_CLIENT_SECRET,
-        scopes,
+        scopes: withOpenid,
         demo_user: demoUser,
         redirect_uri: SANDBOX_REDIRECT_URI
       })
@@ -80,9 +83,9 @@ async function bearerGet(path: string, accessToken: string): Promise<ApiResult> 
   }
 }
 
-export const getUserinfo = (t: string) => bearerGet('/api/auth/tpsso/userinfo', t)
-export const getLicenses = (t: string) => bearerGet('/api/auth/tpsso/licenses', t)
-export const getVerifications = (t: string) => bearerGet('/api/auth/tpsso/verifications', t)
+export const getUserinfo = (t: string) => bearerGet('/api/auth/oidc/userinfo', t)
+export const getLicenses = (t: string) => bearerGet('/api/auth/oidc/licenses', t)
+export const getVerifications = (t: string) => bearerGet('/api/auth/oidc/verifications', t)
 
 export async function refreshAccessToken(refreshToken: string): Promise<ApiResult> {
   try {

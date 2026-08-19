@@ -72,6 +72,16 @@ async function writeSub(srcAbs, destAbs) {
 
 async function mdMirror(srcDir, destDir, indexAlias) {
   const files = (await fs.readdir(path.join(ROOT, srcDir))).filter(f => f.endsWith('.md'))
+  const expected = new Set([...files, ...(indexAlias ? [indexAlias] : [])])
+  try {
+    for (const existing of await fs.readdir(path.join(ROOT, destDir))) {
+      if (existing.endsWith('.md') && !expected.has(existing)) {
+        await fs.unlink(path.join(ROOT, destDir, existing))
+      }
+    }
+  } catch {
+    // Destination is created by writeSub below on a clean checkout.
+  }
   for (const f of files) {
     await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, f))
     // Preserve the historical .md URL for the index page (overview.md / intro.md)

@@ -26,7 +26,7 @@ const CodeBlock = ({ code }: { code: string }) => {
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
+    <div className="group relative overflow-hidden rounded-lg border border-(--vd-border)">
       <button
         type="button"
         onClick={onCopy}

@@ -1,26 +1,17 @@
-# Authentication (OAuth2 / TPSSO Flow)
+# Authentication (OAuth2 / OIDC Flow)
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/authentication
-- Credentials / env vars needed: VALYD_CLIENT_ID, VALYD_CLIENT_SECRET, VALYD_REDIRECT_URI
-- Files an integrator edits: .env (credentials), server route handler for `/callback`, login/redirect route handler
-- Estimated steps: 6
-- Can complete without human input: NO — a human must register the app and obtain a Client ID + Client Secret from the Developer Portal (https://dev.valyd.work), and register the exact redirect/callback URL.
-- Prerequisites:
-  - A Valyd application registered in the Developer Portal (https://dev.valyd.work) with a Client ID and Client Secret.
-  - The exact callback/redirect URL (e.g. `https://yourapp.com/callback`) registered on that application — it must match the `redirect_url` you send.
-  - A server-side environment that can keep `VALYD_CLIENT_SECRET` private (token exchange MUST happen server-side).
-  - (Recommended) Node project with the official SDK: `npm install @valyd/sdk`
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 📖 **After login:** read the account with a Bearer access token
 
----
+> **Prefer the concept pages?** See [Flows](/docs/flows/authorization-code) for the picture-first
+> walkthrough and [Tokens](/docs/tokens) for what each returned token is for.
 
-Valyd uses the OAuth2 Authorization Code flow (referred to internally as TPSSO). This is a server-side integration: you redirect the user to Valyd, the user consents, Valyd redirects back to your callback with a one-time `code`, and your server exchanges that code for tokens.
-
-CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `state` back on the callback. The `state` returned to your callback is Valyd's own opaque session id. Do NOT use it for CSRF protection by comparing it to a value you sent. Instead, create a login session up front, store its marker, and verify the marker on the callback.
+> **These raw-HTTP examples demonstrate the protocol.** For production, use a maintained OIDC
+> library or `@valyd/sdk` — they validate issuer, audience, signature, expiry, `state`, `nonce`,
+> and PKCE for you.
 
 ### Prerequisites
-- Client ID and Client Secret (get these from the Developer Portal → your project → Credentials: https://dev.valyd.work).
-- A registered redirect/callback URL matching what you send as `redirect_url`.
+- Client ID and Client Secret (get these from the Developer Portal → your app → Credentials: https://dev.valyd.work — the portal lists apps as "projects"; same object).
+- A registered redirect/callback URL matching what you send as `redirect_uri`.
 - Environment variables set on your server:
   - `VALYD_CLIENT_ID` (get from Developer Portal: https://dev.valyd.work)
   - `VALYD_CLIENT_SECRET` (get from Developer Portal: https://dev.valyd.work)
@@ -28,10 +19,10 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
 
 ### Steps
 
-1. **Construct the authorization URL.** Redirect users to the Valyd authorization endpoint with your client credentials and requested scopes. The exact URL format is:
+1. **Construct the authorization URL.** Redirect users to the OIDC authorization endpoint with your client id, redirect URI, scopes, and a freshly generated random `state` (and `nonce`):
 
    ```text
-   https://idp.valyd.work/auth?client_id={client_id}&redirect_url={redirect_url}&scope={scopes}
+   https://idp.valyd.work/api/auth/oidc/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scopes}&state={state}&nonce={nonce}
    ```
 
    Parameters:
@@ -39,17 +30,19 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
    | Parameter | Required | Description |
    | --- | --- | --- |
    | `client_id` | Yes | Your application's Client ID from the Developer Portal (https://dev.valyd.work). |
-   | `redirect_url` | Yes | The URL to redirect to after authentication. Must match the URL registered on your application. |
-   | `scope` | Yes | Space-separated list of scopes, URL-encoded. Example: `profile%20verifications`. |
-   | `state` | Optional | Pass `session.authorizeState` from `createLoginSession()`. NOT echoed on the callback for TPSSO — do not use it for CSRF on its own. |
+   | `redirect_uri` | Yes | The URL to redirect to after authentication. Must match the URL registered on your application. |
+   | `response_type` | Yes | Must be `code`. |
+   | `scope` | Yes | Space-separated list of scopes, URL-encoded. **MUST include `openid`.** Example: `openid%20profile%20verifications`. |
+   | `state` | Yes | A random value you generate and store. Echoed back unchanged on the callback — compare it there (CSRF protection). |
+   | `nonce` | Recommended | A random value bound into the `id_token`. Verify the `nonce` claim after the exchange (replay protection). |
 
-   **Expected output:** A fully-formed URL string. Example with encoded scopes `profile verifications`:
+   **Expected output:** A fully-formed URL string. Example with encoded scopes `openid profile verifications`:
 
    ```text
-   https://idp.valyd.work/auth?client_id=YOUR_CLIENT_ID&redirect_url=https://yourapp.com/callback&scope=profile%20verifications
+   https://idp.valyd.work/api/auth/oidc/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://yourapp.com/callback&response_type=code&scope=openid%20profile%20verifications&state=RANDOM_STATE&nonce=RANDOM_NONCE
    ```
 
-2. **Issue a login session and redirect (recommended: use the SDK).** On your login route, create a login session, store its marker (httpOnly cookie or server session), build the authorization URL, and redirect the user:
+2. **Create and store one secure transaction (recommended: SDK).** The SDK generates strong `state`, `nonce`, and S256 PKCE values together. Store the returned object in a server-side session:
 
    ```javascript
    import { ValydClient } from "@valyd/sdk";
@@ -60,54 +53,49 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
      redirectUri: "https://yourapp.com/callback",
    });
 
-   // Issue a login session and redirect — never compare state on the callback.
-   const session = await valyd.createLoginSession();
-   // store session.marker in an httpOnly cookie or server session
-
-   const url = valyd.getAuthorizationUrl({
-     state: session.authorizeState,
-     scope: ["profile", "verifications", "zkp"],
-     productName: "My App",
+   const transaction = valyd.createAuthorizationRequest({
+     scope: ["profile", "verifications", "zkp"], // "openid" is added automatically
    });
-   res.redirect(url);
+   req.session.valydOidc = transaction; // server-side only; includes the PKCE verifier
+   res.redirect(transaction.url);
    ```
 
-   **Expected output:** HTTP 302 redirect sending the user's browser to `https://idp.valyd.work/auth?...`. The login session marker is now stored on the user's side (cookie/session) for the CSRF check in step 5.
+   **Expected output:** HTTP 302 to the OIDC authorize endpoint with `state`, `nonce`, and `code_challenge`. The full transaction stays server-side for step 6.
 
-3. **User consents on the Valyd consent screen.** Valyd shows the consent screen with the requested scopes and, on approval, issues a one-time authorization `code`.
+3. **User consents on the Valyd consent screen.** Valyd shows the consent screen with the requested scopes and, on approval, issues a one-time authorization `code`. (Scopes must be enabled on your app in the Developer Portal before they can be requested — the same model as Google's consent-screen scopes.)
 
-   **Expected output:** Valyd redirects the user's browser to your callback URL with the code attached. The `code` is valid for only 5 minutes.
+   **Expected output:** Valyd redirects the user's browser to your callback URL with the code attached. Codes are single-use and short-lived — exchange immediately.
 
-4. **Receive the callback on your server.** The user is redirected to your registered callback URL with the authorization code as a query parameter. Format:
+4. **Receive the callback on your server.** The user is redirected to your registered callback URL with the authorization code and your original state:
 
    ```text
-   https://yourapp.com/callback?code=AUTH_CODE_HERE
+   https://yourapp.com/callback?code=AUTH_CODE_HERE&state=RANDOM_STATE
    ```
 
    Callback query parameters:
 
    | Parameter | Description |
    | --- | --- |
-   | `code` | The one-time authorization code (valid for 5 minutes). |
-   | `state` | Valyd's own session id (opaque). Do NOT compare it to the value you sent on `authorize`. Use `verifyLoginSession(marker)` for CSRF. |
+   | `code` | The one-time authorization code. Single-use; exchange immediately. |
+   | `state` | The **exact `state` value you sent** on `/authorize`, echoed back unchanged. Compare it to your stored value. |
 
-   **Expected output:** Your `/callback` route is invoked with `code` (and possibly `error`) present in the query string.
+   **Expected output:** Your `/callback` route is invoked with `code` and `state` (and possibly `error`) present in the query string.
 
-5. **CSRF check via the login session.** Verify the marker you stored in step 2. This is how you protect against CSRF — NOT by comparing the callback `state`.
+5. **CSRF check — compare the `state`.** The callback `state` must strictly equal the value you stored in step 2. Reject the request on any mismatch, before touching the code.
 
    ```javascript
-   const marker = req.cookies.valyd_login;
-   const { valid } = await valyd.verifyLoginSession(marker);
-   if (!valid) return res.status(400).send("Invalid login session");
+   const stored = readStoredOAuthValues(req); // your cookie/session read
+   if (!stored?.state || req.query.state !== stored.state) {
+     return res.status(400).send("state mismatch");
+   }
    ```
 
-   **Expected output:** `verifyLoginSession(marker)` returns `{ valid: true }` for a legitimate flow. If `valid` is `false`, reject the request (HTTP 400).
+   **Expected output:** On a legitimate flow the values are identical and processing continues. On a mismatch (missing cookie, forged callback), respond HTTP 400 and stop.
 
-6. **Exchange the code for tokens, then fetch the user (server-side).** Immediately exchange the `code` (it expires in 5 minutes). Full Node/Express + SDK handler:
+6. **Exchange the code for tokens, then fetch the user (server-side).** Exchange the `code` immediately (it is single-use). Full Node/Express + SDK handler:
 
    ```javascript
-   // Recommended: use the official SDK.
-   //   npm install @valyd/sdk
+   // Recommended: @valyd/sdk 1.10.1+
    import { ValydClient } from "@valyd/sdk";
 
    const valyd = new ValydClient({
@@ -117,37 +105,30 @@ CRITICAL behavioral difference from standard OAuth2: Valyd does NOT echo your `s
    });
 
    app.get("/callback", async (req, res) => {
-     // 1. Pull code + state out of the redirect.
-     const { code, error } = valyd.parseCallback(req.url);
-     if (error || !code) return res.status(400).send(error ?? "missing code");
+     const transaction = req.session.valydOidc;
+     if (!transaction) return res.status(400).send("login transaction missing");
+     delete req.session.valydOidc;
 
-     // 2. CSRF — verify the marker we stored on the way out.
-     //    Do NOT compare req.query.state to anything you sent.
-     const marker = req.cookies.valyd_login;
-     const { valid } = await valyd.verifyLoginSession(marker);
-     if (!valid) return res.status(400).send("Invalid login session");
-
-     // 3. Exchange the code for tokens (server-side).
-     const tokens = await valyd.exchangeCode(code);
-
-     // 4. Fetch user data.
-     const user = await valyd.getUserInfo(tokens.accessToken);
-
-     res.clearCookie("valyd_login");
+     const callbackUrl = new URL(req.originalUrl, process.env.VALYD_REDIRECT_URI).toString();
+     const { tokens, user } = await valyd.handleCallback(callbackUrl, { transaction });
      // ...set your own app session, then redirect to /dashboard
    });
    ```
 
-   **Expected output:** `exchangeCode(code)` returns tokens (with `accessToken`); `getUserInfo(accessToken)` returns the user's profile data. Then set your own app session and redirect (e.g. to `/dashboard`).
+   `handleCallback()` compares state, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
+
+   **Expected output:** `exchangeCode(code)` returns tokens (`accessToken`, `refreshToken`, `idToken`, `expiresIn`, `scope`); `getUserInfo(accessToken)` returns the user's profile data. Then set your own app session and redirect (e.g. to `/dashboard`).
 
 #### Token exchange without the SDK (raw HTTP)
 
-The token endpoint is `POST https://idp.valyd.work/api/auth/tpsso/token` with a JSON body. The response wraps the tokens under a `data` key (i.e. `response.data.access_token`).
+The token endpoint is `POST https://idp.valyd.work/api/auth/oidc/token` with a JSON body. The
+response is a **standard top-level token JSON** — `access_token`, `refresh_token`, `id_token`,
+`expires_in`, `scope`, `token_type` at the root (no `data` wrapper).
 
 Request shape:
 
 ```http
-POST /api/auth/tpsso/token HTTP/1.1
+POST /api/auth/oidc/token HTTP/1.1
 Host: idp.valyd.work
 Content-Type: application/json
 
@@ -161,19 +142,35 @@ Content-Type: application/json
 ```
 
 Send the **same** `redirect_uri` you used at `/authorize` — Valyd validates it against the code.
-Authorization codes are bound to the client they were issued to, are single-use, and expire in
-about **2 minutes**, so exchange them as soon as your callback fires.
+Authorization codes are bound to the client they were issued to and are **single-use** — exchange
+them as soon as your callback fires.
 
-**Expected output:** HTTP 200 with a JSON body whose `data` object contains `access_token` (read it as `response.data.access_token`).
-
-#### Renewing an access token
-
-Access tokens are short-lived. Exchange the `refresh_token` at
-`POST https://{{IDP_BASE_URL}}/api/auth/tpsso/refresh` — from your **backend**, with your client
-credentials:
+**Expected output:** HTTP 200 with a top-level JSON body:
 
 ```json
 {
+  "access_token": "eyJhbGciOi...",
+  "refresh_token": "rfrsh_abc123...",
+  "id_token": "eyJhbGciOiJSUzI1NiIs...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "scope": "openid profile verifications"
+}
+```
+
+The `id_token` is an RS256-signed JWT — validate its signature against the JWKS at
+`https://idp.valyd.work/api/auth/oidc/jwks.json` and check that its `nonce` claim equals the
+nonce you sent on `/authorize`.
+
+#### Renewing an access token
+
+Access tokens are short-lived (`expires_in` ≈ 900 seconds). Exchange the `refresh_token` at the
+same token endpoint — `POST https://idp.valyd.work/api/auth/oidc/token` — from your **backend**,
+with your client credentials:
+
+```json
+{
+  "grant_type": "refresh_token",
   "refresh_token": "rfrsh_abc123...",
   "client_id": "YOUR_CLIENT_ID",
   "client_secret": "YOUR_CLIENT_SECRET"
@@ -181,17 +178,17 @@ credentials:
 ```
 
 The refresh token is validated against the client it was issued to, so a token leaked from one
-app cannot be used by another. **Rotation is on by default:** each call returns a new
-`refresh_token` and revokes the one you sent, so always store the returned value. Replaying a
+app cannot be used by another. **Rotation is on:** every refresh returns a new
+`refresh_token` and revokes the one you sent, so always persist the returned value. Replaying a
 rotated-away token is treated as theft and revokes every refresh token for that user and app.
 
 With the SDK this is one call — `const next = await valyd.auth.refreshToken(stored)` — then
-persist both `next.accessToken` and `next.refreshToken`. Requires `@valyd/sdk` **1.6.0+**.
+persist both `next.accessToken` and `next.refreshToken`. Requires `@valyd/sdk` **1.10.1 or newer**.
 
 Python (Flask):
 
 ```python
-from flask import Flask, request, redirect, session
+from flask import Flask, request, redirect, session, abort
 import requests
 
 app = Flask(__name__)
@@ -199,11 +196,14 @@ app = Flask(__name__)
 @app.route("/callback")
 def callback():
     code = request.args.get("code")
+    state = request.args.get("state")
     if not code:
         return "missing code", 400
+    if not state or state != session.pop("valyd_state", None):
+        return "state mismatch", 400
 
     response = requests.post(
-        "https://idp.valyd.work/api/auth/tpsso/token",
+        "https://idp.valyd.work/api/auth/oidc/token",
         json={
             "grant_type": "authorization_code",
             "client_id": "YOUR_CLIENT_ID",
@@ -212,7 +212,7 @@ def callback():
             "redirect_uri": "https://yourapp.com/callback",
         },
     )
-    tokens = response.json()["data"]
+    tokens = response.json()  # top-level: access_token, refresh_token, id_token, ...
     session["access_token"] = tokens["access_token"]
     return redirect("/dashboard")
 ```
@@ -221,25 +221,31 @@ PHP:
 
 ```php
 <?php
+session_start();
 $code = $_GET['code'] ?? null;
+$state = $_GET['state'] ?? null;
 if (!$code) { http_response_code(400); exit('missing code'); }
+if (!$state || !hash_equals($_SESSION['valyd_state'] ?? '', $state)) {
+    http_response_code(400); exit('state mismatch');
+}
+unset($_SESSION['valyd_state']);
 
 $ch = curl_init();
 curl_setopt_array($ch, [
-    CURLOPT_URL => 'https://idp.valyd.work/api/auth/tpsso/token',
+    CURLOPT_URL => 'https://idp.valyd.work/api/auth/oidc/token',
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => json_encode([
         'grant_type' => 'authorization_code',
         'client_id' => 'YOUR_CLIENT_ID',
         'client_secret' => 'YOUR_CLIENT_SECRET',
-        'code' => $code
+        'code' => $code,
+        'redirect_uri' => 'https://yourapp.com/callback'
     ]),
     CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
     CURLOPT_RETURNTRANSFER => true,
 ]);
-$data = json_decode(curl_exec($ch), true);
-session_start();
-$_SESSION['access_token'] = $data['data']['access_token'];
+$tokens = json_decode(curl_exec($ch), true); // top-level token JSON
+$_SESSION['access_token'] = $tokens['access_token'];
 header('Location: /dashboard');
 ```
 
@@ -247,80 +253,92 @@ Java (Spring):
 
 ```java
 @GetMapping("/callback")
-public ResponseEntity<?> callback(@RequestParam String code) {
+public ResponseEntity<?> callback(@RequestParam String code,
+                                  @RequestParam String state,
+                                  HttpSession session) {
+    String expected = (String) session.getAttribute("valyd_state");
+    if (expected == null || !expected.equals(state)) {
+        return ResponseEntity.badRequest().body("state mismatch");
+    }
+    session.removeAttribute("valyd_state");
+
     RestTemplate rt = new RestTemplate();
     Map<String, String> body = Map.of(
         "grant_type", "authorization_code",
         "client_id", "YOUR_CLIENT_ID",
         "client_secret", "YOUR_CLIENT_SECRET",
-        "code", code
+        "code", code,
+        "redirect_uri", "https://yourapp.com/callback"
     );
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    rt.postForEntity("https://idp.valyd.work/api/auth/tpsso/token",
+    rt.postForEntity("https://idp.valyd.work/api/auth/oidc/token",
         new HttpEntity<>(body, headers), String.class);
     return ResponseEntity.status(302).header("Location", "/dashboard").build();
 }
 ```
 
-In all raw-HTTP examples, replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with your real values (get these from the Developer Portal → your project → Credentials: https://dev.valyd.work). Never expose `YOUR_CLIENT_SECRET` in client-side code — the token exchange must run on your server.
+In all raw-HTTP examples, replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with your real values (get these from the Developer Portal → your app → Credentials: https://dev.valyd.work). Never expose `YOUR_CLIENT_SECRET` in client-side code — the token exchange must run on your server.
 
 ### Auth-flow decision tree
 
 ```text
 IF the request just hit your login/start route:
-    → call valyd.createLoginSession(), store session.marker (httpOnly cookie / server session),
-      build the URL with valyd.getAuthorizationUrl({ state: session.authorizeState, scope, productName }),
+    → generate random state + nonce (crypto.randomBytes), store them
+      (httpOnly cookie / server session),
+      build the URL with valyd.auth.getAuthorizationUrl({ state, nonce, scope }),
       and res.redirect(url).
 
 IF the request hit your /callback route:
-    → parse it: const { code, error } = valyd.parseCallback(req.url)
+    → read code, state, error from the query string
     IF error is set OR code is missing:  → return HTTP 400 (error ?? "missing code"). STOP.
     IF code is present:                  → continue to the CSRF check below.
 
 CSRF check (do this on every callback):
-    → const { valid } = await valyd.verifyLoginSession(req.cookies.valyd_login)
-    IF valid === false:  → return HTTP 400 "Invalid login session". STOP.
-    IF valid === true:   → proceed to token exchange.
-
-    DO NOT compare the callback `state` to anything you sent —
-    for TPSSO it is Valyd's opaque session id, not your value.
+    → compare req.query.state to the state you stored before the redirect
+    IF they differ (or the stored value is missing):  → return HTTP 400 "state mismatch". STOP.
+    IF they match:                                    → proceed to token exchange.
 
 Token exchange:
-    → const tokens = await valyd.exchangeCode(code)   // must run server-side, within 5 minutes of issue
-    IF more than 5 minutes elapsed since the code was issued:  → the code is expired; restart the flow from the login route.
-    → const user = await valyd.getUserInfo(tokens.accessToken)
-    → res.clearCookie("valyd_login"), set your own app session, redirect to /dashboard.
+    → const tokens = await valyd.auth.exchangeCode(code)   // must run server-side; codes are single-use
+    IF the exchange returns invalid_grant:  → the code expired or was already used; restart from the login route.
+    → verify tokens.idToken's `nonce` claim equals the nonce you stored
+    → const user = await valyd.auth.getUserInfo(tokens.accessToken)
+    → clear the stored state/nonce, set your own app session, redirect to /dashboard.
 
 IF you are not using Node / the SDK:
-    → POST https://idp.valyd.work/api/auth/tpsso/token with JSON
-      { grant_type: "authorization_code", client_id, client_secret, code }
-      and read the token from response.data.access_token.
+    → POST https://idp.valyd.work/api/auth/oidc/token with JSON
+      { grant_type: "authorization_code", client_id, client_secret, code, redirect_uri }
+      and read the token from the TOP-LEVEL response field access_token.
 ```
 
 ### Verification
-- Confirm the redirect: opening your login route returns HTTP 302 with a `Location` header beginning `https://idp.valyd.work/auth?client_id=...&redirect_url=...&scope=...`.
-- After consenting, confirm your `/callback` route receives a `code` query parameter.
+- Confirm the redirect: opening your login route returns HTTP 302 with a `Location` header beginning `https://idp.valyd.work/api/auth/oidc/authorize?client_id=...&redirect_uri=...&response_type=code&scope=openid...&state=...`.
+- After consenting, confirm your `/callback` route receives `code` and `state` query parameters, and that `state` equals the value you sent.
 - Confirm the token exchange succeeds:
 
   ```bash
-  curl -i -X POST https://idp.valyd.work/api/auth/tpsso/token \
+  curl -i -X POST https://idp.valyd.work/api/auth/oidc/token \
     -H "Content-Type: application/json" \
-    -d '{"grant_type":"authorization_code","client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_CLIENT_SECRET","code":"AUTH_CODE_HERE"}'
+    -d '{"grant_type":"authorization_code","client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_CLIENT_SECRET","code":"AUTH_CODE_HERE","redirect_uri":"https://yourapp.com/callback"}'
   ```
 
-  Expected: HTTP 200 and a JSON body containing `data.access_token`.
+  Expected: HTTP 200 and a JSON body containing top-level `access_token`, `refresh_token`, and `id_token`.
 
 ### Common errors
 
-1. **Comparing the callback `state` to the value you sent (flow always rejected).**
-   - Cause: Valyd's TPSSO does not echo your `state`; the `state` on the callback is Valyd's own opaque session id, so any equality check against your sent value fails.
-   - Fix: Remove the `state` comparison. Use `valyd.createLoginSession()` + store `session.marker`, then verify on the callback with `valyd.verifyLoginSession(marker)` expecting `{ valid: true }`.
+1. **`state mismatch` on the callback (legitimate logins rejected).**
+   - Cause: The stored `state` was lost before the callback — cookie not set, blocked by the browser, expired, or overwritten by a second parallel login attempt.
+   - Fix: Store `state` in an `httpOnly`, `sameSite: "lax"` cookie (or server session) on the login route and compare strictly on the callback: `req.query.state === storedState`. This comparison IS the CSRF protection — do not remove it.
 
-2. **"missing code" / expired code (HTTP 400 on callback or 4xx from /token).**
-   - Cause: No `code` in the callback (user denied or an `error` was returned), or the code was used more than 5 minutes after issue.
-   - Fix: When `parseCallback` returns `error` or no `code`, return HTTP 400 and restart the flow. Exchange the code immediately on the server — it is valid for only 5 minutes.
+2. **"missing code" / `invalid_grant` (HTTP 400 on callback or 4xx from /token).**
+   - Cause: No `code` in the callback (user denied or an `error` was returned), the code was already exchanged (single-use), or the `redirect_uri` in the token request differs from the authorize request.
+   - Fix: When the callback carries `error` or no `code`, return HTTP 400 and restart the flow. Exchange the code immediately, exactly once, with the same `redirect_uri`.
 
-3. **`redirect_url` mismatch (authorization rejected by Valyd).**
-   - Cause: The `redirect_url` sent on the authorization request does not exactly match the URL registered for your application.
+3. **`redirect_uri` mismatch (authorization rejected by Valyd).**
+   - Cause: The `redirect_uri` sent on the authorization request does not exactly match the URL registered for your application.
    - Fix: Set `VALYD_REDIRECT_URI` (and the SDK `redirectUri`) to the exact callback URL registered in the Developer Portal (https://dev.valyd.work), matching scheme, host, and path.
+
+4. **`invalid_scope` / missing `openid`.**
+   - Cause: The `scope` parameter omitted `openid`, or a requested scope is not enabled on your app in the Developer Portal.
+   - Fix: Always include `openid` (the SDK adds it automatically) and enable every requested scope on the app before requesting it.

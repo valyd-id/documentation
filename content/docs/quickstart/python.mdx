@@ -1,0 +1,158 @@
+---
+title: Python (Flask) quickstart — Login with Valyd
+description: 'Add Login with Valyd to a Flask app with plain OIDC: session state and nonce, authorize redirect, form-encoded token exchange, userinfo.'
+---
+
+import { Callout } from 'nextra/components'
+
+# Python (Flask) quickstart
+
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🐍 Raw API recipe · ⏱ ~10 minutes
+
+**What you'll build:** a two-route Flask app where "Login with Valyd" returns the user's
+pseudonymous `valyd_id` to your backend — no SDK, just `requests`.
+
+<Callout type="info">
+Your real values are pre-filled on your app's **Quick setup** tab in the
+[Developer Portal](https://dev.valyd.work).
+</Callout>
+
+## 1. Create the app
+
+In the [Developer Portal](https://dev.valyd.work) create an application, enable the `profile`
+[scope](/docs/scopes), and register this exact redirect URI:
+
+```text
+http://localhost:5000/callback
+```
+
+Copy the `client_id` and the one-time `client_secret`.
+
+## 2. Install
+
+```bash
+mkdir valyd-login && cd valyd-login
+pip install flask requests
+```
+
+Export your credentials (replace with the real values from the portal):
+
+```bash
+export VALYD_CLIENT_ID=YOUR_CLIENT_ID
+export VALYD_CLIENT_SECRET=YOUR_CLIENT_SECRET
+export VALYD_REDIRECT_URI=http://localhost:5000/callback
+export SESSION_SECRET=replace_with_at_least_32_random_characters
+```
+
+## 3. Write the app
+
+**`app.py`**
+
+```python
+import os
+import secrets
+from urllib.parse import urlencode
+
+import requests
+from flask import Flask, abort, redirect, request, session
+
+VALYD = "https://idp.valyd.work"
+
+app = Flask(__name__)
+app.secret_key = os.environ["SESSION_SECRET"]
+
+
+@app.route("/")
+def home():
+    return '<a href="/login">Login with Valyd</a>'
+
+
+@app.route("/login")
+def login():
+    state = secrets.token_hex(16)   # CSRF: Valyd echoes it back on the callback
+    nonce = secrets.token_hex(16)   # bound into the id_token (replay protection)
+    session["valyd_state"] = state
+    session["valyd_nonce"] = nonce
+    return redirect(f"{VALYD}/api/auth/oidc/authorize?" + urlencode({
+        "client_id":     os.environ["VALYD_CLIENT_ID"],
+        "redirect_uri":  os.environ["VALYD_REDIRECT_URI"],  # must exactly match an app redirect URI
+        "response_type": "code",
+        "scope":         "openid profile",                  # openid is REQUIRED
+        "state":         state,
+        "nonce":         nonce,
+    }))
+
+
+@app.route("/callback")
+def callback():
+    if "error" in request.args or "code" not in request.args:
+        abort(400)
+    if not secrets.compare_digest(
+        session.pop("valyd_state", ""), request.args.get("state", "")
+    ):
+        abort(400)  # CSRF check — never skip it
+
+    token = requests.post(f"{VALYD}/api/auth/oidc/token", data={  # form-encoded
+        "grant_type":    "authorization_code",
+        "code":          request.args["code"],
+        "client_id":     os.environ["VALYD_CLIENT_ID"],
+        "client_secret": os.environ["VALYD_CLIENT_SECRET"],
+        "redirect_uri":  os.environ["VALYD_REDIRECT_URI"],  # same URI used at authorize
+    })
+    token.raise_for_status()
+    tokens = token.json()  # TOP-LEVEL: access_token, refresh_token, id_token, expires_in (~900)
+
+    user = requests.get(
+        f"{VALYD}/api/auth/oidc/userinfo",
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    ).json()
+
+    # user["valyd_id"] is the stable pseudonymous ID —
+    # find-or-create your local user against it, then start your own session.
+    return {"valyd_id": user["valyd_id"], "id_verified": user["id_verified"]}
+
+
+if __name__ == "__main__":
+    app.run(port=5000)
+```
+
+The `id_token` is an RS256-signed JWT. This quickstart trusts it because it arrived over TLS
+directly from the token endpoint; for production, verify its signature against the JWKS at
+`https://idp.valyd.work/api/auth/oidc/jwks.json` and check that its `nonce` claim equals
+`session["valyd_nonce"]` (PyJWT does both), or use an OIDC library — see
+[Use any OIDC library](/docs/oidc).
+
+## 4. Run it
+
+```bash
+python app.py
+```
+
+Open http://localhost:5000 and click **Login with Valyd**.
+
+<Callout type="info" emoji="✅">
+**Checkpoint:** `/login` redirects to `https://idp.valyd.work/api/auth/oidc/authorize?...` with
+`state` and `nonce` in the URL; after consent, `/callback` returns your `valyd_id` and
+`id_verified`; and a forged callback (wrong or missing `state`) is rejected with HTTP 400.
+</Callout>
+
+## Troubleshooting
+
+- **`redirect_uri` mismatch** — the value sent at `/authorize` and `/token` must both exactly
+  match a registered redirect URI. See [Errors & troubleshooting](/docs/errors).
+- **State check fails on legitimate logins** — the Flask session cookie was lost (different
+  host/port between login and callback, or cookies blocked); start both routes on
+  `localhost:5000`. See [Errors & troubleshooting](/docs/errors).
+- **`invalid_scope` / missing `openid`** — `scope` must include `openid`, and every requested
+  scope must be enabled on the app in the portal. See [Errors & troubleshooting](/docs/errors).
+
+## Next steps
+
+- [Scopes](/docs/scopes) — request `verifications`, `email`, or license scopes.
+- [Account API](/docs/endpoints) — read userinfo, licenses (`/api/auth/oidc/licenses`), and
+  verification proofs (`/api/auth/oidc/verifications`) with the access token.
+- [Attach a verification](/verifications/quickstart) — run a new KYC or license check with the
+  user's token so the proof saves to their Valyd account.
+- Moving to Node later? The official SDK (`npm install @valyd/sdk@^1.10.1`) does this whole flow,
+  plus PKCE and id_token verification, in two calls — see the
+  [Node.js quickstart](/docs/quickstart/node).

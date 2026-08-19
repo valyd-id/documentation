@@ -1,18 +1,8 @@
-# Create a Project & Get Your Credentials
+# Create an app and choose the right credential
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/create-project
-- Credentials / env vars needed: produces `client_id` and `client_secret` (these are the OUTPUT of this page, not a prerequisite)
-- Files an integrator edits: your backend environment file (e.g. `.env`) to store `client_secret` after you obtain it
-- Estimated steps: 3
-- Can complete without human input: NO — every step is a manual action in the Developer Portal web UI (sign up, create project, copy the one-time-shown secret). An automated agent cannot perform these; a human must do them and then hand the agent the resulting `client_id` and `client_secret`.
-- Prerequisites:
-  - A basic Valyd account (sign up at https://dev.valyd.work — no KYC verification required)
-  - Access to a browser to use the Developer Portal at https://dev.valyd.work
-  - The exact production domain(s) your app sends requests from (for Allowed Web Origins)
-  - Your callback/redirect URL, with NO trailing slash (e.g. `https://myapp.com/callback`)
-
-Before integrating with Valyd SSO, you need to register your application in the Developer Portal to obtain your client credentials. Access to the Developer Portal requires a basic Valyd account; no KYC verification is needed — just sign up at https://dev.valyd.work.
+> **Terminology:** the Developer Portal UI labels this object a **"project"**; these docs call it
+> your **app**. It is the same thing — one OAuth client plus its verification capability. Where an
+> API path literally says `project` (e.g. `/verify/projects/{id}`), keep the literal path.
 
 ## Prerequisites
 
@@ -71,7 +61,7 @@ Select the data permissions your application needs. Users will see these scopes 
   - KYC Data (optional — select verification method):
     - `Name` — User's self-reported name
     - `Age` — User's age estimate
-    - `Portrait` — User's profile photo
+    - `Portrait` — the photo extracted from the user's submitted ID document during KYC (consent-gated; Valyd never exposes a stored face image — accounts hold only irreversible face vectors)
 - `verifications` — Document-based identity verification.
   - `ID Verification` — Government ID document verification
   - `Licenses` — Professional or driver's licenses
@@ -81,7 +71,9 @@ Select the data permissions your application needs. Users will see these scopes 
 
 **Expected output:** The project form is submitted successfully.
 
-### Step 3 — Save your credentials
+![The app's Settings tab: redirect URIs, web origins, and scopes](/images/screenshots/portal-app-settings.png)
+
+### Step 3 — Save only the credentials your path needs
 
 After creating your project, you'll immediately see a modal with your credentials.
 
@@ -99,24 +91,38 @@ Example Client Secret format: sk_live_a1b2c3d4e5f6g7h8i9j0...
 
 IMPORTANT: The Client Secret is shown only once. Copy and store it securely immediately. If you lose it, you'll need to regenerate it.
 
-Store the secret in your backend environment file, for example:
+For Verification API integrations, also copy the App API key shown by the portal. Store it as
+`VALYD_API_KEY` on your backend and send it as `X-API-Key`. Do not send `client_secret` to
+Verification API endpoints, and never expose either secret in frontend code.
+
+Store only the credentials your chosen path needs, for example:
 
 ```bash
 # .env (server-side only — never commit or expose in frontend code)
 VALYD_CLIENT_ID=9357c59bc1794b4c9efe8823e5878147
 VALYD_CLIENT_SECRET=sk_live_a1b2c3d4e5f6g7h8i9j0...
+
+# Verification API only (does not require the two OIDC values above)
+VALYD_API_KEY=vrf_...
 ```
 
-**Expected output:** You have copied and stored a `client_id` (32-hex-character string) and a `client_secret` (prefixed `sk_live_...`). The secret is now saved server-side.
+**Expected output:** Login integrations have `client_id` + `client_secret`. Verification-only
+integrations have `VALYD_API_KEY`. Hosted verification also has a workflow ID and webhook secret.
 
-## You're Ready — Next Steps
+## Choose your next step
 
-With your Client ID and Client Secret you can now integrate Valyd SSO into your application:
+For user account login:
 
 1. Store your `client_secret` securely in your backend environment variables.
-2. Implement the "Login with Valyd" button that redirects to the authorization URL (`https://idp.valyd.work/auth?client_id=...&redirect_url=...&scope=...`).
+2. Follow the [Login with Valyd quickstart](/docs/quick-start); the SDK builds the OIDC URL.
 3. Handle the callback and exchange the one-time code for tokens using your `client_secret` (backend only).
-4. Use the `access_token` to fetch user data.
+4. Use the `access_token` to fetch scoped account data.
+
+For KYC or license verification without user login:
+
+1. Store `VALYD_API_KEY` on your backend.
+2. Do not build an OIDC login route.
+3. Follow the [Verification API quickstart](/verifications/quickstart).
 
 ## Verification
 

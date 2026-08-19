@@ -10,7 +10,7 @@ interface Props {
 
 export const DemoUserPicker = ({ value, onChange }: Props) => {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-(--vd-border) bg-white p-4 dark:bg-slate-950">
       <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Demo User</h3>
       <div className="space-y-2">
         {DEMO_USERS.map(u => (
@@ -20,7 +20,7 @@ export const DemoUserPicker = ({ value, onChange }: Props) => {
               'flex cursor-pointer items-center gap-3 rounded-md border p-2 transition-colors',
               value === u.id
                 ? 'border-(--vd-primary) bg-(--vd-primary-soft)'
-                : 'border-transparent hover:bg-gray-100 dark:hover:bg-slate-800'
+                : 'border-transparent hover:bg-gray-100 dark:hover:bg-slate-900'
             )}
           >
             <input

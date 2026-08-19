@@ -1,27 +1,28 @@
-# Statuses & decisioning
+# Decisions & statuses
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/statuses
-- Credentials / env vars needed: none (reference only)
-- Files an integrator edits: none — reference only
-- Estimated steps: 0
-- Can complete without human input: YES — this is a reference page; no actions required.
-- Prerequisites: none
-
-This page lists every session status and every per-check status, what each means, and a decision tree for how to act on each. There are two independent status dimensions:
-- **Session status** — the lifecycle state of an entire verification session.
-- **Check status** — the result of an individual check within a session.
+**The decision is the authoritative outcome — never trust redirect query params as final.** The
+`?status=` your `redirect_url` receives is a hint only; confirm every result via the signed
+[webhook](/verifications/webhooks) or `GET /api/v2/session/{id}/decision`
+([hosted flow, step 4](/verifications/hosted)).
 
 ## Session status
 
 Lifecycle transitions:
 
-```text
-NOT_STARTED ──► IN_PROGRESS ──► (IN_REVIEW) ──► APPROVED | DECLINED
-                                              └─► ABANDONED | EXPIRED
+```mermaid
+stateDiagram-v2
+    [*] --> NOT_STARTED
+    NOT_STARTED --> IN_PROGRESS
+    IN_PROGRESS --> IN_REVIEW
+    IN_PROGRESS --> APPROVED
+    IN_PROGRESS --> DECLINED
+    IN_PROGRESS --> ABANDONED
+    IN_PROGRESS --> EXPIRED
+    IN_REVIEW --> APPROVED
+    IN_REVIEW --> DECLINED
 ```
 
-`IN_REVIEW` is optional (parenthesized): a session may go directly from `IN_PROGRESS` to a terminal state, or pass through `IN_REVIEW` first.
+`IN_REVIEW` is optional: a session may go directly from `IN_PROGRESS` to a terminal state, or pass through `IN_REVIEW` first.
 
 | Status        | Meaning                                              |
 |---------------|------------------------------------------------------|
@@ -35,6 +36,20 @@ NOT_STARTED ──► IN_PROGRESS ──► (IN_REVIEW) ──► APPROVED | DEC
 
 Terminal states (a webhook is sent and the lifecycle ends): `APPROVED`, `DECLINED`, `ABANDONED`, `EXPIRED`.
 Non-terminal states (still in flight): `NOT_STARTED`, `IN_PROGRESS`, `IN_REVIEW`.
+
+**Unknown values:** new statuses may be added over time ([versioning](/verifications/versioning)) —
+treat unknown verification states as **not approved** until your application explicitly supports
+them.
+
+### Manual review decisions
+
+An `IN_REVIEW` session can be resolved by a reviewer on your side via
+`PATCH /api/v2/session/{id}/status` with `{ "status": "APPROVED" | "DECLINED" }`
+([reference](/verifications/api-reference#patch-apiv2sessionidstatus--manual-override)). This
+records your **business decision** on the session — it does not change what the individual checks
+proved; the per-check results are preserved in the decision. Only `IN_REVIEW` sessions can be
+manually decided, and a manual `APPROVED` still requires the session's ID verification, liveness,
+and face-match checks to have passed.
 
 ### Decision tree — how to act on a session status
 

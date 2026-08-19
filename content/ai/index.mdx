@@ -1,0 +1,66 @@
+---
+title: Valyd for AI Agents
+description: Identity and verification as tools your agent can call — MCP tools, agent-readable docs, and human-in-the-loop consent, with the person always in control.
+---
+
+import { Cards, Callout } from 'nextra/components'
+import { Plug, BookOpenCheck, UserCheck, Bot, KeyRound, Vault } from 'lucide-react'
+
+# Valyd for AI Agents
+
+Give your agent identity and verification as **tools it can call** — while the human stays in
+control. An agent can ask the signed-in user to approve a sensitive action with a face scan,
+read verification results, run web tasks on the user's behalf, and request personal data that
+the person approves (or declines) in their own Valyd app. The agent gets capabilities; the
+user keeps consent.
+
+## Live today
+
+<Cards>
+  <Cards.Card icon={<Plug />} title="Agent tools (MCP)" href="/ai/mcp-setup" arrow>
+    A hosted MCP server (Streamable HTTP, OAuth 2.1 + PKCE) that turns verification and the
+    Valyd web agent into tools for Claude Code, Claude Desktop, Cursor, VS Code, and any
+    OAuth-capable MCP client. No keys in config files — the user signs in with Valyd.
+  </Cards.Card>
+  <Cards.Card icon={<BookOpenCheck />} title="Agent-readable docs" href="/agents" arrow>
+    llms.txt, a full-corpus llms-full.txt, OpenAPI 3.1 specs for both APIs, and a Postman
+    collection — everything an agent needs to discover and call the Valyd APIs without
+    scraping this site.
+  </Cards.Card>
+  <Cards.Card icon={<UserCheck />} title="Human-in-the-loop consent" href="/docs/request-data" arrow>
+    An agent (or your backend) requests raw user data; the human approves the exact fields in
+    their Valyd app. Approved values come back sealed end-to-end to your key — Valyd stays
+    blind to the plaintext.
+  </Cards.Card>
+</Cards>
+
+## Coming soon
+
+<Callout type="info">
+  These are on the roadmap and not yet available. Details will land here when they ship.
+</Callout>
+
+- **Agent-initiated verification sessions** — *Coming soon*
+- **Scoped per-agent credentials** — *Coming soon*
+- **Token vault for agent integrations** — *Coming soon*
+
+## Start here
+
+<Cards>
+  <Cards.Card icon={<Plug />} title="Connect the MCP server" href="/ai/mcp-setup" arrow>
+    One command in Claude Code; a two-line JSON block everywhere else.
+  </Cards.Card>
+  <Cards.Card icon={<Bot />} title="MCP tool reference" href="/ai/mcp-tools" arrow>
+    Every tool — parameters, returns, and statuses.
+  </Cards.Card>
+  <Cards.Card icon={<KeyRound />} title="How MCP auth works" href="/ai/mcp-auth" arrow>
+    OAuth 2.1 + PKCE, discovery via 401, and token requirements for code-first clients.
+  </Cards.Card>
+  <Cards.Card icon={<Vault />} title="Integrate without MCP" href="/ai/agent-guide" arrow>
+    Point your agent at llms.txt and call the APIs directly.
+  </Cards.Card>
+</Cards>
+
+---
+
+Questions? [support@valyd.id](mailto:support@valyd.id)

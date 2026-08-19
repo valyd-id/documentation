@@ -1,16 +1,18 @@
 # Changelog
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/changelog
-- Credentials / env vars needed: none
-- Files an integrator edits: none — reference only
-- Estimated steps: 0 (read to confirm which SDK version introduces the helper you need)
-- Can complete without human input: YES — this is a read-only version history.
-- Prerequisites: none
+## v1.10.1 — Secure OIDC transaction (2026-08-18)
 
-This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality), **Docs** (documentation-only changes), **Breaking (docs)** (a documented pattern was removed or changed).
-
----
+- **Added:** Login with Valyd is now standard OpenID Connect end to end. `valyd.auth.getAuthorizationUrl()`
+  targets `GET /api/auth/oidc/authorize`, takes `state` + `nonce`, and adds the required `openid`
+  scope automatically. `exchangeCode()` / `refreshToken()` use `POST /api/auth/oidc/token` and return
+  the standard top-level token JSON (`access_token`, `refresh_token`, `id_token`, `expires_in`, `scope`).
+- **Added:** `createAuthorizationRequest()` + `handleCallback(url, { transaction })` keep state,
+  nonce, and S256 PKCE together and validate the RS256 ID token against discovery/JWKS.
+- **Breaking (docs):** the IdP now **echoes your `state` back on the callback** — the standard OAuth
+  `state` comparison is the correct, required CSRF check. The login-session "marker" pattern is
+  deprecated; `createLoginSession()` / `verifyLoginSession()` are now deprecated no-ops kept only for
+  backward compatibility.
+- **Docs:** Login with Valyd and the Verification API are documented as separate integration paths.
 
 ## Docs — Anti-spoof, face uniqueness & developer accounts
 
@@ -41,11 +43,11 @@ This page tracks releases of the Valyd SDK. Tags: **Added** (new functionality),
 
 - **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).
 - **Added:** One unified package `@valyd/sdk` — `valyd.auth` (Login with Valyd) + `valyd.verify` (verification) + workforce members; one credential, one host.
-- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk` (latest).
+- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.1`.
 
 ---
 
-## v0.2.0 — Login sessions for TPSSO
+## v0.2.0 — Legacy login-session helpers (superseded by v1.10.1)
 
 - **Added:** `createLoginSession()` and `verifyLoginSession()` helpers.
 - **Docs:** Clarified that the callback `state` is Valyd's session id, not your authorize state.

@@ -18,7 +18,7 @@ export const ScopePicker = ({ selected, onChange }: Props) => {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-(--vd-border) bg-white p-4 dark:bg-slate-950">
       <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Scopes</h3>
       <div className="flex flex-wrap gap-2">
         {AVAILABLE_SCOPES.map(scope => {
@@ -30,7 +30,7 @@ export const ScopePicker = ({ selected, onChange }: Props) => {
                   'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-sm transition-colors',
                   checked
                     ? 'border-(--vd-primary) bg-(--vd-primary-soft) text-gray-900 dark:text-gray-100'
-                    : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:bg-slate-900 dark:text-gray-400 dark:hover:bg-slate-800'
+                    : 'border-(--vd-border) bg-white text-gray-500 hover:bg-gray-100 dark:bg-slate-950 dark:text-gray-400 dark:hover:bg-slate-900'
                 )}
               >
                 <input

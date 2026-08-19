@@ -1,32 +1,5 @@
 # API Reference
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/api-reference
-- Credentials / env vars needed: VALYD_API_KEY (your App API key, sent as the `X-API-Key` header)
-- Files an integrator edits: none — reference only (server code uses these endpoints)
-- Estimated steps: 0
-- Can complete without human input: YES — this is a reference page; no actions required.
-- Prerequisites:
-  - An App API key from the Valyd Developer Portal (https://dev.valyd.work)
-  - For workflow-based sessions, a `workflow_id` configured in the Developer Portal
-
-Base URL for all endpoints: `https://idp.valyd.work`
-
-### Authentication (applies to every call)
-Every call uses the header:
-
-```http
-X-API-Key: <App API key>
-```
-
-A Bearer token is also accepted:
-
-```http
-Authorization: Bearer <App API key>
-```
-
-Get your App API key from the Valyd Developer Portal (https://dev.valyd.work). Authenticated endpoints are billed per call against your App.
-
 ## Sessions
 
 | Method | Path                              | Description                                          |
@@ -79,9 +52,12 @@ Full URL: `https://idp.valyd.work/api/v2/session/{id}/status`
 
 Manually force a terminal decision. Body must set `status` to `APPROVED` or `DECLINED`.
 
-Use this when a session lands in `IN_REVIEW` (or is otherwise still open) and a human reviewer on your side makes the call — for example approving a borderline document check. The override is authenticated by your project API key, so any holder of that key can perform it; there is no separate reviewer role. The decision is recorded on the session and delivered to your webhook like any other result.
+Use this when a session lands in `IN_REVIEW` and a human reviewer on your side makes the call — for example approving a borderline document check. This records **your business decision** on the session; it does not change what the individual checks proved — the per-check results are preserved in the decision. The override is authenticated by your app's API key, so any holder of that key can perform it; there is no separate reviewer role. The decision is recorded on the session and delivered to your webhook like any other result.
 
-**Rule — override only works before the session is terminal.** It is valid while the session is `NOT_STARTED`, `IN_PROGRESS`, or `IN_REVIEW`. Once a session has already reached a terminal state (`APPROVED` / `DECLINED`), it cannot be flipped — the API returns `409 already_decided`.
+**Rules:**
+
+- **Only an `IN_REVIEW` session can be manually decided.** Any other state — including `NOT_STARTED`, `IN_PROGRESS`, or a state that is already terminal — returns `409 review_not_pending`.
+- **Manual `APPROVED` still requires the session's ID verification, liveness, and face-match checks to have passed** — otherwise the API returns `409 required_face_checks_incomplete`. `DECLINED` has no such gate.
 
 ```bash
 curl -X PATCH https://idp.valyd.work/api/v2/session/SES_ID/status \

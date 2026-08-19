@@ -6,10 +6,10 @@ description: 'Developer documentation for Valyd: Login with Valyd (OAuth 2.0 / O
 import { Cards } from 'nextra/components'
 import {
   HeroGrid,
+  ZigRow,
   Hero,
   HeroCode,
   Section,
-  Capabilities,
   Steps,
   Resources,
   SupportBand
@@ -19,6 +19,7 @@ import {
   ScanFace,
   Sparkles,
   Rocket,
+  Signpost,
   ShieldCheck,
   Users,
   Play,
@@ -30,58 +31,102 @@ import {
 
 <HeroGrid>
   <Hero
-    title="Verified identity, built into your product"
-    primary={{ href: '/docs/quick-start', label: 'Get Started' }}
-    secondary={{ href: '/docs/endpoints', label: 'Explore API' }}
+    title="We verify people. You just ask if they're verified."
+    primary={{ href: '/docs/introduction', label: 'Start here' }}
+    secondary={{ href: '/docs/choose', label: 'Choose your integration' }}
   >
-    Valyd is one platform for identity. Let users **sign in** with an already-verified account,
-    **verify** people with KYC, liveness and license checks, and give **AI agents** a safe way to
-    act on a verified identity. One set of credentials, three ways to use them.
+    KYC, liveness, face match, age, and professional licenses — verified by Valyd, saved to the
+    person's Valyd ID, and reusable everywhere they sign in. Their documents and personal data
+    stay with us, encrypted. Prefer raw results in your own system? That works too.
   </Hero>
   <HeroCode>
 
-```typescript
-import { ValydClient } from "@valyd/sdk";
-
-const valyd = new ValydClient({
-  clientId: process.env.VALYD_CLIENT_ID!,
-  clientSecret: process.env.VALYD_CLIENT_SECRET!,
-  redirectUri: process.env.VALYD_REDIRECT_URI!,
-  // baseUrl defaults to the production Valyd IdP — set it for dev/staging
-});
+```html
+<!-- "Sign in with Valyd" — the whole front end -->
+<script src="https://idp.valyd.work/signin/client.js" async></script>
+<div class="valyd-signin"
+     data-client-id="YOUR_CLIENT_ID"
+     data-redirect-uri="https://yourapp.com/callback"></div>
 ```
 
   </HeroCode>
 </HeroGrid>
 
-<Section title="What you can build" index={1}>
+<ZigRow
+  index={1}
+  side="left"
+  kicker="Recommended"
+  title="Verified once. Recognized everywhere."
+  cta={{ href: '/verifications/managed', label: 'How reusable identity works' }}
+  body={<>A person verifies once — their proof lives on their Valyd ID. When they sign in to your
+  app, you simply ask whether they're verified. No forms to rebuild, no documents to store, no
+  personal data in your database: we hold it, encrypted, under our <a href="/docs/data-and-trust">data
+  policies</a>.</>}
+>
+
+```typescript
+// The user signed in and verified — you just read:
+const proofs = await valyd.auth.getVerifications(token);
+// → id_verified: true · verified licenses · age bands
+```
+
+</ZigRow>
+
+<ZigRow
+  index={2}
+  side="right"
+  kicker="Also supported"
+  title="Or keep everything in your own system"
+  cta={{ href: '/verifications/quickstart', label: 'Verification quickstart' }}
+  body={<>No sign-in of any kind: call a check with your API key — or send the person to our
+  hosted page — and the full result comes back to you. You store and protect the personal data
+  yourself.</>}
+>
+
+```typescript
+// License lookup, direct — result in this response:
+const result = await verify.standalone.credentialVerification({
+  firstName: "Jane", lastName: "Doe",
+  providerCode: "MD", licenseState: "CA", licenseNumber: "A12345",
+});
+
+// or the same hosted flow, no account attached:
+const session = await verify.sessions.create({ workflowId, redirectUrl });
+// → decision + identity data return to your system, yours to manage
+```
+
+</ZigRow>
+
+<Section
+  title="What do you want to do?"
+  sub="Pick a goal — each takes you straight to its guide."
+  index={1}
+>
   <Cards>
-    <Cards.Card icon={<KeyRound />} title="Login with Valyd" href="/docs" arrow>
-      OAuth 2.0 and OpenID Connect sign-in with profile, license and verification scopes built in.
-      Your users bring an identity that is already checked.
+    <Cards.Card icon={<ScanFace />} title="Verify someone" href="/verifications/quickstart" arrow>
+      Run KYC, liveness, face, age, or license checks — hosted page or direct API.
     </Cards.Card>
-    <Cards.Card icon={<ScanFace />} title="Verification APIs" href="/verifications" arrow>
-      KYC, document checks, liveness, face match, age and professional-license checks — hosted
-      capture UI or direct REST APIs from your backend.
+    <Cards.Card icon={<ShieldCheck />} title="Reuse verified identity" href="/verifications/managed" arrow>
+      Let verified users skip re-verification — read the proofs their Valyd ID already holds.
     </Cards.Card>
-    <Cards.Card icon={<Sparkles />} title="MCP for AI agents" href="/mcp" arrow>
-      The Valyd MCP server exposes identity and verification as tools an agent can call, with the
-      human staying in control of consent.
+    <Cards.Card icon={<KeyRound />} title="Add “Sign in with Valyd”" href="/docs" arrow>
+      A two-line button gives your app verified sign-in.
+    </Cards.Card>
+    <Cards.Card icon={<Rocket />} title="Pick a quickstart" href="/docs/quickstarts" arrow>
+      Node, Next.js, Python, PHP, or plain cURL — a working login in minutes.
+    </Cards.Card>
+    <Cards.Card icon={<Play />} title="Try it live" href="/sandbox" arrow>
+      The API Playground runs the real flow against demo users.
+    </Cards.Card>
+    <Cards.Card icon={<Sparkles />} title="Build with AI agents" href="/ai" arrow>
+      The Valyd MCP server turns verification into agent tools.
     </Cards.Card>
   </Cards>
 </Section>
 
 <Section
-  title="API capabilities"
-  sub="The authoritative surface, straight from the reference pages: five TPSSO endpoints for sign-in and data access, plus the verification checks the Core APIs expose."
-  index={2}
->
-  <Capabilities />
-</Section>
-
-<Section
-  title="How integration works"
-  sub="Three steps from zero to production. The sandbox lets you try every call before you write code."
+  title="How to choose"
+  sub="Start from the result you need. Add Login with Valyd only when your app needs the user's account."
   index={1}
 >
   <Steps />
@@ -89,8 +134,11 @@ const valyd = new ValydClient({
 
 <Section title="Popular pages" index={1}>
   <Cards>
-    <Cards.Card icon={<Rocket />} title="Quick start" href="/docs/quick-start" arrow>
-      Add Login with Valyd to your app in minutes.
+    <Cards.Card icon={<Signpost />} title="Choose your integration" href="/docs/choose" arrow>
+      Hosted, Core API, or Login? A two-question decision tree and comparison table.
+    </Cards.Card>
+    <Cards.Card icon={<Rocket />} title="Verification quickstart" href="/verifications/quickstart" arrow>
+      Run a verification in your backend with just an API key — attach a user's login token only when the proof should save to their Valyd account.
     </Cards.Card>
     <Cards.Card icon={<ShieldCheck />} title="Ship hosted KYC" href="/verify/ship-hosted-kyc" arrow>
       End-to-end recipe: session, redirect, webhook, decision.

@@ -49,13 +49,13 @@ export const PasteInput = ({ label, value, onChange, placeholder, hint }: Props)
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
           spellCheck={false}
-          className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--vd-primary-border) dark:border-gray-800 dark:bg-slate-900 dark:text-gray-100 dark:placeholder:text-gray-500"
+          className="min-w-0 flex-1 rounded-md border border-(--vd-border) bg-white px-3 py-2 font-mono text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--vd-primary-border) dark:bg-slate-950 dark:text-gray-100 dark:placeholder:text-gray-500"
         />
         <button
           type="button"
           onClick={onPaste}
           title="Paste from clipboard"
-          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-slate-900 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-100"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-(--vd-border) bg-white px-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:bg-slate-950 dark:text-gray-400 dark:hover:bg-slate-900 dark:hover:text-gray-100"
         >
           <ClipboardPaste className="h-3.5 w-3.5" />
         </button>
@@ -64,7 +64,7 @@ export const PasteInput = ({ label, value, onChange, placeholder, hint }: Props)
           onClick={onCopy}
           disabled={!value}
           title="Copy"
-          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50 dark:border-gray-800 dark:bg-slate-900 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-100"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-(--vd-border) bg-white px-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50 dark:bg-slate-950 dark:text-gray-400 dark:hover:bg-slate-900 dark:hover:text-gray-100"
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         </button>

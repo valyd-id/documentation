@@ -1,58 +1,75 @@
-# Valyd Third-Party SSO API
+# Login with Valyd
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs
-- Credentials / env vars needed: client_id, client_secret (obtain from the Developer Portal — see Prerequisites)
-- Files an integrator edits: none — reference / orientation page only
-- Estimated steps: 6 (the end-to-end OAuth2 SSO flow described below)
-- Can complete without human input: NO — obtaining credentials requires signing up at https://dev.valyd.work and creating a project (a human-only web step)
-- Prerequisites:
-  - A basic Valyd account (sign up at https://dev.valyd.work — no KYC verification required)
-  - A registered project in the Developer Portal that provides your `client_id` and `client_secret`
-  - A backend capable of making server-side HTTPS requests (to keep `client_secret` secret)
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 Standard OpenID Connect · 📖 **After login:** read the user's account with a Bearer access token
 
-Integrate secure identity verification and authentication into your application using Valyd's OAuth2-based Single Sign-On system. Get access to verified user profiles, professional licenses, and identity verification data.
+Users sign in with their verified Valyd identity — you get their profile, licenses, and
+verification proofs. Add the button, done:
 
-## Base URL
-
-```text
-https://idp.valyd.work/api/auth/tpsso
+```html
+<script src="https://idp.valyd.work/signin/client.js" async></script>
+<div class="valyd-signin"
+     data-client-id="YOUR_CLIENT_ID"
+     data-redirect-uri="https://yourapp.com/auth/valyd/callback"
+     data-scope="profile verifications"></div>
 ```
 
-## Integration Flow
+That's the whole front end.
 
-Access to the Developer Portal requires a basic Valyd account. No KYC verification needed — just sign up at https://dev.valyd.work to get your API credentials.
+## 1. Get your credentials
 
-The end-to-end OAuth2 SSO flow has six steps:
+In the [Developer Portal](https://dev.valyd.work) create an app, enable the [scopes](/docs/scopes) you need
+(`profile` is on by default), and register your exact callback URL. Copy the `client_id` and
+one-time `client_secret`. New accounts start with a **$100 welcome credit** for
+[testing](/docs/testing).
 
-1. **Create Project** — Register your application at https://dev.valyd.work to get your client credentials (`client_id` and `client_secret`).
-2. **Redirect to Authorization** — When a user clicks "Login with Valyd", redirect them to the authorization URL with your `client_id` and requested `scope`s.
-3. **User Consent** — The user sees the consent screen with the requested permissions and approves access.
-4. **Receive Authorization Code** — After approval, the user is redirected to your callback URL with a one-time code (valid for 5 minutes).
-5. **Exchange Code for Tokens** — Your backend exchanges the code for an `access_token` and `refresh_token` using your `client_secret`.
-6. **Access Protected Resources** — Use the `access_token` to call `/userinfo`, `/licenses`, and `/verifications` endpoints.
+![The app's Quick setup page: setup checklist, client credentials, and OIDC endpoints](/images/screenshots/portal-app-quicksetup.png)
 
-### Authorization URL shape
+## 2. Handle the callback
 
-The authorization URL is built from the IdP base host `https://idp.valyd.work`, the `/auth` path, and query parameters. `scope` is a space-separated list, URL-encoded.
+One backend route at the `data-redirect-uri` you set on the button (Express shown — any
+framework works; `req` is the incoming callback request):
 
-```text
-https://idp.valyd.work/auth?client_id=YOUR_CLIENT_ID&redirect_url=YOUR_REDIRECT_URI&scope=profile%20verifications
+```typescript
+import express from "express";
+import cookieParser from "cookie-parser";
+import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.1 cookie-parser
+
+const app = express();
+app.use(cookieParser());
+const valyd = new ValydClient({ clientId, clientSecret, redirectUri });
+
+app.get("/auth/valyd/callback", async (req, res) => {
+  const { user } = await valyd.handleCallback(req.url, {
+    expectedState: req.cookies.valyd_oidc_state,   // the button set this cookie
+    nonce: req.cookies.valyd_oidc_nonce,
+  });
+  // user.valyd_id — stable ID; user.id_verified — identity proof
+  res.redirect("/dashboard");
+});
 ```
 
-- `YOUR_CLIENT_ID` — get this from the Developer Portal → your project → Credentials: https://dev.valyd.work
-- `YOUR_REDIRECT_URI` — the Redirect URL you registered for the project in the Developer Portal (must NOT end with a trailing slash)
-- `scope` — space-separated scope list (e.g. `profile verifications zkp`), URL-encoded so the space becomes `%20`
+Done. See the [complete example](/docs/quick-start), or plug in
+[your own OIDC library](/docs/oidc) instead.
 
-## Security Notes
+## From here you can get
 
-- Keep your `client_secret` server-side only — never expose it in frontend code.
-- `access_token` is short-lived (15 minutes); `refresh_token` is longer-lived.
+| Endpoint | What it reads from the user's account |
+| --- | --- |
+| [`GET /api/auth/oidc/userinfo`](/docs/endpoints#get-userinfo--get-user-profile) | Profile: legal name, username, `id_verified` |
+| [`GET /api/auth/oidc/licenses`](/docs/endpoints#get-licenses--get-professional-licenses) | Professional licenses already verified on the account |
+| [`GET /api/auth/oidc/verifications`](/docs/endpoints#get-verifications--get-identity-verifications) | Saved verification proofs and badges |
 
-  Note: the component lists `access_token` as "short-lived (15 minutes)" in the Security Notes, while the Integration Flow text describes it generically as "short-lived". 15 minutes is the explicit value given.
-- Always use HTTPS for all API calls.
-- Store tokens securely and never log them in production.
+These read what the account already holds, gated by the scopes the user approved. Raw identity
+attributes (DOB, document data) go through the explicit
+[consent flow](/docs/request-data).
 
-## Developer Tools
+Need to run a **new** KYC or license check and save it to this user's account? Run any
+[Verification API](/verifications) check with the user's `valyd_access_token` — the passed proof
+saves to their account, and next time you just read it here.
 
-The live documentation page includes a Postman Collection generator widget for exploring these endpoints interactively. It is a UI convenience and produces a Postman collection for the same endpoints described here; there is no additional API surface beyond the endpoints listed above.
+## Security rules
+
+- Keep `client_secret`, tokens, and the OIDC transaction on your backend.
+- Register an exact HTTPS redirect URI.
+- Never build your own state, PKCE, nonce, or JWT validation when the SDK can do it.
+- A verification API key is not an OIDC token and must not be placed in a browser.

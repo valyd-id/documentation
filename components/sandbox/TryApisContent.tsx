@@ -4,13 +4,11 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
-  Boxes,
   Check,
   ExternalLink,
   Fingerprint,
   KeyRound,
   Loader2,
-  Lock,
   Play,
   Shield,
   Sparkles,
@@ -84,7 +82,7 @@ const ENDPOINTS: EndpointMeta[] = [
     key: 'userinfo',
     method: 'GET',
     label: 'Get User Info',
-    path: '/api/auth/tpsso/userinfo',
+    path: '/api/auth/oidc/userinfo',
     description:
       "Returns the authenticated user's profile claims. Sends the access_token as `Authorization: Bearer …`."
   },
@@ -92,7 +90,7 @@ const ENDPOINTS: EndpointMeta[] = [
     key: 'licenses',
     method: 'GET',
     label: 'Get Licenses',
-    path: '/api/auth/tpsso/licenses',
+    path: '/api/auth/oidc/licenses',
     description:
       'Returns verified professional licenses (medical / nursing) attached to the user.'
   },
@@ -100,7 +98,7 @@ const ENDPOINTS: EndpointMeta[] = [
     key: 'verifications',
     method: 'GET',
     label: 'Get Verifications',
-    path: '/api/auth/tpsso/verifications',
+    path: '/api/auth/oidc/verifications',
     description: 'Returns verifiable credentials the user has presented to the IDP.'
   },
   {
@@ -115,7 +113,7 @@ const ENDPOINTS: EndpointMeta[] = [
 
 const methodColors: Record<'GET' | 'POST', string> = {
   GET: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-900',
-  POST: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-400 dark:border-indigo-900'
+  POST: 'bg-(--vd-primary-soft) text-(--vd-primary) border-(--vd-primary-border)'
 }
 
 /** Safe accessors for the loosely-typed API bodies. */
@@ -124,7 +122,7 @@ const asObject = (v: unknown): Record<string, unknown> | null =>
   v !== null && typeof v === 'object' ? (v as Record<string, unknown>) : null
 
 export const TryApisContent = () => {
-  const [protocol, setProtocol] = useState<'oauth2' | 'oidc' | 'mcp' | null>(null)
+  const [lane, setLane] = useState<'login' | 'verify' | null>(null)
   const [active, setActive] = useState<EndpointKey>('issue-code')
 
   const [demoUser, setDemoUserState] = useState<DemoUser>('nurse')
@@ -244,11 +242,11 @@ export const TryApisContent = () => {
     <TooltipProvider>
       {/* Hero header — `vd-rise` is the global, reduced-motion-gated entrance animation */}
       <header
-        className="vd-rise relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-b from-(--vd-primary-soft) to-transparent px-6 py-12 sm:px-10 dark:border-gray-800"
+        className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-gradient-to-b from-(--vd-primary-soft) to-transparent px-6 py-12 sm:px-10"
         style={{ '--i': 0 } as React.CSSProperties}
       >
         <div className="max-w-3xl">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-3 py-1 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-slate-900/70">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-(--vd-border) bg-white/70 px-3 py-1 shadow-sm backdrop-blur dark:bg-slate-950/70">
             <Sparkles className="h-3.5 w-3.5 text-(--vd-primary)" />
             <span className="text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300">
               Interactive Sandbox
@@ -258,9 +256,12 @@ export const TryApisContent = () => {
             API Playground
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg dark:text-gray-400">
-            Run real OAuth + OIDC requests against the Valyd sandbox. Pick a demo user, choose
-            scopes, and walk through the full flow — from authorization code to userinfo — without
-            writing a single line of code.
+            Valyd does two things. <span className="font-semibold text-gray-900 dark:text-gray-100">Login with Valyd</span>{' '}
+            signs a user in and lets you read what's already on their account — profile, licenses,
+            verification proofs. The <span className="font-semibold text-gray-900 dark:text-gray-100">Verification API</span>{' '}
+            runs checks — KYC, liveness, license lookups — from your backend with an API key,{' '}
+            <span className="font-semibold">no user login needed</span>. Pick the lane you're
+            building for below.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
@@ -275,47 +276,37 @@ export const TryApisContent = () => {
       </header>
 
       <div className="mt-8 space-y-6">
-        {/* Protocol picker */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Lane picker — the same two product lanes the docs sell: login vs verification. */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(
             [
               {
-                id: 'oauth2',
-                label: 'OAuth 2.0',
-                desc: 'Authorization code flow with demo users and scopes.',
-                icon: Shield,
-                enabled: true
+                id: 'login' as const,
+                label: 'Login with Valyd',
+                tag: 'User signs in',
+                desc: 'Standard OIDC. The user logs in with Valyd and you read what their account already holds — profile (legal name), licenses, verification proofs. Try the whole flow live below.',
+                icon: Fingerprint
               },
               {
-                id: 'oidc',
-                label: 'OpenID Connect',
-                desc: 'Identity layer on top of OAuth 2.0.',
-                icon: Fingerprint,
-                enabled: false
-              },
-              {
-                id: 'mcp',
-                label: 'MCP',
-                desc: 'Model Context Protocol endpoints.',
-                icon: Boxes,
-                enabled: false
+                id: 'verify' as const,
+                label: 'Verification API — just an API key',
+                tag: 'Just an API',
+                desc: 'Run KYC, liveness, face or license checks from your backend with an App API key. The person being checked never creates or uses a Valyd login.',
+                icon: Shield
               }
-            ] as const
+            ]
           ).map((p, i) => {
             const Icon = p.icon
-            const selected = protocol === p.id
+            const selected = lane === p.id
             return (
               <button
                 key={p.id}
-                onClick={() => p.enabled && setProtocol('oauth2')}
-                disabled={!p.enabled}
+                onClick={() => setLane(p.id)}
                 className={cn(
-                  'vd-rise group relative overflow-hidden rounded-xl border bg-white p-5 text-left transition-all dark:bg-slate-900',
+                  'vd-rise group relative overflow-hidden rounded-xl border bg-white p-5 text-left transition-all dark:bg-slate-950',
                   selected
                     ? 'border-(--vd-primary) shadow-md ring-2 ring-(--vd-primary-border)'
-                    : p.enabled
-                      ? 'cursor-pointer border-gray-200 hover:border-(--vd-primary-border) hover:shadow-sm dark:border-gray-800'
-                      : 'cursor-not-allowed border-gray-200 opacity-60 dark:border-gray-800'
+                    : 'cursor-pointer border-(--vd-border) hover:border-(--vd-primary-border) hover:shadow-sm'
                 )}
                 style={{ '--i': i + 1 } as React.CSSProperties}
               >
@@ -330,17 +321,13 @@ export const TryApisContent = () => {
                   >
                     <Icon className="h-5 w-5" />
                   </div>
-                  {!p.enabled ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:bg-slate-800 dark:text-gray-400">
-                      <Lock className="h-3 w-3" /> Coming soon
-                    </span>
-                  ) : selected ? (
+                  {selected ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-(--vd-primary-soft) px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-(--vd-primary)">
                       <Check className="h-3 w-3" /> Selected
                     </span>
                   ) : (
                     <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
-                      Available
+                      {p.tag}
                     </span>
                   )}
                 </div>
@@ -355,9 +342,11 @@ export const TryApisContent = () => {
           })}
         </div>
 
-        {/* SDK starter repo */}
+        {/* SDK starter repo — login-lane tooling, so hide it in the verify lane where
+            "no OIDC needed" is the whole point. */}
+        {lane !== 'verify' && (
         <section
-          className="vd-rise relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-50 via-white to-white p-6 sm:p-8 dark:border-gray-800 dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900"
+          className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-gradient-to-br from-(--vd-primary-soft) via-white to-white p-6 sm:p-8 dark:from-(--vd-primary-soft) dark:via-slate-950 dark:to-slate-950"
           style={{ '--i': 4 } as React.CSSProperties}
         >
           <div className="grid items-center gap-6 lg:grid-cols-[1fr_auto]">
@@ -371,8 +360,8 @@ export const TryApisContent = () => {
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                 A minimal Express app wired up with <code className="font-mono">@valyd/sdk</code> —
-                including <code className="font-mono">createLoginSession</code> /{' '}
-                <code className="font-mono">verifyLoginSession</code> for CSRF. The full
+                standard OIDC with <code className="font-mono">state</code> +{' '}
+                <code className="font-mono">nonce</code> CSRF handling. The full
                 redirect-and-consent flow on your localhost in three commands.
               </p>
               <pre className="mt-4 overflow-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-100">
@@ -401,30 +390,99 @@ npm run dev`}
             </ButtonLink>
           </div>
         </section>
+        )}
 
-        {protocol !== 'oauth2' ? (
+        {lane === null ? (
           <div
             key="empty"
-            className="vd-rise rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-10 text-center dark:border-gray-800 dark:bg-slate-900/40"
+            className="vd-rise rounded-xl border border-dashed border-(--vd-border) bg-gray-50/60 p-10 text-center dark:bg-slate-950/40"
             style={{ '--i': 5 } as React.CSSProperties}
           >
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400">
               <Sparkles className="h-5 w-5" />
             </div>
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Pick a protocol to get started
+              Pick a lane to get started
             </h3>
             <p className="mx-auto mt-1.5 max-w-md text-sm text-gray-500 dark:text-gray-400">
-              Select{' '}
-              <span className="font-medium text-gray-900 dark:text-gray-100">OAuth 2.0</span> above
-              to explore credentials, endpoints and run live requests.
+              <span className="font-medium text-gray-900 dark:text-gray-100">Login with Valyd</span>{' '}
+              when a user signs in and you read their account.{' '}
+              <span className="font-medium text-gray-900 dark:text-gray-100">Verification API</span>{' '}
+              when you just run checks from your backend — no user login involved.
             </p>
+          </div>
+        ) : lane === 'verify' ? (
+          <div key="verify" className="vd-rise space-y-6" style={{ '--i': 5 } as React.CSSProperties}>
+            <Alert tone="info">
+              <span className="font-semibold">Just an API key — the person never signs in.</span> Every call below is
+              server-to-server with your App API key (<code className="font-mono">X-API-Key</code>)
+              from the{' '}
+              <a href="https://dev.valyd.work" className="font-medium underline" target="_blank" rel="noopener noreferrer">
+                Developer Portal
+              </a>
+              . Results come back to <em>your</em> system — nothing is added to any Valyd account
+              unless you use the account-connected flow after a login.
+            </Alert>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              {[
+                {
+                  title: 'Run a KYC and get the data',
+                  method: 'POST',
+                  path: '/api/v2/kyc-credential',
+                  desc: 'Send a document + selfie, get the verdict and extracted document data back in the response. One call, one result — nothing stored on a Valyd account.',
+                  href: '/verifications/standalone'
+                },
+                {
+                  title: 'Verify a professional license',
+                  method: 'POST',
+                  path: '/api/v2/credential-verification',
+                  desc: "Look up a medical / nursing license and get the verification result directly. The person never logs in anywhere — it's just an API you call.",
+                  href: '/verifications/standalone'
+                },
+                {
+                  title: 'Hosted capture page',
+                  method: 'POST',
+                  path: '/api/v2/session',
+                  desc: 'Create a session, redirect the person to a Valyd-hosted capture page, get the decision by signed webhook + decision endpoint. Still no Valyd login for them.',
+                  href: '/verifications/hosted'
+                }
+              ].map(c => (
+                <Link
+                  key={c.title}
+                  href={c.href}
+                  className="group rounded-xl border border-(--vd-border) bg-white p-5 transition-all hover:border-(--vd-primary-border) hover:shadow-sm dark:bg-slate-950"
+                >
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-(--vd-border) bg-white px-2 py-1 dark:bg-slate-950">
+                    <span className={cn('rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold', methodColors.POST)}>
+                      {c.method}
+                    </span>
+                    <code className="font-mono text-[11px] text-gray-900 dark:text-gray-100">{c.path}</code>
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{c.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{c.desc}</p>
+                  <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-(--vd-primary) transition-all group-hover:gap-2.5">
+                    Quickstart <ExternalLink className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <div className="rounded-xl border border-(--vd-border) bg-gray-50/60 px-5 py-4 text-sm leading-relaxed text-gray-600 dark:bg-slate-950/40 dark:text-gray-400">
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                Want the result saved to the user's Valyd account?
+              </span>{' '}
+              That's the one case where the two lanes combine: sign the user in first (Login with
+              Valyd), then create the verification with their access token — the passed check
+              attaches to their account as a reusable proof.{' '}
+              <Link href="/verifications/managed" className="font-medium text-(--vd-primary) underline">
+                Account-connected verification →
+              </Link>
+            </div>
           </div>
         ) : (
           <div key="oauth2" className="vd-rise space-y-6">
             {/* TOP: Credentials banner */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-slate-900">
-              <div className="flex items-center gap-2 border-b border-gray-200 bg-gradient-to-r from-(--vd-primary-soft) to-transparent px-5 py-3 dark:border-gray-800">
+            <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
+              <div className="flex items-center gap-2 border-b border-(--vd-border) bg-gradient-to-r from-(--vd-primary-soft) to-transparent px-5 py-3">
                 <KeyRound className="h-3.5 w-3.5 text-(--vd-primary)" />
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Sandbox Credentials
@@ -440,8 +498,8 @@ npm run dev`}
 
             <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)_300px]">
               {/* LEFT: Endpoint list */}
-              <aside className="overflow-hidden rounded-xl border border-gray-200 bg-white/80 shadow-sm backdrop-blur-sm lg:sticky lg:top-20 dark:border-gray-800 dark:bg-slate-900/80">
-                <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+              <aside className="overflow-hidden rounded-xl border border-(--vd-border) bg-white/80 shadow-sm backdrop-blur-sm lg:sticky lg:top-20 dark:bg-slate-950/80">
+                <div className="border-b border-(--vd-border) px-4 py-3">
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Endpoints
                   </h2>
@@ -458,7 +516,7 @@ npm run dev`}
                             'group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-all',
                             isActive
                               ? 'bg-(--vd-primary-soft) text-gray-900 dark:text-gray-100'
-                              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800'
+                              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-900'
                           )}
                         >
                           <span
@@ -481,7 +539,7 @@ npm run dev`}
                               'shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] font-bold',
                               ep.method === 'GET'
                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
-                                : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400'
+                                : 'bg-(--vd-primary-soft) text-(--vd-primary)'
                             )}
                           >
                             {ep.method}
@@ -496,8 +554,8 @@ npm run dev`}
               {/* CENTER: Request + Response */}
               <section className="min-w-0 space-y-5">
                 {/* Header card */}
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-slate-900">
-                  <div className="border-b border-gray-200 bg-gradient-to-br from-white to-slate-50/50 px-6 py-5 dark:border-gray-800 dark:from-slate-900 dark:to-slate-950/50">
+                <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
+                  <div className="border-b border-(--vd-border) bg-gradient-to-br from-white to-slate-50/50 px-6 py-5 dark:from-slate-900 dark:to-slate-950/50">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
@@ -513,7 +571,7 @@ npm run dev`}
                         <p className="mt-1.5 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                           {activeMeta.description}
                         </p>
-                        <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 dark:border-gray-800 dark:bg-slate-950">
+                        <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--vd-border) bg-white px-2.5 py-1.5 dark:bg-slate-950">
                           <span
                             className={cn(
                               'rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold',
@@ -587,8 +645,8 @@ npm run dev`}
                 </div>
 
                 {/* Response card */}
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-slate-900">
-                  <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-slate-50/80 to-white px-6 py-3 dark:border-gray-800 dark:from-slate-950/80 dark:to-slate-900">
+                <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
+                  <div className="flex items-center justify-between border-b border-(--vd-border) bg-gradient-to-r from-slate-50/80 to-white px-6 py-3 dark:from-slate-950/80 dark:to-slate-900">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -647,7 +705,7 @@ npm run dev`}
                   </div>
                   <p className="leading-relaxed">
                     Start with{' '}
-                    <code className="rounded border border-gray-200 bg-white px-1 py-0.5 font-mono text-[10px] dark:border-gray-800 dark:bg-slate-950">
+                    <code className="rounded border border-(--vd-border) bg-white px-1 py-0.5 font-mono text-[10px] dark:bg-slate-950">
                       profile verifications
                     </code>{' '}
                     — enough to exercise the license and verification endpoints.
@@ -655,7 +713,7 @@ npm run dev`}
                   <ul className="space-y-0.5 leading-relaxed">
                     <li>
                       • Add{' '}
-                      <code className="rounded border border-gray-200 bg-white px-1 py-0.5 font-mono text-[10px] dark:border-gray-800 dark:bg-slate-950">
+                      <code className="rounded border border-(--vd-border) bg-white px-1 py-0.5 font-mono text-[10px] dark:bg-slate-950">
                         doctor_license
                       </code>{' '}
                       only when the <span className="font-medium">Doctor</span> demo user is

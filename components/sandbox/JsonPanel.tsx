@@ -18,11 +18,11 @@ interface JsonPanelProps {
  */
 const JsonSkeleton = ({ label }: { label?: string }) => (
   <div
-    className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800"
+    className="overflow-hidden rounded-lg border border-(--vd-border)"
     aria-busy="true"
     aria-live="polite"
   >
-    <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-800 dark:bg-slate-900">
+    <div className="flex items-center justify-between border-b border-(--vd-border) bg-gray-50 px-3 py-1.5 dark:bg-slate-950">
       <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
         {label ?? 'Response'}
       </span>
@@ -41,7 +41,7 @@ export const JsonPanel = ({ data, ok, status, label, placeholder, loading }: Jso
 
   if (data === null || data === undefined) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500 dark:border-gray-800 dark:bg-slate-900 dark:text-gray-400">
+      <div className="rounded-lg border border-dashed border-(--vd-border) bg-gray-50 p-4 text-sm text-gray-500 dark:bg-slate-950 dark:text-gray-400">
         {placeholder ?? 'Response will appear here.'}
       </div>
     )

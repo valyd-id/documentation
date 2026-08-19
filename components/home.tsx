@@ -72,11 +72,65 @@ export function HeroCode({ children }: { children: ReactNode }) {
       <div className="overflow-hidden rounded-(--vd-radius) border border-(--vd-border) bg-white shadow-lg shadow-cyan-900/5 dark:bg-slate-950 dark:shadow-black/30">
         <div className="flex items-center gap-2 border-b border-(--vd-border) bg-(--vd-surface) px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
           <Terminal className="h-3.5 w-3.5" aria-hidden />
-          server.ts — Login with Valyd
+          server.ts — both delivery modes, one API key
         </div>
         <div className="[&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!border-0 [&_pre]:!shadow-none">{children}</div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Auth0-style alternating feature row: text on one side, a code card on the other.
+ * `side` is where the CODE sits on large screens; stacks on mobile.
+ */
+export function ZigRow({
+  title,
+  kicker,
+  body,
+  cta,
+  side = 'right',
+  index = 1,
+  children
+}: {
+  title: string
+  kicker?: string
+  body: ReactNode
+  cta?: { href: string; label: string }
+  side?: 'left' | 'right'
+  index?: number
+  children: ReactNode
+}) {
+  const text = (
+    <div>
+      {kicker && (
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--vd-primary)">{kicker}</p>
+      )}
+      <h3 className="m-0 text-2xl font-bold tracking-tight">{title}</h3>
+      <div className="vd-hero-sub mt-3 max-w-xl text-[15px] leading-relaxed">{body}</div>
+      {cta && (
+        <div className="mt-5">
+          <ButtonLink href={cta.href} size="md" variant="primary">
+            {cta.label} <ArrowRight className="h-4 w-4" aria-hidden />
+          </ButtonLink>
+        </div>
+      )}
+    </div>
+  )
+  const code = (
+    <div className="overflow-hidden rounded-(--vd-radius) border border-(--vd-border) bg-white shadow-lg shadow-cyan-900/5 dark:bg-slate-950 dark:shadow-black/30">
+      <div className="[&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!border-0 [&_pre]:!shadow-none">{children}</div>
+    </div>
+  )
+  return (
+    <section className="vd-rise mx-auto grid max-w-6xl items-center gap-10 px-6 pt-24 sm:pt-28 lg:grid-cols-2 lg:gap-16" style={rise(index)}>
+      {side === 'right' ? (<>{text}{code}</>) : (
+        <>
+          <div className="max-lg:order-2">{code}</div>
+          <div className="max-lg:order-1">{text}</div>
+        </>
+      )}
+    </section>
   )
 }
 
@@ -92,7 +146,7 @@ export function Section({
   children: ReactNode
 }) {
   return (
-    <section className="vd-rise mx-auto max-w-6xl px-6 pt-16" style={rise(index)}>
+    <section className="vd-rise mx-auto max-w-6xl px-6 pt-24 sm:pt-28" style={rise(index)}>
       <h2 className="m-0 text-2xl font-bold tracking-tight">{title}</h2>
       {sub ? <p className="mb-6 mt-2 max-w-2xl text-[0.95rem] text-slate-500 dark:text-slate-400">{sub}</p> : <div className="mb-6" />}
       {children}
@@ -103,11 +157,11 @@ export function Section({
 /* Two-column capability panel: Login endpoints + Verification checks.
    Every value comes from the docs (endpoints page / Core APIs page / scopes). */
 const ENDPOINTS = [
-  ['POST', '/token', 'Exchange an authorization code for tokens'],
-  ['GET', '/userinfo', 'Profile claims for the signed-in user'],
-  ['GET', '/licenses', 'Verified professional licenses'],
-  ['GET', '/verifications', 'Identity verification results'],
-  ['POST', '/refresh', 'Refresh an expired access token']
+  ['GET', '/oidc/authorize', 'Standard OIDC authorization (code + state echo)'],
+  ['POST', '/oidc/token', 'Exchange a code or refresh token for tokens'],
+  ['GET', '/oidc/userinfo', 'Profile claims for the signed-in user'],
+  ['GET', '/oidc/licenses', 'Verified professional licenses'],
+  ['GET', '/oidc/verifications', 'Identity verification results']
 ] as const
 
 const CHECKS = [
@@ -128,7 +182,7 @@ export function Capabilities() {
       <div className="rounded-(--vd-radius) border border-(--vd-border) bg-white/60 p-6 dark:bg-slate-900/40">
         <h3 className="m-0 flex items-center gap-2 text-base font-semibold">
           <Braces className="h-4 w-4 text-(--vd-primary)" aria-hidden />
-          Login with Valyd — TPSSO endpoints
+          Login with Valyd — the user's account
         </h3>
         <ul className="m-0 mt-4 list-none space-y-1 p-0">
           {ENDPOINTS.map(([method, path, desc]) => (
@@ -151,7 +205,7 @@ export function Capabilities() {
       <div className="rounded-(--vd-radius) border border-(--vd-border) bg-white/60 p-6 dark:bg-slate-900/40">
         <h3 className="m-0 flex items-center gap-2 text-base font-semibold">
           <ScanFace className="h-4 w-4 text-(--vd-primary)" aria-hidden />
-          Verification checks — Core APIs
+          Verification API — every check
         </h3>
         <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
           {CHECKS.map(c => (
@@ -164,8 +218,9 @@ export function Capabilities() {
           ))}
         </ul>
         <p className="mb-0 mt-4 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-          Run them hosted (Valyd renders the capture UI) or call the REST APIs directly from your
-          backend. Every response uses the same envelope, and keys stay server-side.
+          Authenticate your backend with an App API key — run them hosted or call REST directly.
+          Add the signed-in user's token and the passed proof saves to their account; without it,
+          the result and the person's identity data return to your system to manage yourself.
         </p>
       </div>
     </div>
@@ -176,15 +231,15 @@ export function Capabilities() {
 const STEPS = [
   {
     title: 'Create an app',
-    body: 'Sign up at the developer portal and create an app. It gives you your OAuth client (client_id / client_secret) and your verification API key — one place, all credentials.'
+    body: 'One app gives you both credentials: an API key for verification and OIDC client credentials for sign-in. Start with either — add the other any time.'
   },
   {
     title: 'Pick what you need',
-    body: 'Login with Valyd for sign-in, the verification APIs for checks, or MCP for agents. Mix them: many apps log the user in, then run a verification against that account.'
+    body: 'Recommended: sign the user in and verify into their account — you read proofs, Valyd holds their data. API-key-only checks also work; the raw result then lives in your system, yours to manage.'
   },
   {
     title: 'Integrate and ship',
-    body: 'Use the SDKs or call the REST endpoints. Every response is the same envelope, keys stay server-side, and the sandbox lets you try calls before you write code.'
+    body: 'Copy the matching quickstart, test with your $100 welcome credit, and go live with the production checklist.'
   }
 ] as const
 
@@ -206,9 +261,9 @@ export function Steps() {
 
 /* Developer resources: every target is a real, served asset or page. */
 const RESOURCES = [
-  { href: '/openapi/valyd-id.json', icon: FileJson, label: 'OpenAPI — Valyd ID', desc: 'Machine-readable spec for TPSSO + OIDC' },
+  { href: '/openapi/valyd-id.json', icon: FileJson, label: 'OpenAPI — Valyd ID', desc: 'Machine-readable spec for OIDC + resource endpoints' },
   { href: '/openapi/valyd-verify.json', icon: FileJson, label: 'OpenAPI — Verify', desc: 'Sessions, core checks, webhooks' },
-  { href: '/valyd-postman-collection.json', icon: Send, label: 'Postman collection', desc: 'Ready-to-run TPSSO requests' },
+  { href: '/valyd-postman-collection.json', icon: Send, label: 'Postman collection', desc: 'Ready-to-run Valyd ID requests' },
   { href: '/downloads/valyd-sdk-starter.zip', icon: Download, label: 'SDK starter project', desc: 'Minimal Express app with @valyd/sdk' },
   { href: '/llms.txt', icon: BookText, label: 'llms.txt', desc: 'Agent-readable index of these docs' }
 ] as const

@@ -1,232 +1,132 @@
 # API Reference
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/endpoints
-- Credentials / env vars needed: CLIENT_ID, CLIENT_SECRET, ACCESS_TOKEN, REFRESH_TOKEN, AUTH_CODE
-- Files an integrator edits: none — reference only (consumed by your backend route handlers)
-- Estimated steps: N/A (reference)
-- Can complete without human input: NO — CLIENT_ID and CLIENT_SECRET must be obtained by a human from the Developer Portal (https://dev.valyd.work)
-- Prerequisites:
-  - A registered application with a Client ID and Client Secret (get these from the Developer Portal: https://dev.valyd.work)
-  - All requests must be made over HTTPS
-  - Authenticated endpoints require a Bearer access token in the `Authorization` header
-  - The base URL for every endpoint below is `https://idp.valyd.work/api/auth/tpsso`
+This page is only for Login with Valyd and reading a signed-in user's account. These endpoints do
+not start KYC or license verification. To run a check—without requiring OIDC login—use the
+[Verification API reference](/verifications/api-reference).
 
 ## General notes
+- Every API response carries an **`X-Request-Id`** header. Log it, and quote it when contacting support — never send API keys, tokens, or identity data.
 - All API requests must be made over HTTPS.
 - Endpoints that require authentication expect a Bearer token in the `Authorization` header: `Authorization: Bearer YOUR_ACCESS_TOKEN`.
-- If you are using the SDK, prefer the typed helpers (`createLoginSession()`, `verifyLoginSession(marker)`, `getAuthorizationUrl()`, `exchangeCode`) — they call these endpoints for you.
-- Base URL (used by every endpoint below): `https://idp.valyd.work/api/auth/tpsso`
+- If you are using the SDK, prefer the typed helpers (`getAuthorizationUrl()`, `exchangeCode()`, `handleCallback()`, `refreshToken()`) — they call these endpoints for you.
+- **One API namespace:** authorize, token, JWKS, UserInfo, licenses, and verifications are under `https://idp.valyd.work/api/auth/oidc`. Discovery is at `/.well-known/openid-configuration` (the `/api/.well-known/...` alias also works).
 
-## SDK methods (v0.2.0)
+## SDK methods (@valyd/sdk 1.10.1)
 
-### `valyd.createLoginSession()` (New in 0.2.0)
-Issues a one-time login session. Call **before** redirecting the user to Valyd. Returns `{ authorizeState, marker }`.
-- **authorizeState** — pass as `state` in `getAuthorizationUrl()`.
-- **marker** — HMAC-signed string. Store server-side (httpOnly cookie or session). Never expose to the browser JS.
-- **TTL** — 10 minutes.
+### `valyd.auth.createAuthorizationRequest({ scope, redirectUri? })`
+Recommended login entry point. Generates strong `state`, `nonce`, and an S256 PKCE verifier/challenge together. Store the returned transaction server-side and redirect to `transaction.url`.
 
-### `valyd.verifyLoginSession(marker)` (New in 0.2.0)
-Validates the marker on the callback, **before** `exchangeCode`. Returns `{ valid: boolean }`. Never throws on an invalid marker.
-- Use this as your CSRF check. Do **not** compare callback `state` to anything.
-- Returns `{ valid: false }` for expired, missing, or tampered markers.
+### `valyd.auth.getAuthorizationUrl({ state, nonce, codeChallenge, scope, redirectUri? })`
+Low-level URL builder. `state` is required. Prefer `createAuthorizationRequest()` so PKCE and nonce cannot be forgotten.
 
----
+### `valyd.auth.exchangeCode(code)`
+Exchanges the authorization code at `POST /api/auth/oidc/token`. The SDK verifies the ID token against discovery/JWKS before returning `{ accessToken, refreshToken, idToken, claims, expiresIn, scope, tokenType }`.
 
-## POST /token — Exchange Code for Tokens
+### `valyd.auth.handleCallback(url, { transaction })`
+One callback call: compares state, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
+
+### `valyd.auth.refreshToken(refreshToken)`
+Refreshes at `POST /api/auth/oidc/token` with `grant_type: "refresh_token"`. Rotation is on — persist the returned `refreshToken` every time.
+
+## OIDC endpoints (current — use these)
+
+### GET /api/.well-known/openid-configuration — Discovery
+
+- **Method:** GET
+- **Full URL:** `https://idp.valyd.work/api/.well-known/openid-configuration`
+- **Auth:** none
+
+Standard OIDC discovery document: issuer, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `jwks_uri`, supported scopes/grants/algorithms. Point any OIDC-capable framework at this URL to auto-configure. See the [OIDC integration guide](/docs/oidc) for the full response.
+
+### GET /api/auth/oidc/authorize — Authorization
+
+- **Method:** GET (browser redirect)
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/authorize`
+- **Auth:** none (user authenticates interactively)
+
+Query parameters: `client_id`, `redirect_uri`, `response_type=code`, `scope` (space-separated, **must include `openid`**), `state` (required — echoed back unchanged on the callback), `nonce` (recommended — bound into the `id_token`). On consent, Valyd redirects to your `redirect_uri` with `?code=...&state=<your original state>`.
+
+### POST /api/auth/oidc/token — Token (exchange + refresh)
 
 - **Method:** POST
-- **Full URL:** `https://idp.valyd.work/api/auth/tpsso/token`
-- **Base URL:** `https://idp.valyd.work/api/auth/tpsso`
-- **Path:** `/token`
-- **Auth / required scope:** None (authenticated via `client_id` + `client_secret` in the request body)
-- **Required headers:**
-  - `Content-Type: application/json`
-  - `Accept: application/json`
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/token`
+- **Auth:** client credentials in the body (`client_secret_post`) or HTTP Basic (`client_secret_basic`)
+- **Required headers:** `Content-Type: application/json`
 
-Exchange the one-time authorization code you received on your callback URL for access and refresh tokens. This should be called from your backend server.
+Two grants:
 
-<Callout type="info">
-Authorization codes are **bound to the client they were issued to**, single-use, and expire
-**2 minutes** after they are issued. Exchange the code as soon as your callback receives it —
-a code issued for one application can never be redeemed by another.
-</Callout>
+| `grant_type` | Body fields |
+|---|---|
+| `authorization_code` | `client_id`, `client_secret`, `code`, `redirect_uri` (exact match), `code_verifier` when PKCE was used |
+| `refresh_token` | `client_id`, `client_secret`, `refresh_token` |
 
-### Parameters
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `grant_type` | string | Yes | Must be "authorization_code" |
-| `client_id` | string | Yes | Your assigned Client ID (get this from the Developer Portal → your project → Credentials: https://dev.valyd.work) |
-| `client_secret` | string | Yes | Your Client Secret (server-side only!) (get this from the Developer Portal → your project → Credentials: https://dev.valyd.work) |
-| `code` | string | Yes | The authorization code from callback |
-| `redirect_uri` | string | Recommended | The **exact** `redirect_uri` you used at `/authorize`. Validated when supplied; will become required in a future release |
-
-### Request body (application/json)
+Returns a **standard top-level token JSON** (no `data` wrapper):
 
 ```json
 {
-  "grant_type": "authorization_code",
-  "client_id": "YOUR_CLIENT_ID",
-  "client_secret": "YOUR_CLIENT_SECRET",
-  "code": "AUTH_CODE_FROM_CALLBACK",
-  "redirect_uri": "https://yourapp.com/auth/valyd/callback"
+  "access_token": "eyJhbGciOi...",
+  "refresh_token": "rfrsh_abc123...",
+  "id_token": "eyJhbGciOiJSUzI1NiIs...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "scope": "openid profile verifications"
 }
 ```
 
-`YOUR_CLIENT_ID` / `YOUR_CLIENT_SECRET`: get these from the Developer Portal → your project → Credentials: https://dev.valyd.work
-`AUTH_CODE_FROM_CALLBACK`: the one-time authorization code delivered to your registered callback URL after the user authenticates.
+Notes:
+- Authorization codes are single-use and client-bound — exchange immediately.
+- The `id_token` is an RS256 JWT; validate it against the JWKS below and check its `nonce` claim.
+- Refresh **rotation is on for every refresh**: the `refresh_token` you sent is revoked and a new one is returned — always persist the new value. Replaying a rotated-away token revokes every refresh token for that user and client.
+- The returned `access_token` works on all resource endpoints below (`/userinfo`, `/licenses`, `/verifications`).
+- What each of the three tokens is for, with decoded examples: [Tokens](/docs/tokens).
 
-### Code examples
+### GET /api/auth/oidc/logout — RP-initiated logout
 
-```bash
-curl -X POST "https://idp.valyd.work/api/auth/tpsso/token" \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -d '{
-    "grant_type": "authorization_code",
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "code": "AUTH_CODE_FROM_CALLBACK"
-  }'
-```
+- **Method:** GET (browser redirect)
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/logout`
+- **Auth:** none (identity proven by `id_token_hint`)
 
-```javascript
-const response = await fetch("https://idp.valyd.work/api/auth/tpsso/token", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-  },
-  body: JSON.stringify({
-    grant_type: "authorization_code",
-    client_id: "YOUR_CLIENT_ID",
-    client_secret: "YOUR_CLIENT_SECRET",
-    code: authCode
-  })
-});
+Query parameters: `id_token_hint` (the id_token you received at login — an expired one is
+accepted, its signature still proves the user/client), `post_logout_redirect_uri` (must
+**exactly match** one of your registered redirect URIs — register your post-logout URL as an
+additional redirect URI), `state` (optional, echoed back). Revokes the user's refresh tokens and
+access tokens **for your client**, then redirects. Advertised in discovery as
+`end_session_endpoint`.
 
-const data = await response.json();
-const { access_token, refresh_token } = data.data;
-```
+### GET /api/auth/oidc/jwks.json — Signing keys
 
-```python
-import requests
+- **Method:** GET
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/jwks.json`
+- **Auth:** none
 
-response = requests.post(
-    "https://idp.valyd.work/api/auth/tpsso/token",
-    json={
-        "grant_type": "authorization_code",
-        "client_id": "YOUR_CLIENT_ID",
-        "client_secret": "YOUR_CLIENT_SECRET",
-        "code": auth_code
-    },
-    headers={
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-)
+Public RSA keys (JWK set) for validating `id_token` signatures (RS256).
 
-data = response.json()
-access_token = data["data"]["access_token"]
-refresh_token = data["data"]["refresh_token"]
-```
+### GET /api/auth/oidc/userinfo — Standard OIDC userinfo
 
-```php
-<?php
-$ch = curl_init();
+- **Method:** GET
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/userinfo`
+- **Auth:** `Authorization: Bearer YOUR_ACCESS_TOKEN`
 
-curl_setopt_array($ch, [
-    CURLOPT_URL => "https://idp.valyd.work/api/auth/tpsso/token",
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode([
-        "grant_type" => "authorization_code",
-        "client_id" => "YOUR_CLIENT_ID",
-        "client_secret" => "YOUR_CLIENT_SECRET",
-        "code" => $authCode
-    ]),
-    CURLOPT_HTTPHEADER => [
-        "Content-Type: application/json",
-        "Accept: application/json"
-    ],
-    CURLOPT_RETURNTRANSFER => true
-]);
-
-$response = curl_exec($ch);
-$data = json_decode($response, true);
-$accessToken = $data["data"]["access_token"];
-?>
-```
-
-```java
-HttpClient client = HttpClient.newHttpClient();
-
-String body = """
-{
-    "grant_type": "authorization_code",
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "code": "%s"
-}
-""".formatted(authCode);
-
-HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("https://idp.valyd.work/api/auth/tpsso/token"))
-    .header("Content-Type", "application/json")
-    .header("Accept", "application/json")
-    .POST(HttpRequest.BodyPublishers.ofString(body))
-    .build();
-
-HttpResponse<String> response = client.send(request, 
-    HttpResponse.BodyHandlers.ofString());
-
-// Parse response with your preferred JSON library
-```
-
-### Expected output
-
-**Response — 200 OK** (Success Response):
-
-```json
-{
-  "success": true,
-  "data": {
-    "access_token": "eyJhbGciOi...",
-    "token_type": "Bearer",
-    "expires_in": 900,
-    "refresh_token": "rfrsh_abc123...",
-    "user": {
-      "id": 123,
-      "email": "user@example.com",
-      "username": "john_doe",
-      "name": "John Doe",
-      "valyd_id": "valyd_225c7f2ac450496f97bbbc57354a5898",
-      "avatar_url": null,
-      "created_at": "2025-09-11T10:15:00Z"
-    }
-  }
-}
-```
-
-**Response — Error** (Error Response):
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "invalid_client",
-    "message": "client_id/client_secret invalid"
-  }
-}
-```
+Returns top-level standard OIDC claims such as `sub`, `valyd_id`, `preferred_username`, `email`, `name`, and `id_verified` according to the granted scopes.
 
 ---
+
+## Resource API — user data
+
+> 🔑 **Auth:** Bearer access token (from login) · 👤 **User login:** required · 📄 **Scope-gated** — these READ the account; they never run a new check
+
+These canonical `/api/auth/oidc/*` endpoints accept access tokens minted by the
+[OIDC token endpoint](#post-apiauthoidctoken--token-exchange--refresh).
+
+**Raw identity data** (DOB, document number, address …) is never returned by these endpoints — it
+requires the user's explicit approval via the [consent flow](/docs/request-data), and comes back
+end-to-end encrypted.
 
 ## GET /userinfo — Get User Profile
 
 - **Method:** GET
-- **Full URL:** `https://idp.valyd.work/api/auth/tpsso/userinfo`
-- **Base URL:** `https://idp.valyd.work/api/auth/tpsso`
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/userinfo`
+- **Base URL:** `https://idp.valyd.work/api/auth/oidc`
 - **Path:** `/userinfo`
 - **Auth / required scope:** Bearer access token required; required scope: `profile`
 - **Required headers:**
@@ -235,117 +135,34 @@ HttpResponse<String> response = client.send(request,
 
 Retrieve the authenticated user's profile information including name, email, and verification status.
 
-`YOUR_ACCESS_TOKEN`: the `access_token` returned by `POST /token` (or `POST /refresh`).
+`YOUR_ACCESS_TOKEN`: the `access_token` returned by [`POST /api/auth/oidc/token`](#post-apiauthoidctoken--token-exchange--refresh) (code exchange or refresh grant).
 
-### Code examples
+### Example
 
 ```bash
-curl -X GET "https://idp.valyd.work/api/auth/tpsso/userinfo" \
+curl -X GET "https://idp.valyd.work/api/auth/oidc/userinfo" \
   -H "Accept: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-```javascript
-const response = await fetch("https://idp.valyd.work/api/auth/tpsso/userinfo", {
-  method: "GET",
-  headers: {
-    "Accept": "application/json",
-    "Authorization": `Bearer ${accessToken}`
-  }
-});
-
-const data = await response.json();
-const user = data.data;
-console.log(user.full_name, user.email);
-```
-
-```python
-import requests
-
-response = requests.get(
-    "https://idp.valyd.work/api/auth/tpsso/userinfo",
-    headers={
-        "Accept": "application/json",
-        "Authorization": f"Bearer {access_token}"
-    }
-)
-
-user = response.json()["data"]
-print(user["full_name"], user["email"])
-```
-
-```php
-<?php
-$ch = curl_init();
-
-curl_setopt_array($ch, [
-    CURLOPT_URL => "https://idp.valyd.work/api/auth/tpsso/userinfo",
-    CURLOPT_HTTPHEADER => [
-        "Accept: application/json",
-        "Authorization: Bearer " . $accessToken
-    ],
-    CURLOPT_RETURNTRANSFER => true
-]);
-
-$response = curl_exec($ch);
-$user = json_decode($response, true)["data"];
-echo $user["full_name"];
-?>
-```
-
-```java
-HttpClient client = HttpClient.newHttpClient();
-
-HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("https://idp.valyd.work/api/auth/tpsso/userinfo"))
-    .header("Accept", "application/json")
-    .header("Authorization", "Bearer " + accessToken)
-    .GET()
-    .build();
-
-HttpResponse<String> response = client.send(request, 
-    HttpResponse.BodyHandlers.ofString());
-```
-
-### Expected output
-
-**Response — 200 OK** (Success Response):
+### Response
 
 ```json
 {
-  "success": true,
-  "data": {
-    "sub": "valyd_225c7f2ac450496f97bbbc57354a5898",
-    "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "full_name": "John Doe",
-    "valyd_id": "valyd_225c7f2ac450496f97bbbc57354a5898",
-    "id_verified": true,
-    "created_at": "2025-09-10T12:00:00Z"
-  }
+  "sub": "valyd_225c7f2ac450496f97bbbc57354a5898",
+  "valyd_id": "valyd_225c7f2ac450496f97bbbc57354a5898",
+  "preferred_username": "johndoe",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "id_verified": true
 }
 ```
-
-**Response — Error** (Error Response):
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "insufficient_scope",
-    "message": "The request requires the profile scope"
-  }
-}
-```
-
----
 
 ## GET /licenses — Get Professional Licenses
 
 - **Method:** GET
-- **Full URL:** `https://idp.valyd.work/api/auth/tpsso/licenses`
-- **Base URL:** `https://idp.valyd.work/api/auth/tpsso`
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/licenses`
+- **Base URL:** `https://idp.valyd.work/api/auth/oidc`
 - **Path:** `/licenses`
 - **Auth / required scope:** Bearer access token required (no specific scope declared on this endpoint in the source)
 - **Required headers:**
@@ -354,90 +171,17 @@ HttpResponse<String> response = client.send(request,
 
 Returns a snapshot of the user's professional licenses as verified by Valyd. Includes nursing licenses, CDL endorsements, CPR/BLS certifications, Food Handler permits, and more.
 
-`YOUR_ACCESS_TOKEN`: the `access_token` returned by `POST /token` (or `POST /refresh`).
+`YOUR_ACCESS_TOKEN`: the `access_token` returned by [`POST /api/auth/oidc/token`](#post-apiauthoidctoken--token-exchange--refresh) (code exchange or refresh grant).
 
-### Code examples
+### Example
 
 ```bash
-curl -X GET "https://idp.valyd.work/api/auth/tpsso/licenses" \
+curl -X GET "https://idp.valyd.work/api/auth/oidc/licenses" \
   -H "Accept: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-```javascript
-const response = await fetch("https://idp.valyd.work/api/auth/tpsso/licenses", {
-  method: "GET",
-  headers: {
-    "Accept": "application/json",
-    "Authorization": `Bearer ${accessToken}`
-  }
-});
-
-const data = await response.json();
-const licenses = data.data.licenses;
-
-licenses.forEach(license => {
-  console.log(`${license.type}: ${license.status}`);
-});
-```
-
-```python
-import requests
-
-response = requests.get(
-    "https://idp.valyd.work/api/auth/tpsso/licenses",
-    headers={
-        "Accept": "application/json",
-        "Authorization": f"Bearer {access_token}"
-    }
-)
-
-licenses = response.json()["data"]["licenses"]
-for license in licenses:
-    print(f"{license['type']}: {license['status']}")
-```
-
-```php
-<?php
-$ch = curl_init();
-
-curl_setopt_array($ch, [
-    CURLOPT_URL => "https://idp.valyd.work/api/auth/tpsso/licenses",
-    CURLOPT_HTTPHEADER => [
-        "Accept: application/json",
-        "Authorization: Bearer " . $accessToken
-    ],
-    CURLOPT_RETURNTRANSFER => true
-]);
-
-$response = curl_exec($ch);
-$licenses = json_decode($response, true)["data"]["licenses"];
-
-foreach ($licenses as $license) {
-    echo $license["type"] . ": " . $license["status"] . "\n";
-}
-?>
-```
-
-```java
-HttpClient client = HttpClient.newHttpClient();
-
-HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("https://idp.valyd.work/api/auth/tpsso/licenses"))
-    .header("Accept", "application/json")
-    .header("Authorization", "Bearer " + accessToken)
-    .GET()
-    .build();
-
-HttpResponse<String> response = client.send(request, 
-    HttpResponse.BodyHandlers.ofString());
-
-// Parse licenses from response
-```
-
-### Expected output
-
-**Response — 200 OK** (Success Response):
+### Response
 
 ```json
 {
@@ -463,25 +207,11 @@ HttpResponse<String> response = client.send(request,
 }
 ```
 
-**Response — Error** (Error Response):
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "invalid_token",
-    "message": "token invalid/expired"
-  }
-}
-```
-
----
-
 ## GET /verifications — Get Identity Verifications
 
 - **Method:** GET
-- **Full URL:** `https://idp.valyd.work/api/auth/tpsso/verifications`
-- **Base URL:** `https://idp.valyd.work/api/auth/tpsso`
+- **Full URL:** `https://idp.valyd.work/api/auth/oidc/verifications`
+- **Base URL:** `https://idp.valyd.work/api/auth/oidc`
 - **Path:** `/verifications`
 - **Auth / required scope:** Bearer access token required; required scope: `verifications`
 - **Required headers:**
@@ -490,7 +220,7 @@ HttpResponse<String> response = client.send(request,
 
 Returns the user's verification status: whether they passed a human (liveness) check, whether they completed identity (KYC) verification, and any professional licenses linked to their Valyd identity. Use alongside `/userinfo` for a complete user picture.
 
-`YOUR_ACCESS_TOKEN`: the `access_token` returned by `POST /token` (or `POST /refresh`).
+`YOUR_ACCESS_TOKEN`: the `access_token` returned by [`POST /api/auth/oidc/token`](#post-apiauthoidctoken--token-exchange--refresh) (code exchange or refresh grant).
 
 **Response fields (`data.verifications`):**
 
@@ -504,88 +234,15 @@ Returns the user's verification status: whether they passed a human (liveness) c
 | `licenses[].verified_from` | string \| null | Source the license was verified against. |
 | `licenses[].expire_at` | string \| null | ISO-8601 expiry timestamp, or `null` if it does not expire. |
 
-### Code examples
+### Example
 
 ```bash
-curl -X GET "https://idp.valyd.work/api/auth/tpsso/verifications" \
+curl -X GET "https://idp.valyd.work/api/auth/oidc/verifications" \
   -H "Accept: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-```javascript
-const response = await fetch("https://idp.valyd.work/api/auth/tpsso/verifications", {
-  method: "GET",
-  headers: {
-    "Accept": "application/json",
-    "Authorization": `Bearer ${accessToken}`
-  }
-});
-
-const data = await response.json();
-const { human_verified, id_verified, licenses } = data.data.verifications;
-
-if (human_verified && id_verified) {
-  console.log("User is a verified human with completed KYC!");
-}
-```
-
-```python
-import requests
-
-response = requests.get(
-    "https://idp.valyd.work/api/auth/tpsso/verifications",
-    headers={
-        "Accept": "application/json",
-        "Authorization": f"Bearer {access_token}"
-    }
-)
-
-verifications = response.json()["data"]["verifications"]
-if verifications["human_verified"] and verifications["id_verified"]:
-    print("User is a verified human with completed KYC!")
-```
-
-```php
-<?php
-$ch = curl_init();
-
-curl_setopt_array($ch, [
-    CURLOPT_URL => "https://idp.valyd.work/api/auth/tpsso/verifications",
-    CURLOPT_HTTPHEADER => [
-        "Accept: application/json",
-        "Authorization: Bearer " . $accessToken
-    ],
-    CURLOPT_RETURNTRANSFER => true
-]);
-
-$response = curl_exec($ch);
-$verifications = json_decode($response, true)["data"]["verifications"];
-
-if ($verifications["human_verified"] && $verifications["id_verified"]) {
-    echo "User is a verified human with completed KYC!";
-}
-?>
-```
-
-```java
-HttpClient client = HttpClient.newHttpClient();
-
-HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("https://idp.valyd.work/api/auth/tpsso/verifications"))
-    .header("Accept", "application/json")
-    .header("Authorization", "Bearer " + accessToken)
-    .GET()
-    .build();
-
-HttpResponse<String> response = client.send(request, 
-    HttpResponse.BodyHandlers.ofString());
-
-// Parse verifications from response
-```
-
-### Expected output
-
-**Response — 200 OK** (Success Response):
+### Response
 
 ```json
 {
@@ -603,207 +260,6 @@ HttpResponse<String> response = client.send(request,
         }
       ]
     }
-  }
-}
-```
-
-**Response — Error** (Error Response):
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "insufficient_scope",
-    "message": "The request requires the verifications scope"
-  }
-}
-```
-
----
-
-## POST /refresh — Refresh Access Token
-
-- **Method:** POST
-- **Full URL:** `https://idp.valyd.work/api/auth/tpsso/refresh`
-- **Base URL:** `https://idp.valyd.work/api/auth/tpsso`
-- **Path:** `/refresh`
-- **Auth / required scope:** Client authentication required — `client_id` + `client_secret` (request body, or HTTP Basic)
-- **Required headers:**
-  - `Content-Type: application/json`
-  - `Accept: application/json`
-
-Use your `refresh_token` to obtain a new `access_token` when it expires.
-
-<Callout type="warning">
-**Breaking change.** This endpoint now requires your `client_id` and `client_secret`, and the
-refresh token is validated against the client it was issued to. Calls that send only a
-`refresh_token` are rejected with `401 invalid_client`. Refresh tokens are **server-side
-credentials** — perform this exchange from your backend, never from a browser or mobile app.
-</Callout>
-
-### Parameters
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `refresh_token` | string | Yes | Your current refresh token |
-| `client_id` | string | Yes | Your application's client ID |
-| `client_secret` | string | Yes | Your application's client secret (server-side only) |
-| `rotate_refresh` | boolean | No | **Defaults to `true`.** Set to `false` only if you cannot store the replacement token |
-
-### Request body (application/json)
-
-```json
-{
-  "refresh_token": "rfrsh_abc123...",
-  "client_id": "your_client_id",
-  "client_secret": "your_client_secret"
-}
-```
-
-`refresh_token`: the `refresh_token` previously returned by `POST /token` or by a prior `POST /refresh`.
-
-### Rotation and reuse detection
-
-Rotation is **on by default**. Each successful refresh returns a **new** `refresh_token` and
-immediately **revokes the one you presented** — always persist the new token and discard the old.
-
-If a token that has already been rotated away is presented again, Valyd treats it as a stolen
-credential and **revokes every refresh token for that user and client**. Both the attacker's copy
-and the legitimate session stop working, and the user simply signs in again. In practice this
-only fires if you keep using a stale token, so store the replacement atomically.
-
-### Code examples
-
-```bash
-curl -X POST "https://idp.valyd.work/api/auth/tpsso/refresh" \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -d '{
-    "refresh_token": "rfrsh_abc123...",
-    "client_id": "your_client_id",
-    "client_secret": "your_client_secret"
-  }'
-```
-
-```javascript
-const response = await fetch("https://idp.valyd.work/api/auth/tpsso/refresh", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-  },
-  body: JSON.stringify({
-    refresh_token: refreshToken,
-    client_id: process.env.VALYD_CLIENT_ID,
-    client_secret: process.env.VALYD_CLIENT_SECRET // server-side only
-  })
-});
-
-const data = await response.json();
-const { access_token, refresh_token } = data.data;
-
-// Rotation is on by default: the token you just sent is now revoked.
-// Persist the replacement, or the next refresh will trip reuse detection.
-await saveTokens({ access_token, refresh_token });
-```
-
-```python
-import requests
-
-response = requests.post(
-    "https://idp.valyd.work/api/auth/tpsso/refresh",
-    json={
-        "refresh_token": refresh_token,
-        "client_id": os.environ["VALYD_CLIENT_ID"],
-        "client_secret": os.environ["VALYD_CLIENT_SECRET"],  # server-side only
-    },
-    headers={
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-)
-
-tokens = response.json()["data"]
-access_token = tokens["access_token"]
-# Rotation is on by default — the token you just sent is revoked. Store this one.
-refresh_token = tokens["refresh_token"]
-```
-
-```php
-<?php
-$ch = curl_init();
-
-curl_setopt_array($ch, [
-    CURLOPT_URL => "https://idp.valyd.work/api/auth/tpsso/refresh",
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode([
-        "refresh_token" => $refreshToken,
-        "client_id" => getenv("VALYD_CLIENT_ID"),
-        "client_secret" => getenv("VALYD_CLIENT_SECRET"), // server-side only
-    ]),
-    CURLOPT_HTTPHEADER => [
-        "Content-Type: application/json",
-        "Accept: application/json"
-    ],
-    CURLOPT_RETURNTRANSFER => true
-]);
-
-$response = curl_exec($ch);
-$tokens = json_decode($response, true)["data"];
-$accessToken = $tokens["access_token"];
-// Rotation is on by default — the token you just sent is revoked. Store this one.
-$refreshToken = $tokens["refresh_token"];
-?>
-```
-
-```java
-HttpClient client = HttpClient.newHttpClient();
-
-String body = """
-{
-    "refresh_token": "%s",
-    "client_id": "%s",
-    "client_secret": "%s"
-}
-""".formatted(refreshToken, clientId, clientSecret);
-
-HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("https://idp.valyd.work/api/auth/tpsso/refresh"))
-    .header("Content-Type", "application/json")
-    .header("Accept", "application/json")
-    .POST(HttpRequest.BodyPublishers.ofString(body))
-    .build();
-
-HttpResponse<String> response = client.send(request, 
-    HttpResponse.BodyHandlers.ofString());
-```
-
-### Expected output
-
-**Response — 200 OK** (Success Response):
-
-```json
-{
-  "success": true,
-  "data": {
-    "tokens": {
-      "access_token": "eyJhbGciOi...",
-      "token_type": "Bearer",
-      "expires_in": 900,
-      "refresh_token": "rfrsh_new456..."
-    }
-  }
-}
-```
-
-**Response — Error** (Error Response):
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "invalid_grant",
-    "message": "refresh_token is invalid or expired"
   }
 }
 ```

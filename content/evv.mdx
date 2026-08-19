@@ -1,6 +1,6 @@
 ---
 title: Electronic Visit Verification (EVV)
-description: Prove the right clinician reached the right home — with verified identity, a live medical license, a face match, and geolocation. Built on Managed Identity, so clinicians verify once and reuse everywhere.
+description: Prove the right clinician reached the right home — with verified identity, a live medical license, a face match, and geolocation. Built on Managed Identity, so clinicians verify once and reuse that identity on every visit.
 ---
 
 import { Callout, Tabs, Steps, Cards } from 'nextra/components'
@@ -9,7 +9,7 @@ import { Callout, Tabs, Steps, Cards } from 'nextra/components'
 
 **Verification APIs · EVV**
 
-Prove the **right clinician** reached the **right home** — with verified identity, a live medical license, a face match, and geolocation. Built on Managed Identity, so clinicians verify once and reuse everywhere.
+Prove the **right clinician** reached the **right home** — with verified identity, a live medical license, a face match, and geolocation. Built on Managed Identity, so clinicians verify once and reuse that identity on every visit — each visit still gets a fresh face + location check.
 
 - [Open the live demo](https://homehealth.valyd.work)
 - [Full Verify docs](/verifications)
@@ -60,7 +60,7 @@ Your backend reads the result by session id (API key).
 **One console.** Sign in at [dev.valyd.work](https://dev.valyd.work) — the dev portal issues *everything*. There is no separate Verify console.
 
 - **OAuth client** (for "Connect Valyd") — register an app → `client_id` + `client_secret`; add your redirect URI and the scopes `profile`, `verifications`, `doctor_license`.
-- **Verify API key + workflow** — in the **same portal**, create a Verify project → copy the `API key` (`vrf_…`, shown once) + `webhook secret`. Then **New workflow → "Home Health · EVV"** (pre-selects ID, liveness, face match, license & location) → copy its `workflow_id`.
+- **Verify API key + workflow** — in the **same portal**, set up your app's verification capability (surfaced as a Verify "project") → copy the `API key` (`vrf_…`, shown once) + `webhook secret`. Then **New workflow → "Home Health · EVV"** (pre-selects ID, liveness, face match, license & location) → copy its `workflow_id`.
 
 Keep `client_secret` and the `API key` server-side only.
 
@@ -70,7 +70,7 @@ Server (Node 18+) and browser:
 
 ```bash
 # server: OAuth + Verify checks (v0.3+ has kyc.redirectUrl, evvPresence, locationMatch)
-npm i @valyd/sdk
+npm i @valyd/sdk@^1.10.1
 
 # browser: the modal + high-accuracy location capture (v0.2+ has captureLocation)
 # No browser SDK — hosted verification is a redirect to the session url
@@ -287,7 +287,7 @@ ACCOUNT / Managed-Identity model — the clinician logs in with Valyd once; thei
 license are stored and reused on later visits.
 
 SDKs (install):
-- Server (Node 18+):  npm i @valyd/sdk    // valyd.auth (OAuth) + valyd.verify (checks)
+- Server (Node 18+):  npm i @valyd/sdk@^1.10.1    // valyd.auth (OIDC) + valyd.verify (checks)
 - Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
 
 Environment (IMPORTANT): you are on DEVELOPMENT — construct the SDK with env="development":
@@ -298,7 +298,7 @@ Environment (IMPORTANT): you are on DEVELOPMENT — construct the SDK with env="
 Credentials — ALL from ONE console, the dev portal at dev.valyd.work (there is no separate Verify
 console). Ask me for these; keep all server-side, never in the browser:
 - VALYD_CLIENT_ID / VALYD_CLIENT_SECRET    — your OAuth app
-- VALYD_API_KEY / VALYD_WEBHOOK_SECRET     — your Verify project (API key vrf_…, shown once)
+- VALYD_API_KEY / VALYD_WEBHOOK_SECRET     — your app's verification settings (API key vrf_…, shown once)
 - VALYD_WORKFLOW_ID                        — a "Home Health · EVV" workflow (id+liveness+face_match+credential+location)
 
 Rules:
@@ -353,10 +353,10 @@ Now: ask me for the credentials, then scaffold the server routes + a minimal UI 
 Put every secret in env vars and make all Valyd calls server-to-server.
 ````
 
-## Verify once, reuse forever
+## Verify once, reuse on every visit
 
 <Callout type="info">
-Because EVV runs on **Managed Identity**, the first visit does full KYC + license; every visit after is **just a face + location check**. Licenses are re-checked against the board automatically, and identity/KYC live on Valyd — your app stores proofs, not documents.
+Because EVV runs on **Managed Identity**, the first visit does full KYC + license; every visit after is **just a face + location check**. A stored license is never served past its `expire_at` date — an expired credential fails the check and must be re-verified — and identity/KYC live on Valyd — your app stores proofs, not documents.
 </Callout>
 
 - [See it live](https://homehealth.valyd.work)

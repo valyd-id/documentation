@@ -1,27 +1,5 @@
 # The Developer Portal
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/console
-- Credentials / env vars needed: none to read this page; using the Console produces the App ID, App API key, `workflow_id`, and webhook signing secret your integration will need
-- Files an integrator edits: none — reference only (the Console is a web UI)
-- Estimated steps: 0 (reference; the actions described are human-only UI steps)
-- Can complete without human input: NO — every action here is performed by a human in the web UI at https://dev.valyd.work (Valyd SSO sign-in, creating Apps/Workflows, configuring webhooks, copying secrets)
-- Prerequisites:
-  - A Valyd SSO account
-  - A browser to reach https://dev.valyd.work
-
-The console lives at https://dev.valyd.work — **the Developer Portal is the one and only console**. There is no
-separate Verify dashboard: one sign-in issues **everything** your integration needs.
-
-| What you get | Where |
-| --- | --- |
-| `client_id` + `client_secret` (Login with Valyd / OAuth2) | Developer Portal → your app |
-| Verify **API key** (`vrf_…`, shown once) + webhook signing secret (`whsec_…`) | Developer Portal → Verify projects |
-| `workflow_id` — create / edit / delete workflows | Developer Portal → Verify projects → Workflows |
-| Balance, top-ups, session history | Developer Portal |
-
-The actions below are performed by a human in the Console web UI; they cannot be automated by an agent. The values they produce (App ID, API key, `workflow_id`, signing secret) are what your code then uses.
-
 ## Apps
 One app in the Developer Portal carries both identities: the OAuth `client_id` / `client_secret` for **Login with Valyd**,
 and a Verify **API key** (`vrf_…`) for the verification APIs. The API key is shown **once** at creation. Create multiple

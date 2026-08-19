@@ -1,17 +1,9 @@
 # Organizations & teams
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/organizations
-- Credentials / env vars needed: to READ or WRITE members programmatically you need an app's `client_id` + `client_secret` (server-side only). Portal actions are human web steps.
-- Package: `@valyd/sdk` (Node, server-side) — `npm i @valyd/sdk`
-- Can complete without human input: PARTIAL — adding/listing members and reading billing is a real API (`/api/sdk/*`); creating an org, inviting teammates, CSV upload, deactivation and private-app assignment are portal steps.
-- Prerequisites: a Valyd account, and an app whose credentials you use for the Members API.
-
-Every Valyd account has its own **personal apps** and can create or join **any number of
-organizations** (there is no "individual vs company" account type). An organization is a shared
-tenant — a team, roles, a face-verified workforce, and public or private apps — governed by one
-billing account. You manage its members from the developer portal **or programmatically via the
-Members API**.
+An **organization** is a shared Valyd workspace for a company: one team, one set of apps, one
+workforce roster, one bill. Solo developers don't need one — every account works standalone.
+Create an organization when more than one person manages your apps, when apps should outlive any
+single person's account, or when you onboard a workforce whose members sign in by face.
 
 ## Roles
 
@@ -23,6 +15,8 @@ Members API**.
   into the apps assigned to them, by face.
 
 ## What an organization gives you
+
+![An organization in the Developer Portal: seats, members, team, and shared apps](/images/screenshots/portal-organization.png)
 
 - **Teams & roles** — invite teammates and give each a role; clear separation between who builds and
   who administers.

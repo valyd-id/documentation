@@ -1,11 +1,11 @@
 # Valyd — Identity & Verify API Documentation
 
-> Valyd is one identity platform with a single unified SDK, **@valyd/sdk**. It covers **Login with
-> Valyd** (OAuth 2.0 / OpenID Connect SSO — `valyd.auth`) and the **Verification APIs** (KYC, liveness,
-> face match, age and professional-license checks — `valyd.verify`). **One app credential** (client_id /
-> client_secret, created in the developer portal and owned by your individual account or your
-> organization) authenticates both; a project API key is available for verification-only use. Everything
-> runs through one host, the Valyd IdP — there is no separate verify service or URL. This file is the machine-readable index of the docs.
+> Valyd has two separate integration paths in one SDK. **Login with Valyd** uses OIDC and reads a
+> signed-in user's account through `valyd.auth`. **Verification API** runs KYC, liveness, face,
+> age, and license checks through `valyd.verify`; it needs an App API key and does not require OIDC
+> or an end-user Valyd login. Combine the paths only when a new verification should be saved to the
+> signed-in user's account. Everything runs through the Valyd IdP host. This file is the
+> machine-readable index of the docs.
 > Every page below is available as clean Markdown at the linked `.md` URL — fetch those directly;
 > do not try to scrape the HTML site (it is a client-rendered SPA and returns no static content).
 
@@ -25,8 +25,9 @@
   (see "Human-only steps" at the bottom). Pause and request these values rather than guessing:
   `client_id`, `client_secret` (Valyd ID); App `API key`, `workflow_id`, webhook signing secret
   (Verification APIs).
-- Auth headers: Valyd ID uses OAuth2 Bearer access tokens; Verification APIs uses `X-API-Key: <App API key>`
-  (Bearer also accepted).
+- Auth is not interchangeable: Login/account endpoints use an OIDC Bearer access token;
+  Verification API calls use `X-API-Key: <App API key>`. An account-connected verification uses
+  the App API key plus the signed-in user's `valyd_access_token` in the documented request field.
 - Token exchange and webhook signature verification MUST run server-side (never expose the client
   secret or webhook secret to a browser).
 - **Machine-readable API specs (OpenAPI 3.1):** for endpoint discovery, schemas, and codegen, fetch
@@ -34,35 +35,35 @@
 
 ## Valyd ID — Getting started
 
-- [Overview](https://docs.valyd.work/docs/overview.md): What Valyd ID is, the 6-step OAuth2 SSO integration flow, and security notes.
+- [Overview](https://docs.valyd.work/docs/overview.md): When to use OIDC login, what it reads from an account, and when to use Verification API instead.
 - [Create a Project & Get Credentials](https://docs.valyd.work/docs/create-project.md): Dev-portal setup — sign up, create a project, set redirect/scopes, copy client_id + client_secret. (Human-only.)
-- [Quick start — Login with Valyd](https://docs.valyd.work/docs/quick-start.md): Install @valyd/sdk and wire the full TPSSO/OAuth login flow end to end.
-- [Login sessions (CSRF)](https://docs.valyd.work/docs/login-sessions.md): Why OAuth `state` comparison fails for TPSSO and how to use createLoginSession/verifyLoginSession.
+- [Quick start — Login with Valyd](https://docs.valyd.work/docs/quick-start.md): Install @valyd/sdk (^1.10.1) and wire the standard OIDC login flow end to end — state comparison, code exchange, userinfo.
+- [OIDC session security](https://docs.valyd.work/docs/login-sessions.md): Store and validate state, nonce, PKCE, and redirect URI as one server-side transaction.
 
 ## Valyd ID — Authentication & integration
 
-- [Authentication (OAuth2 / TPSSO flow)](https://docs.valyd.work/docs/authentication.md): Authorization URL, login-session CSRF, callback handling, code→token exchange.
+- [Authentication (OAuth2 / OIDC flow)](https://docs.valyd.work/docs/authentication.md): Authorization URL, state/nonce CSRF, callback handling, code→token exchange, refresh rotation.
 - [OpenID Connect (OIDC) Integration](https://docs.valyd.work/docs/oidc.md): Discovery endpoint, manual config, Mendix setup, claim/user mapping, testing, troubleshooting, security.
 
 ## Valyd ID — Reference
 
-- [API Reference (endpoints)](https://docs.valyd.work/docs/endpoints.md): POST /token, GET /userinfo, GET /licenses, GET /verifications, POST /refresh — base URL https://idp.valyd.work/api/auth/tpsso.
+- [API Reference (endpoints)](https://docs.valyd.work/docs/endpoints.md): OIDC discovery, authorize, token, JWKS, UserInfo, licenses, and account verification proofs under `/api/auth/oidc`.
 - [OAuth2 Scopes](https://docs.valyd.work/docs/scopes.md): profile, verifications, doctor_license, zkp, mcp — what data each unlocks and how to request them.
-- [Errors & troubleshooting](https://docs.valyd.work/docs/errors.md): Every error code with cause and fix, plus the SDK "Invalid login session" failure.
-- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd@valyd/sdk release history (v1.5.1 unified SDK + Workforce Members API; v0.2.0 login sessions).
+- [Errors & troubleshooting](https://docs.valyd.work/docs/errors.md): Every error code with cause and fix, plus the app-level "state mismatch" CSRF rejection.
+- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history, including the v1.10.1 secure OIDC transaction helpers.
 
 
 - [Request user data (consent)](https://docs.valyd.work/docs/request-data.md): Ask a Valyd user for raw attributes (legal_name, dob, country). The user approves in their Valyd app; values return end-to-end encrypted (X25519 sealed box) via valyd.auth.requestAttributes + getAttributeResult. Needs libsodium-wrappers for self-custody.
 
 ## Verification APIs — Guides
 
-- [Introduction](https://docs.valyd.work/verify/intro.md): What Verification APIs is, Hosted vs Core APIs modes, services, base URL, response envelope.
-- [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an API key, create a workflow/webhook, make a first Core API call and a hosted session.
+- [Introduction](https://docs.valyd.work/verify/intro.md): Verification without login, optional account-connected verification, Hosted vs Core APIs, and data handling.
+- [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an App API key and run a license check or hosted session without OIDC login.
 - [Developer Portal](https://docs.valyd.work/verify/console.md): Apps, API keys, workflows, webhooks, SSO. (Human-only UI steps.)
-- [Hosted vs Core APIs](https://docs.valyd.work/verify/modes.md): Decision tree and comparison to choose an integration mode.
-- [Account (Managed by Valyd)](https://docs.valyd.work/verify/managed.md): Account vs Non-account model, the proofs-only data rule, hosted + core account APIs, reuse, and the consent Core API for raw KYC.
-- [Hosted Verification](https://docs.valyd.work/verify/hosted.md): Create session, redirect, signed webhooks, decision API, statuses. Base URL https://idp.valyd.work.
-- [Core APIs](https://docs.valyd.work/verify/standalone.md): Server-to-server checks — ID verification, liveness, **anti-spoof** (`POST /api/v2/antispoof`, single image or burst → `human_score`), **anti-spoof + identity** (`POST /api/v2/antispoof/identity` → stable `valyd_` uuid), **face uniqueness / dedup** (`POST /api/v2/face-uniqueness` + `DELETE .../{valyd_uuid}` → one face = one uuid), face match, age, credential, KYC+credential, and location.
+- [Choose an integration](https://docs.valyd.work/verify/modes.md): Decide whether the result belongs to your system or a Valyd account, then choose Hosted or Core API.
+- [Account-connected verification](https://docs.valyd.work/verify/managed.md): OIDC first, then Verification API; successful proofs are saved to the user's account.
+- [Hosted Verification](https://docs.valyd.work/verify/hosted.md): No-login capture page, signed webhooks, decision API, statuses, and optional account linking.
+- [Core APIs](https://docs.valyd.work/verify/standalone.md): No-login server-to-server ID, liveness, anti-spoof, face, age, license, KYC+license, and location checks.
 - [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.
 - [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it.
@@ -73,7 +74,7 @@
 
 ## API specs (OpenAPI 3.1)
 
-- [Valyd ID OpenAPI](https://docs.valyd.work/openapi/valyd-id.json): TPSSO + OIDC endpoints, schemas, auth, and error envelope. Use for SDK/codegen and endpoint discovery.
+- [Valyd ID OpenAPI](https://docs.valyd.work/openapi/valyd-id.json): OIDC login and account-resource endpoints, schemas, auth, and errors.
 - [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, Core checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen and endpoint discovery.
 
 ## Downloads & tooling

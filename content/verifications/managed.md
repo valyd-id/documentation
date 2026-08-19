@@ -1,19 +1,28 @@
-# Account (Managed by Valyd)
+# Account-connected verification
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verify?mode=managed
-- Credentials / env vars needed: ONE app from the Developer Portal (https://dev.valyd.work) — it gives you both the OAuth `client_id`/`client_secret` for "Login with Valyd" AND the Verify API key (`X-API-Key`) and `workflow_id`. There is no second console.
-- Auth: the end user logs in with Valyd (OAuth2/TPSSO); you pass their `valyd_access_token` when creating a session or calling a reuse/core API
-- Prerequisites: the user has (or creates) a Valyd account
+> 🔑 **Auth:** App API key + the user's access token · 👤 **User login:** required (sign in first) · 💾 **Result:** proof saves to the user's Valyd account
 
-Account ("Managed by Valyd") is one of the two Valyd API types. The other is Non-account
-("Fresh"). Each type is available as **Hosted** (Valyd renders the capture page) or **Core APIs**
-(you call REST directly) — a 2×2:
+```mermaid
+flowchart LR
+    L["Login (OIDC sign-in)"] --> V["Verify (check runs with the user token)"] --> P["Proof (saved to the user's account)"] --> R["Reuse (next login: read it — no re-run while still fresh for your policy)"]
+```
 
-| | Hosted | Core APIs |
-|---|---|---|
-| **Account (Managed by Valyd)** | Login with Valyd → workflow on the hosted page; steps stored on the account; reuse skips already-done steps. Proofs only. | Call REST with the user's token — license (badge on account), face (vs stored vector), reuse read/revoke. KYC redirects to Valyd. Proofs only. |
-| **Non-account (Fresh)** | One-shot hosted capture, nothing retained. Raw data. | Per-endpoint REST capture in your own UI. Raw data. |
+**What is a proof?** The durable outcome of a passed check saved on the user's Valyd account — a
+pseudonym, `id_verified`, verified license badges, age bands — read back any time via the
+[Account API](/docs/endpoints#resource-api--user-data) or `GET /api/v2/identity`. The account's
+`identity` object carries a `verified_at` timestamp so you can judge freshness; a license badge
+carries the registry's own `status` and `expires_at`. Re-run a check when your policy needs a
+fresher answer.
+
+Use this path when a successful KYC or license result should be saved to a signed-in user's Valyd
+account. Two steps:
+
+1. **[Sign in with Valyd](/docs) signs the user in** and gives your backend their access token.
+2. **The Verification API runs the check with that token** and the passed proof saves to the account.
+
+Prefer the result only in your own system? Use the
+[API-key-only quickstart](/verifications/quickstart) — no user sign-in, but the person's identity
+data then lives in your backend, yours to manage.
 
 ## Data-sharing rule (critical)
 
@@ -24,8 +33,9 @@ Account ("Managed by Valyd") is one of the two Valyd API types. The other is Non
 - **Raw account KYC is released only through the consent Core API** — you request specific attributes,
   the user approves in their Valyd app, and the values are returned end-to-end encrypted (X25519 sealed
   box) to your public key. See "Consent Core API" below.
-- **Non-account (Fresh) APIs return the captured raw data as-is** — you performed the capture and Valyd
-  retains nothing.
+- A **one-off KYC decision** releases raw data only after required ID, liveness, and face-match
+  checks pass. Before that gate, sensitive data remains encrypted. A one-off license lookup returns
+  its registry result directly.
 
 ## Why: Account vs Non-account
 
@@ -37,8 +47,8 @@ Account ("Managed by Valyd") is one of the two Valyd API types. The other is Non
 
 ## Hosted flow (Account × Hosted)
 
-1. Register your app at the Developer Portal (https://dev.valyd.work) → `client_id` / `client_secret`, and in the same portal create a Verify project → API key (`vrf_…`, shown once) + `workflow_id`. One console, all credentials.
-2. Log the user in with Valyd (OAuth2/TPSSO), exchange the code → `valyd_access_token` + identity.
+1. Register your app at the Developer Portal (https://dev.valyd.work) → `client_id` / `client_secret`, and set up its verification capability in the same portal (surfaced there as a Verify "project") → API key (`vrf_…`, shown once) + `workflow_id`. One console, all credentials.
+2. Log the user in with Valyd (OAuth2/OIDC), exchange the code → `valyd_access_token` + identity.
 3. If KYC is required and not done, **redirect the user to Valyd** to complete it (raw KYC is stored
    under the user's per-user key; it can't be a plain API write).
 4. Create a session: `POST https://idp.valyd.work/api/v2/session` with `workflow_id`, `valyd_access_token`,

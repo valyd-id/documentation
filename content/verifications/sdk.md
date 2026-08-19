@@ -1,21 +1,5 @@
 # Node SDK
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/sdk
-- Credentials / env vars needed: VALYD_API_KEY, VALYD_WEBHOOK_SECRET (for hosted/webhook flows), VALYD_WORKFLOW_ID (for hosted sessions)
-- Files an integrator edits: .env, your server bootstrap (VerifyClient init), and a webhook route handler (e.g. Express)
-- Estimated steps: 3 (install, initialise, call resources)
-- Can complete without human input: NO — you must first obtain an API key, a webhook secret, and a workflow ID from the Valyd Developer Portal (https://dev.valyd.work); these cannot be generated programmatically here.
-- Prerequisites:
-  - Node 18+ (the SDK relies on the built-in `fetch` and `crypto`)
-  - A Verification API key (X-API-Key) — get it from the dashboard: https://dev.valyd.work
-  - For hosted/webhook flows: a webhook secret and a workflow ID from the dashboard
-  - Server-side runtime only — the API key must never reach the browser
-
-`@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk) is the single, unified Valyd SDK — **Login with Valyd** lives on `valyd.auth` and the **Verification APIs** on `valyd.verify`. **One app credential** (client_id / client_secret, from an app in the developer portal owned by your individual account or your organization) authenticates both; a project API key works for verification-only use. Everything routes through one host (the Valyd IdP) — there is no separate verify service or URL. Zero-dependency, dual ESM + CJS, fully typed TypeScript; Node 18+ (built-in `fetch` / `crypto`).
-
-> Server-side only. Your API key must never reach the browser. The hosted flow is just a redirect to `session.url` — there is no browser SDK.
-
 ## Recipe
 
 ### Prerequisites
@@ -35,16 +19,16 @@ IF you are building a hosted flow (redirect the user to a Valyd-hosted page):
 IF you are building a Core APIs flow (call individual checks server-side):
   → you only need VALYD_API_KEY
 IF unsure which credentials you have:
-  → log in to https://dev.valyd.work and check your project's API keys / webhooks / workflows
+  → log in to https://dev.valyd.work and check your app's API keys / webhooks / workflows
 ```
 
 ### Steps
 
 1. **Install the SDK.**
    ```bash
-   npm i @valyd/sdk
+   npm i @valyd/sdk@^1.10.1
    ```
-   **Expected output:** npm adds `@valyd/sdk` to `dependencies` in `package.json` and reports `added 1 package`. Versions follow semver and are pinned per release — lock to `^x.y.z` for backwards-compatible upgrades.
+   **Expected output:** npm adds `@valyd/sdk` at `^1.10.1` to `dependencies` in `package.json`. This allows backwards-compatible patch and minor upgrades while keeping the documented minimum version.
 
 2. **Set environment variables** (e.g. in a `.env` file or your process environment). Get each value from the Valyd Developer Portal: https://dev.valyd.work.
    ```bash
@@ -77,8 +61,7 @@ IF unsure which credentials you have:
 ### Authentication
 
 Every Verification API call is authenticated by your **App API key** — the `apiKey` you pass to the
-constructor, sent as the `X-API-Key` header on each request (a `Bearer <apiKey>` header is also
-accepted). This is the credential that matters for the SDK; get it from the Developer Portal → your
+constructor, sent as the `X-API-Key` header on each request. This is the credential that matters for the SDK; get it from the Developer Portal → your
 project → Credentials.
 
 - **`apiKey` (`vrf_…`)** — authenticates all `verify.*` calls (sessions, standalone checks,
@@ -285,7 +268,7 @@ app.post(
   ```bash
   npm ls @valyd/sdk
   ```
-  **Expected output:** a line like `@valyd/sdk@x.y.z`.
+  **Expected output:** `@valyd/sdk@1.10.1` (or a newer compatible version allowed by `^1.10.1`).
 - Confirm credentials are wired (Core APIs path, only needs `VALYD_API_KEY`):
   ```javascript
   import { VerifyClient } from "@valyd/sdk";

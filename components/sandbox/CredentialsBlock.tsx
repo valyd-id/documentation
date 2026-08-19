@@ -24,14 +24,14 @@ export const CredentialsBlock = () => {
   }
 
   return (
-    <div className="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-sm dark:border-gray-800 dark:bg-slate-900">
+    <div className="space-y-1.5 rounded-lg border border-(--vd-border) bg-gray-50 p-4 font-mono text-sm dark:bg-slate-950">
       {rows.map((r, i) => (
         <div key={r.label} className="flex items-center gap-3">
           <span className="w-32 shrink-0 text-gray-500 dark:text-gray-400">{r.label}:</span>
           <span className="flex-1 break-all text-gray-900 dark:text-gray-100">{r.value}</span>
           <button
             onClick={() => copy(r.value, i)}
-            className="shrink-0 rounded-md border border-transparent p-1.5 transition-colors hover:border-gray-200 hover:bg-white dark:hover:border-gray-700 dark:hover:bg-slate-800"
+            className="shrink-0 rounded-md border border-transparent p-1.5 transition-colors hover:border-(--vd-border) hover:bg-white dark:hover:border-gray-700 dark:hover:bg-slate-900"
             title={`Copy ${r.label}`}
             aria-label={`Copy ${r.label}`}
           >

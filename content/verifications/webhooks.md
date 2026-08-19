@@ -1,20 +1,9 @@
 # Webhooks
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/webhooks
-- Credentials / env vars needed: VALYD_WEBHOOK_SECRET (the webhook signing secret), VALYD_API_KEY (App API key, to fetch the full decision)
-- Files an integrator edits: server route handler (e.g. an Express handler), .env (to store VALYD_WEBHOOK_SECRET and VALYD_API_KEY)
-- Estimated steps: 4
-- Can complete without human input: NO — you must obtain the webhook signing secret and register a callback URL in the Valyd Developer Portal (https://dev.valyd.work), which is a human/portal action.
-- Prerequisites:
-  - A publicly reachable HTTPS endpoint to receive POST callbacks
-  - A webhook signing secret configured on your App or session (from the Developer Portal: https://dev.valyd.work)
-  - An App API key to call the decision endpoint
-  - Ability to read the raw (unparsed) request body in your web framework
-
-Valyd POSTs to your app or session callback URL when a verification session reaches a terminal state. The webhook is a **notification only** — always call `GET /api/v2/session/{id}/decision` for the full extracted data.
-
-> IMPORTANT: Read the **raw** request body before parsing it as JSON. You need the exact bytes that were sent in order to verify the HMAC signature. If your framework auto-parses JSON and re-serializes it, the bytes will differ and verification will fail.
+> **Try it without a real session:** the Developer Portal's **Webhook Tester** (app → webhook
+> settings) sends simulated decision events — signed with your real secret, marked
+> `"test": true` — plus duplicate-event and bad-signature modes to prove your handler's
+> defenses. See [Testing](/docs/testing#testing-webhooks).
 
 ## Recipe: register a callback and verify webhook signatures
 

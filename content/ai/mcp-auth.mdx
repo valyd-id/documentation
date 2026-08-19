@@ -1,0 +1,85 @@
+---
+title: MCP Authentication
+description: How the Valyd MCP server authenticates clients — OAuth 2.1 + PKCE, 401 discovery via RFC 9728, resource indicators, and token requirements.
+---
+
+import { Callout } from 'nextra/components'
+
+# How MCP authentication works
+
+The Valyd MCP server does **not** issue tokens — it only validates them. The flow is
+standards-based (OAuth 2.1 + PKCE, RFC 9728 Protected Resource Metadata, RFC 8707 resource
+indicators), so any OAuth-capable MCP client connects with zero custom code. There is nothing
+to register per request and no shared secret to paste.
+
+| | |
+| --- | --- |
+| Resource | `https://mcp.valyd.work` |
+| Endpoint | `https://mcp.valyd.work/verification/mcp` |
+| Authorization server | `https://idp.valyd.work` |
+| Required scopes | `openid` `mcp` |
+| Token audience (`aud`) | `https://mcp.valyd.work` |
+
+## The discovery flow (automatic in interactive clients)
+
+1. The client calls the MCP endpoint with no token and gets **401** with a `WWW-Authenticate`
+   header pointing at `https://mcp.valyd.work/.well-known/oauth-protected-resource`.
+2. That metadata names the authorization server and scopes:
+
+   ```json
+   {
+     "resource": "https://mcp.valyd.work",
+     "authorization_servers": ["https://idp.valyd.work"],
+     "scopes_supported": ["openid", "mcp"],
+     "bearer_methods_supported": ["header"]
+   }
+   ```
+
+3. The client discovers the IDP, registers (Dynamic Client Registration), and opens a browser.
+   The user logs into Valyd and consents.
+4. The client gets an access token bound to `resource = https://mcp.valyd.work` with scope `mcp`
+   and sends it on every call: `Authorization: Bearer <access_token>`.
+
+Claude Code, Claude Desktop, Cursor, and VS Code all run this flow for you — you only sign in.
+
+## Token validation requirements
+
+All of these must hold for a token to be accepted:
+
+| Claim | Requirement |
+| --- | --- |
+| signature | RS256, verifiable against `https://idp.valyd.work/api/auth/oidc/jwks.json` |
+| `iss` | `https://idp.valyd.work` |
+| `aud` | `https://mcp.valyd.work` |
+| `scope` | must include `mcp` |
+| `exp` / `iat` / `sub` | present and not expired |
+
+The `sub` claim identifies the user — every tool acts on that user's behalf.
+
+## Code-first clients (LangChain, OpenAI SDK, scripts)
+
+<Callout type="info">
+  Obtain a user access token by running the OAuth 2.1 **authorization-code + PKCE** flow against
+  `https://idp.valyd.work` with `scope=openid mcp` and the resource indicator
+  `resource=https://mcp.valyd.work`, then pass it as the `Authorization: Bearer` header on the
+  streamable-HTTP connection. The token is user-bound, so it must come from a user login — **not**
+  client-credentials.
+</Callout>
+
+Ready-made snippets for LangChain and the OpenAI Agents SDK live in the
+[MCP integration guide](/mcp).
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `401` with `WWW-Authenticate` on connect | No / expired token | Let the client run the OAuth login (Claude Code/Cursor: `/mcp` → Authenticate). For code clients, fetch a fresh token. |
+| `invalid_token` | Wrong `aud`, `iss`, `scope`, or signature | Token must have `aud=https://mcp.valyd.work`, `iss=https://idp.valyd.work`, and scope including `mcp`. |
+| `invalid_scope` | A requested scope is not allowed by the IDP | Request only `openid mcp`. |
+| `missing_token` | No `Authorization: Bearer` header | Send the Bearer token on every request. |
+
+<Callout type="warning">
+  The legacy `X-MCP-Client-Id` / `X-MCP-Client-Secret` / `X-MCP-Webhook-Url` header scheme and
+  the `user_id` tool parameter are **removed**. Authentication is OAuth 2.1 Bearer only, and the
+  user comes from the token.
+</Callout>

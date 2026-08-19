@@ -6,27 +6,6 @@
 > (`requestAttributes` → the user approves in their Valyd app) for all data requests today. The
 > at-login sections below are retained for when it is re-enabled.
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/docs/request-data
-- Credentials / env vars needed: VALYD_CLIENT_ID, VALYD_CLIENT_SECRET (server-side); the subject's `valyd_id` (from login)
-- Runs on: `valyd.auth` (the ValydClient) — NOT `valyd.verify`
-- Extra dependency: `libsodium-wrappers` (only for self-custody decryption; `npm i libsodium-wrappers`)
-- Two ways to ask: **at login** (on the consent screen — no human polling) or **after login** (`requestAttributes`, the user approves in their Valyd app)
-- Prerequisites: the app has a backend to hold the X25519 secret key + `clientSecret`
-
-Login and the verification APIs return **proofs** — a pseudonym, `id_verified`, license badges, age
-bands. When you need a user's **raw personal attributes** (legal name, date of birth, country, …),
-you request them explicitly. The user **consents to the release**, and the values come back
-**end-to-end encrypted** — sealed to a key only you hold, so Valyd never sees them.
-
-There are two ways to ask, both using the same keypair + sealed-box mechanism:
-
-- **Any time after login (use this today)** — call `requestAttributes` with the user's `valyd_id`;
-  they approve in their Valyd app (a notification → face approval). This is the supported path.
-- **At login** *(currently disabled — see the status note above)* — add the attributes to your
-  authorize URL; when enabled, the user checks/unchecks them on the consent screen and the granted
-  fields are delivered **inline with the login** as `attr_code`.
-
 ## Available attributes
 
 Pass any of these keys in `attributes`. They fall into three groups:
@@ -78,24 +57,27 @@ const valyd = new Valyd({
   redirectUri:  "https://your-app.com/callback",
 });
 
-// 1. Keypair — keep secretKey SERVER-SIDE, stash it against `state` for the callback.
+// 1. Keypair — keep secretKey and the OIDC transaction SERVER-SIDE.
 const { publicKey, secretKey } = await ValydClient.generateRequesterKeypair();
 
 // 2. Send the user to the authorize URL WITH the data you want (checkboxes on consent).
-const url = valyd.auth.getAuthorizationUrl({
+const transaction = valyd.auth.createAuthorizationRequest({
   scope: ["openid", "profile"],
-  state,
   attributes: ["legal_name", "dob", "is_18_plus"],
   requesterPublicKey: publicKey,
   purpose: "Confirm your identity",
 });
-// -> redirect the browser to `url`
+req.session.valydConsent = { transaction, secretKey };
+// -> redirect the browser to transaction.url
 
 // 3. On your callback: exchange the code AND fetch the consented data with attrCode.
-const { code, attrCode } = valyd.auth.parseCallback(callbackUrl);
-const { user } = await valyd.auth.exchangeCode(code);
+const saved = req.session.valydConsent;
+delete req.session.valydConsent;
+const { user, attrCode } = await valyd.auth.handleCallback(callbackUrl, {
+  transaction: saved.transaction,
+});
 if (attrCode) {
-  const result = await valyd.auth.getConsentedAttributes(attrCode, { secretKey });
+  const result = await valyd.auth.getConsentedAttributes(attrCode, { secretKey: saved.secretKey });
   result.attributes; // { legal_name, dob, is_18_plus } — only what the user kept checked
 }
 ```

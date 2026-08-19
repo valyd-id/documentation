@@ -171,18 +171,21 @@ article pre:hover {
 /* Homepage cards: title row (icon + label) on top, padded description below.
    Nextra renders children first and the title row last, so column-reverse
    puts the title visually first without touching the component. */
-.vd-page .nextra-card {
+.vd-page .nextra-card,
+article .nextra-card {
   flex-direction: column-reverse;
   justify-content: flex-end;
 }
 
-.vd-page .nextra-card > span {
+.vd-page .nextra-card > span,
+article .nextra-card > span {
   padding: 1.15rem 1.25rem 0.35rem;
   font-size: 0.975rem;
   gap: 0.6rem;
 }
 
-.vd-page .nextra-card p {
+.vd-page .nextra-card p,
+article .nextra-card p {
   margin: 0;
   padding: 0 1.25rem 1.2rem;
   font-size: 0.875rem;
@@ -190,7 +193,8 @@ article pre:hover {
   color: color-mix(in srgb, currentColor 72%, transparent);
 }
 
-.vd-page .nextra-card svg {
+.vd-page .nextra-card svg,
+article .nextra-card svg {
   width: 1.05rem;
   height: 1.05rem;
   color: var(--vd-primary);

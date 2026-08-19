@@ -1,0 +1,61 @@
+# Valyd SDK Starter
+
+A minimal Express app that demonstrates the full **Valyd OpenID Connect** flow using
+`@valyd/sdk@^1.10.1`: state, nonce, S256 PKCE, one-time code exchange, RS256/JWKS
+signature validation, and UserInfo.
+
+## Why a server-side OIDC transaction?
+
+The SDK generates `state`, `nonce`, and the PKCE verifier together. This starter stores that
+transaction server-side and sends only an opaque lookup cookie to the browser. The callback
+consumes it once, compares `state`, sends the verifier, and validates the signed ID token.
+
+## Run it
+
+```bash
+# 1. Install
+npm install
+
+# 2. Configure
+cp .env.example .env
+# → fill in VALYD_CLIENT_ID, VALYD_CLIENT_SECRET, VALYD_REDIRECT_URI
+
+# 3. Start
+npm run dev
+# → http://localhost:8080
+```
+
+In the Valyd dev portal, register a redirect URI matching `VALYD_REDIRECT_URI`
+(default: `http://localhost:8080/callback`) and enable the scopes you want
+(default: `profile verifications`).
+
+## What's wired up
+
+| Route             | What it does                                                            |
+| ----------------- | ----------------------------------------------------------------------- |
+| `GET  /`          | Home — login button, or signed-in profile card                          |
+| `GET  /login`     | Create + store an OIDC transaction, then redirect to Valyd              |
+| `GET  /callback`  | Validate state/PKCE/nonce/signature, then fetch UserInfo                 |
+| `POST /logout`    | Destroys the in-memory app session and cookies                          |
+
+To repoint at a different Valyd environment, edit `src/config.ts` (or set
+`VALYD_BASE_URL` in `.env`). No other file changes required.
+
+## Layout
+
+```
+src/
+  config.ts        — single place for env config
+  server.ts        — Express routes + SDK calls
+  sessions.ts      — tiny in-memory app session store (swap for Redis in prod)
+  views/           — server-rendered HTML
+public/styles.css  — styling
+.env.example
+```
+
+## Production checklist
+
+- Replace `sessions.ts` with Redis / your DB session store.
+- Set `NODE_ENV=production` so cookies are issued with `Secure`.
+- Serve over HTTPS.
+- Never expose `VALYD_CLIENT_SECRET`, tokens, or the OIDC transaction to browser JS.

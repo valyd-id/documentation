@@ -1,0 +1,142 @@
+---
+title: PHP (Laravel) quickstart — Login with Valyd
+description: 'Add Login with Valyd to a Laravel app with plain OIDC: session state, hash_equals CSRF check, form-encoded token exchange with Http::asForm, userinfo.'
+---
+
+import { Callout } from 'nextra/components'
+
+# PHP (Laravel) quickstart
+
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🐘 Raw API recipe · ⏱ ~10 minutes
+
+**What you'll build:** two Laravel routes where "Login with Valyd" returns the user's
+pseudonymous `valyd_id` to your backend — no SDK, just Laravel's `Http` client.
+
+<Callout type="info">
+Your real values are pre-filled on your app's **Quick setup** tab in the
+[Developer Portal](https://dev.valyd.work).
+</Callout>
+
+## 1. Create the app
+
+In the [Developer Portal](https://dev.valyd.work) create an application, enable the `profile`
+[scope](/docs/scopes), and register this exact redirect URI:
+
+```text
+http://localhost:8000/auth/valyd/callback
+```
+
+Copy the `client_id` and the one-time `client_secret`.
+
+## 2. Configure
+
+**`.env`**
+
+```bash
+VALYD_CLIENT_ID=YOUR_CLIENT_ID
+VALYD_CLIENT_SECRET=YOUR_CLIENT_SECRET
+VALYD_REDIRECT_URI=http://localhost:8000/auth/valyd/callback
+```
+
+**`config/services.php`**
+
+```php
+'valyd' => [
+    'client_id'     => env('VALYD_CLIENT_ID'),
+    'client_secret' => env('VALYD_CLIENT_SECRET'),
+    'redirect_uri'  => env('VALYD_REDIRECT_URI'),
+],
+```
+
+## 3. Add the two routes
+
+**`routes/web.php`**
+
+```php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+
+// GET /auth/valyd — the "Login with Valyd" button links here
+Route::get('/auth/valyd', function () {
+    $state = Str::random(32);                    // CSRF: Valyd echoes it back
+    session(['valyd_state' => $state]);
+    return redirect()->away(
+        'https://idp.valyd.work/api/auth/oidc/authorize?' . http_build_query([
+            'client_id'     => config('services.valyd.client_id'),
+            'redirect_uri'  => config('services.valyd.redirect_uri'), // must exactly match an app redirect URI
+            'response_type' => 'code',
+            'scope'         => 'openid profile',                      // openid is REQUIRED
+            'state'         => $state,
+        ])
+    );
+});
+
+// GET /auth/valyd/callback — check state, exchange the code, sign the user in
+Route::get('/auth/valyd/callback', function (Request $request) {
+    abort_unless(
+        hash_equals(session()->pull('valyd_state', ''), (string) $request->query('state')),
+        403 // CSRF check — never skip it
+    );
+    abort_if($request->query('error') || !$request->query('code'), 400);
+
+    $token = Http::asForm()->post('https://idp.valyd.work/api/auth/oidc/token', [
+        'grant_type'    => 'authorization_code',
+        'code'          => $request->query('code'),
+        'client_id'     => config('services.valyd.client_id'),
+        'client_secret' => config('services.valyd.client_secret'),
+        'redirect_uri'  => config('services.valyd.redirect_uri'),     // same URI used at authorize
+    ])->throw()->json();
+    // TOP-LEVEL JSON: access_token, refresh_token, id_token (RS256), expires_in (~900)
+
+    $user = Http::withToken($token['access_token'])
+        ->get('https://idp.valyd.work/api/auth/oidc/userinfo')->json();
+
+    // $user['valyd_id'] is the stable pseudonymous ID —
+    // find-or-create your local user against it, then log them in.
+    return response()->json([
+        'valyd_id'    => $user['valyd_id'],
+        'id_verified' => $user['id_verified'],
+    ]);
+});
+```
+
+## 4. Run it
+
+```bash
+php artisan serve
+```
+
+Open http://localhost:8000/auth/valyd and complete the login.
+
+<Callout type="info" emoji="✅">
+**Checkpoint:** `/auth/valyd` redirects to `https://idp.valyd.work/api/auth/oidc/authorize?...`
+with your `state` in the URL; after consent, the callback returns your `valyd_id` and
+`id_verified`; and a forged callback (wrong or missing `state`) is rejected with HTTP 403.
+</Callout>
+
+For production, register your HTTPS callback URI, add a `nonce` and verify the `id_token`'s
+signature against `https://idp.valyd.work/api/auth/oidc/jwks.json` (e.g. with
+`firebase/php-jwt`), or plug in any OIDC library — see [Use any OIDC library](/docs/oidc).
+
+## Troubleshooting
+
+- **`redirect_uri` mismatch** — the value sent at `/authorize` and `/token` must both exactly
+  match a registered redirect URI. See [Errors & troubleshooting](/docs/errors).
+- **403 on legitimate logins** — the session cookie was lost between the two routes; both must
+  run on the same host and go through Laravel's `web` middleware (sessions enabled). See
+  [Errors & troubleshooting](/docs/errors).
+- **`invalid_grant` from `->throw()`** — the code is single-use and short-lived; refreshing the
+  callback URL replays a consumed code. Restart from `/auth/valyd`. See
+  [Errors & troubleshooting](/docs/errors).
+
+## Next steps
+
+- [Scopes](/docs/scopes) — request `verifications`, `email`, or license scopes.
+- [Account API](/docs/endpoints) — read userinfo, licenses (`/api/auth/oidc/licenses`), and
+  verification proofs (`/api/auth/oidc/verifications`) with the access token.
+- [Attach a verification](/verifications/quickstart) — run a new KYC or license check with the
+  user's token so the proof saves to their Valyd account.
+- On a Node stack too? The official SDK (`npm install @valyd/sdk@^1.10.1`) does this whole flow,
+  plus PKCE and id_token verification, in two calls — see the
+  [Node.js quickstart](/docs/quickstart/node).

@@ -1,25 +1,25 @@
-# Verification APIs Quickstart
+# Verification API quickstart
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/quickstart
-- Credentials / env vars needed: VALYD_API_KEY, VALYD_WORKFLOW_ID (Hosted only)
-- Files an integrator edits: .env (to store VALYD_API_KEY and VALYD_WORKFLOW_ID), server route handler (to make the API call and, for Hosted, handle the webhook)
-- Estimated steps: 6
-- Can complete without human input: NO — steps 1-4 require a human to sign in with Valyd SSO, copy the one-time API key, create a Workflow, and configure the webhook in the Developer Portal (https://dev.valyd.work). The API call itself (steps 5-6) can be automated once credentials exist.
-- Prerequisites:
-  - A Valyd SSO account able to sign in to the Developer Portal
-  - An App API key copied from the Console (shown once at creation)
-  - For Hosted: a `workflow_id` from a created Workflow
-  - For Hosted: a publicly reachable webhook URL and signing secret
+> 🔑 **Auth:** App API key (`X-API-Key`) · 👤 **User login:** not required · 🔗 **Account attach:** optional — add `valyd_access_token`
+
+Only your developer/admin signs in to the Developer Portal once to create credentials — the person
+being checked never does.
+
+Use this path when you want the KYC or license result in your own system. If the result must be
+saved to a user's Valyd account, follow [Account-connected verification](/verifications/managed)
+instead.
 
 ### Prerequisites
-- Access to the Developer Portal at https://dev.valyd.work (sign in with Valyd SSO).
+- Access to the Developer Portal at https://dev.valyd.work. This is developer setup, not part of
+  your end-user verification flow.
 - The App API key, copied at App creation (shown once). Store it server-side only.
 - For the Hosted snippet: a `workflow_id` from a Workflow you created in the Console.
 
 ### Steps
 
-1. Sign in to the Developer Portal with Valyd SSO and create an app — owned by your individual account or your organization. That ONE app issues your OAuth credentials (client_id / client_secret, used for BOTH login and verification), a project API key for verification-only use, and your workflows. One SDK (@valyd/sdk), one host (the Valyd IdP), no second dashboard. (Human-only step.)
+1. Sign in to the Developer Portal and create an app. Copy its **App API key** for verification.
+   Ignore the OIDC `client_id` and `client_secret` unless you separately decide to add Login with
+   Valyd. (Human-only setup step.)
 
    ```text
    Open https://dev.valyd.work and sign in with Valyd SSO.
@@ -56,18 +56,25 @@
 
    **Expected output:** Valyd will POST signed events to your URL when a session reaches a terminal state.
 
-5. Run your first Core APIs call (age verification) to confirm your API key works.
+5. Run a one-off professional-license verification with just the API key.
 
    ```bash
-   curl -X POST https://idp.valyd.work/api/v2/age-verification \
+   curl -X POST https://idp.valyd.work/api/v2/credential-verification \
      -H "X-API-Key: $VALYD_API_KEY" \
      -H "Content-Type: application/json" \
-     -d '{ "dob": "1995-06-01", "bands": ["is_18_plus"] }'
+     -d '{
+       "first_name": "Jane",
+       "last_name": "Doe",
+       "license_type": "MD",
+       "license_state": "CA",
+       "license_number": "A12345"
+     }'
    ```
 
    **Expected output:** HTTP `200` with the standard envelope, e.g. `{ "success": true, "data": { ... } }`. On a bad/missing key expect a `4xx` with `{ "success": false, "error": { "code": "...", "message": "..." } }`.
 
-6. (Hosted only) Create a Hosted session from your server, then redirect the user's browser to the returned URL.
+6. (Hosted only) Create a Hosted session from your server, then redirect the user's browser to the
+   returned capture URL. This is a verification page, not an OIDC login page.
 
    ```javascript
    const res = await fetch("https://idp.valyd.work/api/v2/session", {
@@ -90,13 +97,13 @@
    **Expected output:** HTTP `200` with `{ "success": true, "data": { "url": "https://..." } }`. Redirect the user's browser to `data.url`. The verification result arrives later via your configured webhook (step 4).
 
 ### Verification
-- Core APIs: the curl in step 5 returns HTTP `200` and a body where `success` is `true`.
+- Core APIs: the license curl in step 5 returns HTTP `200` and a body where `success` is `true`.
 
   ```bash
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/age-verification \
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/credential-verification \
     -H "X-API-Key: $VALYD_API_KEY" \
     -H "Content-Type: application/json" \
-    -d '{ "dob": "1995-06-01", "bands": ["is_18_plus"] }'
+    -d '{ "first_name":"Jane", "last_name":"Doe", "license_type":"MD", "license_state":"CA", "license_number":"A12345" }'
   ```
 
   Expect `200` printed.

@@ -1,22 +1,15 @@
-# Hosted Verification
+# Hosted verification
 
-> **Scope: Non-account (Fresh) hosted.** No Valyd login, nothing retained; the decision returns the **raw** captured data. For the Account variant — result stored on the user's Valyd account, reuse (returning users verify with a selfie only), and **proofs-only** results — see [Account (Managed by Valyd)](/verifications/managed). Same hosted page; you additionally pass the user's `valyd_access_token` when creating the session.
+> 🔑 **Auth:** App API key (`X-API-Key`) + workflow · 👤 **User login:** not required · 🔗 **Account attach:** optional — add `valyd_access_token`
 
-## Agent Quick-Start
-- Source URL: https://docs.valyd.work/verifications/hosted
-- Credentials / env vars needed: VALYD_API_KEY, VALYD_WEBHOOK_SECRET, VALYD_WORKFLOW_ID (workflow created in the Developer Portal: https://dev.valyd.work), APP_URL
-- Files an integrator edits: .env (credentials), server route handlers (session create, redirect callback, webhook receiver)
-- Estimated steps: 4 (create session → redirect → handle redirect-back → read authoritative result)
-- Can complete without human input: NO — a human must create the App API key, the webhook signing secret, and a workflow in the Developer Portal to obtain a `workflow_id`.
-- Prerequisites:
-  - An App API key (`X-API-Key`) — server-side only, never exposed to the browser. Get this from the Developer Portal: https://dev.valyd.work
-  - A webhook signing secret (`VALYD_WEBHOOK_SECRET`) — get this from the Developer Portal: https://dev.valyd.work
-  - A `workflow_id` — create the workflow in the Developer Portal (Workflows → "License Verification" or "KYC + License" preset) or via the API, then copy its `workflow_id`.
-  - Node.js project with `@valyd/sdk` installed (for the SDK examples).
+Create a verification session with your App API key and redirect the person to Valyd's capture
+page — Valyd handles the capture UI, camera, retries, and security, and all workflow checks come
+back together in one decision.
 
-> ALL server-to-server calls use the header `X-API-Key: <App API key>`. Keep this key SERVER-SIDE ONLY — never expose it to the browser. Every response uses the envelope `{ success, data, error: { code, message } }`.
-
----
+The decision belongs to your integration and is not saved to a Valyd account. Raw KYC fields are
+released only after the required ID, liveness, and face-match checks pass; otherwise they remain
+encrypted. For the optional account-connected variant, pass a signed-in user's
+`valyd_access_token`; see [Account-connected verification](/verifications/managed).
 
 ## Overview
 
@@ -27,7 +20,7 @@ The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk)
 Install it:
 
 ```bash
-npm i @valyd/sdk
+npm i @valyd/sdk@^1.10.1
 ```
 
 Initialize the client:
@@ -47,6 +40,23 @@ Hosted flow at a glance:
 2. Redirect the user's browser to the returned `url`.
 3. Valyd captures everything and redirects back to your `redirect_url`.
 4. Receive a signed webhook, then fetch the authoritative result from the decision API.
+
+## Session lifecycle
+
+A session is one user's run through a [workflow](/verifications/workflows):
+
+- **Creation** — `POST /api/v2/session` with a `workflow_id`; the response carries the hosted
+  `url`, a `session_token`, and `expires_at`. Tag it with `vendor_data` (your internal user ref,
+  echoed back on the webhook) and set `ttl_seconds` to bound its lifetime.
+- **In flight** — status moves `NOT_STARTED → IN_PROGRESS` (→ optionally `IN_REVIEW`) while the
+  user completes the workflow's checks on the hosted page.
+- **Return** — the user's browser is sent back to your `redirect_url` with
+  `?session_id=…&status=…`; the `status` param is a **hint only**.
+- **Terminal** — `APPROVED`, `DECLINED`, `ABANDONED` (user left), or `EXPIRED` (TTL elapsed). A
+  signed webhook fires and the decision endpoint holds the authoritative result. An abandoned or
+  expired session is never resumed — create a new session.
+
+Full status tables live in [Decisions & statuses](/verifications/statuses).
 
 ---
 
@@ -369,7 +379,7 @@ APPROVED for KYC + License means ALL of:
 // Sessions
 const session = await verify.sessions.retrieve(sessionId);
 const page    = await verify.sessions.list({ status: "APPROVED", vendorData: "user_123", limit: 50 });
-await verify.sessions.updateStatus(sessionId, "APPROVED"); // or "DECLINED" — manual override
+await verify.sessions.updateStatus(sessionId, "APPROVED"); // or "DECLINED" — manual review decision (IN_REVIEW sessions only)
 
 // Workflows  (↔ /api/v2/workflows)
 const wf = await verify.workflows.create({
@@ -414,7 +424,7 @@ Full set of check status values: `pending`, `running`, `passed`, `failed`, `revi
 | GET | `https://idp.valyd.work/api/v2/session/<session_id>/decision` | `X-API-Key` | Read the authoritative decision and per-check breakdown. |
 | GET (SDK: `sessions.retrieve`) | `https://idp.valyd.work/api/v2/session/<session_id>` | `X-API-Key` | Retrieve a session. |
 | GET (SDK: `sessions.list`) | `https://idp.valyd.work/api/v2/session` | `X-API-Key` | List sessions (filter by `status`, `vendorData`, `limit`). |
-| POST/PATCH (SDK: `sessions.updateStatus`) | `https://idp.valyd.work/api/v2/session/<session_id>` | `X-API-Key` | Manually override session status to `APPROVED` or `DECLINED`. |
+| PATCH (SDK: `sessions.updateStatus`) | `https://idp.valyd.work/api/v2/session/<session_id>/status` | `X-API-Key` | Manually decide an `IN_REVIEW` session: `APPROVED` or `DECLINED` (approval still requires passed ID, liveness, and face-match checks). |
 | POST (SDK: `workflows.create`) | `https://idp.valyd.work/api/v2/workflows` | `X-API-Key` | Create a workflow. |
 | GET (SDK: `workflows.list`) | `https://idp.valyd.work/api/v2/workflows` | `X-API-Key` | List workflows. |
 | GET (SDK: `workflows.retrieve`) | `https://idp.valyd.work/api/v2/workflows/<id>` | `X-API-Key` | Retrieve a workflow. |
@@ -422,7 +432,7 @@ Full set of check status values: `pending`, `running`, `passed`, `failed`, `revi
 | DELETE (SDK: `workflows.remove`) | `https://idp.valyd.work/api/v2/workflows/<id>` | `X-API-Key` | Delete a workflow. |
 | POST (your endpoint) | `<your callback URL>` | Signed via `X-Valyd-Signature` | Webhook Valyd POSTs to on a terminal session. |
 
-> The exact HTTP methods/paths for the SDK helpers `sessions.retrieve`, `sessions.list`, `sessions.updateStatus`, and the `workflows.*` helpers are inferred from the SDK method names and the noted `↔ /api/v2/workflows` mapping in the source; the component only spells out the literal paths `POST /api/v2/session` and `GET /api/v2/session/<id>/decision`.
+> The exact HTTP methods/paths for the SDK helpers `sessions.retrieve`, `sessions.list`, and the `workflows.*` helpers are inferred from the SDK method names and the noted `↔ /api/v2/workflows` mapping in the source; the component only spells out the literal paths `POST /api/v2/session`, `GET /api/v2/session/<id>/decision`, and `PATCH /api/v2/session/<id>/status`.
 
 ---
 

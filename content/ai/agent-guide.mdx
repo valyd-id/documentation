@@ -1,0 +1,65 @@
+---
+title: Agent Integration Guide
+description: How an AI agent integrates with Valyd without MCP — read llms.txt, pick a lane (API-key verification or account-connected), and call the APIs directly.
+---
+
+import { Callout } from 'nextra/components'
+
+# Integrate without MCP
+
+No MCP client? An agent can integrate with Valyd the same way any backend does: read the
+machine-readable docs, pick the right lane, and call the APIs.
+
+## Step 1 — Read `llms.txt` first
+
+```bash
+curl -sL https://docs.valyd.work/llms.txt
+```
+
+One fetch gives the agent the full docs hierarchy, base URLs, credential rules, and links to
+every page as clean Markdown. Fetch individual `.md` pages on demand rather than loading the
+full corpus, unless you need everything — then use
+[`llms-full.txt`](https://docs.valyd.work/llms-full.txt). The OpenAPI 3.1 specs
+([Valyd ID](https://docs.valyd.work/openapi/valyd-id.json) ·
+[Verification APIs](https://docs.valyd.work/openapi/valyd-verify.json)) and the
+[Postman collection](https://docs.valyd.work/valyd-postman-collection.json) are listed on
+[the agent-readable docs page](/agents).
+
+## Step 2 — Pick a lane
+
+**Verification with an App API key.** No sign-in of any kind: call a check (KYC, liveness,
+face match, age, license) with `VALYD_API_KEY` — or send the person to the hosted page — and
+the full result comes back to your system. The personal data is yours to manage and protect.
+Start at the [Verification quickstart](/verifications/quickstart).
+
+**Account-connected with a user token.** The user signs in with Valyd (OAuth 2.0 / OIDC); your
+agent acts with their access token. Read the proofs their Valyd ID already holds
+(`id_verified`, age bands, licenses) instead of re-verifying, and when a new check runs with
+the token attached, the proof saves to their account for reuse everywhere. Start at
+[Reusable identity](/verifications/managed) and the [Valyd ID docs](/docs). Need raw personal
+data? Use the [human-in-the-loop consent flow](/docs/request-data) — the user approves the
+exact fields in their Valyd app and the values arrive sealed to your key.
+
+## Step 3 — Call the APIs
+
+Follow the pages `llms.txt` points to. Two golden rules keep the products straight:
+
+<Callout type="warning">
+  **The two golden rules**
+
+  1. The **Account API never runs a check** — a user token only *reads* proofs the account
+     already holds.
+  2. A **check never touches an account** unless the user's token is attached to the call —
+     API-key-only checks return results to you and save nothing to any Valyd ID.
+</Callout>
+
+## Notes for agents
+
+- **Credentials cannot be created via API.** Pause and ask a human to supply `client_id`,
+  `client_secret`, and `VALYD_API_KEY` before making auth calls.
+- Token exchange and webhook signature verification must run server-side — never expose
+  `client_secret` to a browser.
+- Prefer the clean `.md` URLs listed in `llms.txt` over scraping HTML pages.
+- Prefer **proofs** over raw data where they suffice — request `is_18_plus`, not `dob`.
+
+Prefer tools over raw HTTP? [Connect the MCP server](/ai/mcp-setup) instead.
