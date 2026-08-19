@@ -36,7 +36,7 @@ Two clarifications that scope this claim precisely:
 | DOB, document number, gender, nationality | **Vault-only.** Released solely through the explicit [consent flow](/docs/request-data), sealed on the user's device to your X25519 key — end-to-end encrypted; the server is blind to them. |
 | Age | Shared as derived **age bands** (`is_18_plus`, …) without exposing the raw DOB; the raw `dob` needs the consent flow. |
 | Verification status & proofs (`id_verified`, license badges, age bands) | Read via the [Account API](/docs/endpoints#resource-api--user-data), gated by the [scopes](/docs/scopes) the user approved at login. |
-| One-off (non-account) check results | Returned to your system only; nothing is added to a Valyd account. Raw KYC fields in a hosted decision are released only after the required ID, liveness, and face-match gates pass — until then they remain encrypted. |
+| [Standalone](/verifications/standalone) check results | Returned to your system only; nothing is added to a Valyd account. Raw KYC fields in a hosted decision are released only after the required ID, liveness, and face-match gates pass — until then they remain encrypted. |
 | Account-connected results | The account APIs return **proofs only**, never raw account KYC ([details](/verifications/managed)). |
 
 Two rules cover everything:

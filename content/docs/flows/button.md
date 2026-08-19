@@ -95,7 +95,7 @@ window.onValydSignIn = async ({ code }) => {
 ```
 
 Your `/auth/valyd/exchange` route exchanges the code exactly like a redirect callback
-(`valyd.auth.exchangeCode(code)` with `@valyd/sdk@^1.10.1`), then verifies the ID token and sets
+(`valyd.auth.exchangeCode(code)` with `@valyd/sdk@^1.10.2`), then verifies the ID token and sets
 your session.
 
 ## Security notes

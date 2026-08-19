@@ -1,0 +1,118 @@
+# Anti-spoof
+
+One family, two endpoints: `POST /api/v2/antispoof` answers "is this a live human capture?",
+and `POST /api/v2/antispoof/identity` additionally resolves the proven-live face to a stable
+`valyd_` uuid for duplicate-account / sybil detection.
+
+## POST /api/v2/antispoof — Anti-spoof (single image or burst)
+
+Answers "is this a live human capture?" and returns a vendor-neutral `human_score`
+(0–100) with a pass/fail verdict. Accepts **either** a single `image` or a short
+**burst** of frames; a burst adds per-frame voting, motion analysis and same-person
+consistency, which is far stronger than a single frame.
+
+**Method:** POST
+**Full URL:** `https://idp.valyd.work/api/v2/antispoof`
+**Auth header:** `X-API-Key: <App API key>`
+
+**Fields (send one of):**
+- `image` (image) — single still. Analysis-only; `human_score` is capped at 85 (`assurance: "upload"`).
+- `frames[]` (3–8 images) — chronological stills captured over ~2s (`assurance: "burst"`).
+
+**Request (SDK, Node — v1.10.2+):**
+
+```javascript
+import { VerifyClient, readImage } from "@valyd/sdk";
+const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
+
+// burst (strongest): 3–8 chronological stills captured over ~2s
+const { check } = await verify.standalone.antispoof({
+  frames: [
+    readImage("./f1.jpg"), readImage("./f2.jpg"), readImage("./f3.jpg"),
+    readImage("./f4.jpg"), readImage("./f5.jpg"),
+  ],
+});
+// …or a single still (human_score capped at 85):
+// await verify.standalone.antispoof({ image: readImage("./selfie.jpg") });
+
+console.log(check.score, check.data.assurance); // 100 "burst"
+```
+
+**Raw HTTP:** [cURL example →](/verifications/standalone/http#anti-spoof-single-image-or-burst)
+
+**Expected output:** HTTP 200; `check.type` is `"antispoof"`, `check.score` is the `human_score`. `check.data`:
+
+```json
+{
+  "assurance": "burst",
+  "frames_analyzed": 5,
+  "frames_genuine": 5,
+  "frames_spoof": 0,
+  "motion": "natural",
+  "face_consistency": "consistent",
+  "human_score": 100
+}
+```
+
+On failure `check.data.signal` is one of: `no_face`, `face_unreadable`, `spoof_detected`,
+`low_confidence`, `duplicate_frames`, `static_capture`, `discontinuous_motion`, `different_faces`.
+
+> For the strongest assurance, run anti-spoof through the **hosted flow**, where Valyd
+> captures a live camera burst and issues a random on-screen action (turn head, open
+> mouth, nod, move closer). That path returns `assurance: "captured"` — see
+> [Hosted Verification](/verifications/hosted).
+
+## POST /api/v2/antispoof/identity — Anti-spoof + identity
+
+Runs the identical anti-spoof pipeline and, only if it passes, resolves the proven-live
+face against the global Valyd face gallery — returning the person's **stable `valyd_`
+uuid**. The same face resolves to the same uuid across all your requests (matching is by
+biometric-vector similarity against the gallery), so this
+is duplicate-account / sybil detection. If liveness fails, no identity lookup runs (and
+none is billed).
+
+**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/antispoof/identity` · **Auth:** `X-API-Key`
+
+**Request (SDK, Node — v1.10.2+):**
+
+```javascript
+const { check } = await verify.standalone.antispoofIdentity({
+  frames: [readImage("./f1.jpg"), readImage("./f2.jpg"), readImage("./f3.jpg")],
+});
+// check.data.identity.valyd_uuid, check.data.identity.registered
+```
+
+**Raw HTTP:** [cURL example →](/verifications/standalone/http#anti-spoof--identity)
+
+Same input as `/antispoof` (`image` or `frames[]`). Response adds `identity` to `check.data`:
+
+```json
+{
+  "human_score": 100,
+  "identity": { "valyd_uuid": "valyd_f35fecf0…", "registered": "existing" }
+}
+```
+
+`registered` is `"new"` the first time a face is seen, `"existing"` afterwards.
+
+## Gesture challenge
+
+`POST /api/v2/antispoof/challenge` issues a **single-use, 60-second** liveness challenge — a
+random gesture (turn head, open mouth, nod, move closer). Show it to the person, capture the
+burst while they perform it, then echo the `challenge_id` on the run. Optional on plain
+`/antispoof`; **strict projects require it** (plus a 3–8 frame burst) on `/antispoof/identity`
+and [face uniqueness](/verifications/standalone/face-uniqueness) enrollments.
+
+**Request (SDK, Node — v1.10.2+):**
+
+```javascript
+const { challengeId, challenge } = await verify.standalone.antispoofChallenge();
+// show `challenge` (e.g. "turn head") and capture the burst while it's performed…
+
+const { check } = await verify.standalone.antispoofIdentity({ frames, challengeId });
+```
+
+**Raw HTTP:** [cURL example →](/verifications/standalone/http#gesture-challenge)
+
+An expired or reused id returns `400 challenge_expired`; a strict project run without one
+returns `400 challenge_required`.

@@ -15,7 +15,7 @@ A ready-to-go demo: let a user log in with Valyd and share their verified detail
 
 Start a session, allow the camera in the tab that opens, and follow the prompts. In the hosted capture Valyd **tracks your face, records a short live burst, and asks you to perform one random action** (turn your head, open your mouth, nod, or move a little closer). It then decides whether it's a real, live person — this active, capture-controlled path is what makes a photo, screen replay, or pre-recorded clip fail, because an attacker can't know the action in advance.
 
-> **How the check is graded.** Every frame is scored for passive liveness and the results are combined into a single `human_score` (0–100), together with motion analysis, same-face consistency across frames, and verification that the requested action actually happened. The hosted flow returns the strongest assurance level, `captured`. See the [Anti-spoof API](/verifications/standalone#post-apiv2antispoof--anti-spoof-single-image-or-burst) for the raw `human_score` fields and the standalone `POST /api/v2/antispoof` / `POST /api/v2/antispoof/identity` endpoints.
+> **How the check is graded.** Every frame is scored for passive liveness and the results are combined into a single `human_score` (0–100), together with motion analysis, same-face consistency across frames, and verification that the requested action actually happened. The hosted flow returns the strongest assurance level, `captured`. See the [Anti-spoof API](/verifications/standalone/antispoof) for the raw `human_score` fields and the standalone `POST /api/v2/antispoof` / `POST /api/v2/antispoof/identity` endpoints.
 
 The demo runs entirely with the **public app key** (`X-API-Key`). The flow is:
 
@@ -78,7 +78,7 @@ Start the liveness workflow, open the hosted capture, poll the decision — huma
 ## Server (Node) — login, share details, verify face
 
 ```javascript filename="server.js"
-// server.js — Node 18+ (Express). Install: npm i express @valyd/sdk@^1.10.1
+// server.js — Node 18+ (Express). Install: npm i express @valyd/sdk@^1.10.2
 // The client_secret and app key stay here on the server, never in the browser.
 import express from "express";
 import { ValydClient } from "@valyd/sdk";
@@ -164,11 +164,11 @@ app.listen(PORT, () => console.log("Anti-spoof demo on http://localhost:" + PORT
 
 ## Anti-spoof + identity (one call)
 
-If you also want to know **who** the live person is, use `POST /api/v2/antispoof/identity`. It runs the same anti-spoof pipeline and, only when it passes, resolves the proven-live face against the global Valyd gallery — returning a **stable `valyd_` uuid**. The same face always maps to the same uuid, so this is duplicate-account / sybil detection in a single request. See [Anti-spoof + identity](/verifications/standalone#post-apiv2antispoofidentity--anti-spoof--identity) and [Face uniqueness](/verifications/standalone#post-apiv2face-uniqueness--face-uniqueness-dedup).
+If you also want to know **who** the live person is, use `POST /api/v2/antispoof/identity`. It runs the same anti-spoof pipeline and, only when it passes, resolves the proven-live face against the global Valyd gallery — returning a **stable `valyd_` uuid**. The same face always maps to the same uuid, so this is duplicate-account / sybil detection in a single request. See [Anti-spoof + identity](/verifications/standalone/antispoof#post-apiv2antispoofidentity--anti-spoof--identity) and [Face uniqueness](/verifications/standalone/face-uniqueness).
 
 ## Next steps
 
-- [Anti-spoof & face-uniqueness API](/verifications/standalone#post-apiv2antispoof--anti-spoof-single-image-or-burst)
+- [Anti-spoof & face-uniqueness API](/verifications/standalone/antispoof)
 - [Hosted verification](/verifications/hosted)
 - [Verify docs](/verifications)
 - [Dev Portal](https://dev.valyd.work)

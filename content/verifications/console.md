@@ -33,6 +33,6 @@ IF you lost the API key:
 IF you will use Hosted mode:
   → Create a Workflow bundling the services you need and copy its workflow_id
   → Under Webhooks, set the endpoint URL and copy the signing secret
-IF you will use Core APIs mode only:
+IF you will use standalone checks only:
   → You only need the App API key; Workflows and Webhooks are not required
 ```

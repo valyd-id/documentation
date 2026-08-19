@@ -5,7 +5,7 @@ here is current.
 
 | What | Status | Since | Use instead |
 | --- | --- | --- | --- |
-| `POST /api/auth/tpsso/token`, `/refresh`, `/tpsso/authorize` (legacy TPSSO OAuth) | **Removed — 410 Gone** | 2026-08-18 | [`/api/auth/oidc/*`](/docs/endpoints) — see the [migration guide](/docs/migrate-tpsso-to-oidc) |
+| `POST /api/auth/tpsso/token`, `/refresh`, `/tpsso/authorize` (legacy TPSSO OAuth) | **Removed — 410 Gone** | 2026-08-18 | [`/api/auth/oidc/*`](/docs/endpoints) — see the [OIDC guide](/docs/oidc) |
 | SDK `createLoginSession()` / `verifyLoginSession()` (login-session "marker" CSRF) | **Deprecated no-ops** | SDK 1.10.1 | Standard `state` comparison — [`handleCallback()`](/docs/quickstart/node) does it for you |
 | Comparing callback `state` was documented as *wrong* | **Reversed** | 2026-08-18 | State comparison is now the correct, required CSRF check |
 | Age check `bands.*.verified` response field | **Deprecated alias** | 2026-08-19 | Read `satisfied` — same value, honest name ([why](/verifications/standalone)) |

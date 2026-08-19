@@ -32,7 +32,7 @@ framework works; `req` is the incoming callback request):
 ```typescript
 import express from "express";
 import cookieParser from "cookie-parser";
-import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.1 cookie-parser
+import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.2 cookie-parser
 
 const app = express();
 app.use(cookieParser());
@@ -51,7 +51,7 @@ app.get("/auth/valyd/callback", async (req, res) => {
 Done. See the [complete example](/docs/quick-start), or plug in
 [your own OIDC library](/docs/oidc) instead.
 
-## From here you can get
+## The user is signed in — see what they already have
 
 | Endpoint | What it reads from the user's account |
 | --- | --- |
@@ -63,9 +63,9 @@ These read what the account already holds, gated by the scopes the user approved
 attributes (DOB, document data) go through the explicit
 [consent flow](/docs/request-data).
 
-Need to run a **new** KYC or license check and save it to this user's account? Run any
-[Verification API](/verifications) check with the user's `valyd_access_token` — the passed proof
-saves to their account, and next time you just read it here.
+KYC not done yet? License missing? Run the check **for the user** — a
+[hosted page or a direct API call](/verifications/managed), with their `valyd_access_token`
+riding along — and the passed proof lands on their Valyd ID. Next time you just read it here.
 
 ## Security rules
 

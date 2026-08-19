@@ -24,7 +24,7 @@ const forbidden = [
   { pattern: /\btpsso\b/i, message: 'removed auth terminology', exempt: ['content/docs/errors.md', 'content/docs/deprecations.md'] },
   { pattern: /\/api\/auth\/tpsso/i, message: 'removed auth namespace', exempt: ['content/docs/deprecations.md'] },
   { pattern: /https:\/\/idp\.valyd\.work\/auth\?/i, message: 'non-canonical authorize URL' },
-  { pattern: /npm (?:i|install) @valyd\/sdk(?!@\^1\.10\.1)/, message: 'unpinned or stale SDK install command' },
+  { pattern: /npm (?:i|install) @valyd\/sdk(?!@\^1\.10\.2)/, message: 'unpinned or stale SDK install command' },
   { pattern: /@valyd\/sdk (?:1\.10\.x|1\.11)\+?/i, message: 'stale SDK version guidance' },
   { pattern: /@valyd\/sdk@x\.y\.z/i, message: 'placeholder SDK version' }
 ]
@@ -50,8 +50,8 @@ const required = [
   ['content/verifications/managed.md', 'valyd_access_token'],
   ['content/verifications/quickstart.md', 'being checked never does'],
   // SDK version pin.
-  ['content/docs/quick-start.md', '@valyd/sdk@^1.10.1'],
-  ['content/verifications/sdk.md', '@valyd/sdk@^1.10.1'],
+  ['content/docs/quick-start.md', '@valyd/sdk@^1.10.2'],
+  ['content/verifications/sdk.md', '@valyd/sdk@^1.10.2'],
 ]
 
 for (const [relative, phrase] of required) {

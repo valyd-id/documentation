@@ -72,7 +72,7 @@ sequenceDiagram
 
 ## Build it
 
-- **Full guide (steps, Core APIs, consent):** [Account-connected verification](/verifications/managed)
+- **Full guide (steps, check endpoints, consent):** [Account-connected verification](/verifications/managed)
 - The login half: [Authorization Code flow](/docs/flows/authorization-code)
 - The session half: [Hosted verification](/verifications/hosted)
 - Reading proofs after login: [API reference — Resource API](/docs/endpoints#resource-api--user-data)

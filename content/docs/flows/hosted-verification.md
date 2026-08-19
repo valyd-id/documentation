@@ -1,19 +1,18 @@
 # Hosted verification flow
 
-> 🔑 **Auth:** App API key (`X-API-Key`) + workflow · 👤 **User login:** not required · 🔗 **Account attach:** optional — add `valyd_access_token`
+> 🔑 **Auth:** App API key (`X-API-Key`) + workflow · 💾 With the user's `valyd_access_token`, proofs save to their Valyd ID
 
-Hosted verification runs a KYC or license check with **no user login and no UI to build**: your
-backend creates a session, you send the person to Valyd's capture page, and the result comes back
-as a signed webhook plus an authoritative decision API. The decision belongs to your integration —
-nothing is saved to a Valyd account unless you attach a user token.
+Hosted verification runs a KYC or license check with **no UI to build**: your backend creates a
+session, you send the person to Valyd's capture page, and the result comes back as a signed
+webhook plus an authoritative decision API. Include the signed-in user's token when creating the
+session and passed proofs save to their Valyd ID
+([account-connected flow](/docs/flows/account-connected)).
 
 ## When to use it
 
-- One-shot identity or license checks where the person doesn't have (or doesn't need) a Valyd
-  login — onboarding forms, gig-worker screening, license validation.
 - You want Valyd to own the capture UX (camera, retries, anti-spoofing) end to end.
-- The result should live in **your** system. If it should save to the user's Valyd account
-  instead, use the [account-connected flow](/docs/flows/account-connected).
+- Identity or license checks during onboarding, gig-worker screening, license validation.
+- Also available for [standalone checks](/verifications/standalone) on data you keep yourself.
 
 ## How it works
 
@@ -51,9 +50,10 @@ sequenceDiagram
 - Verify webhooks against the **raw** body (HMAC-SHA256, `X-Valyd-Signature`) and reject stale
   timestamps; dedupe on `X-Valyd-Event-Id`.
 - Never treat the redirect `?status=` as final — only the webhook/decision API is authoritative.
-- Raw KYC fields in a decision are released only after the required ID, liveness, and
-  face-match gates pass; sessions that expire or are abandoned are never resumed — create a new
-  one.
+- Raw KYC fields appear in a decision only on tokenless (standalone) sessions, and only after
+  the required ID, liveness, and face-match gates pass; with the user's token the decision
+  returns proofs and public data only. Expired or abandoned sessions are never resumed — create
+  a new one.
 
 ## Build it
 

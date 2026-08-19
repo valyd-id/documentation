@@ -1,6 +1,14 @@
 # Customization
 
-What you can brand today — nothing here requires a support ticket.
+What you can shape today — nothing here requires a support ticket.
+
+## The hosted flow is yours to compose
+
+The hosted capture page runs exactly the checks **your workflow** defines. You decide which
+steps the user goes through, in what order, and how retries behave — compose a workflow in the
+[Developer Portal](https://dev.valyd.work) or [via the API](/verifications/workflows), and the
+hosted page auto-adapts its steps to it. License-only, full KYC + license, liveness-gated flows:
+same page, your composition.
 
 ## Your name on the consent screen
 
@@ -23,12 +31,14 @@ The drop-in button accepts:
 Or skip it entirely and render your own button — it only needs to link to the
 [authorize URL](/docs/flows/authorization-code).
 
-## Hosted verification
+## Coming soon: full hosted-flow branding
 
-The hosted capture page runs the checks **your workflow** defines — you control which steps the
-user goes through, retries and ordering included. See [Workflows](/verifications/workflows).
+Full layout, design, and branding customization of the hosted flow is on the roadmap — the goal
+is a capture experience that looks and feels like *your* product end to end:
 
-## Not available yet
+- **Custom colors, logo, and typography** on the hosted verification pages
+- **Your own domain** for the hosted flow
+- **Branded emails** sent under your name
 
-Custom domains for the login/consent pages and branded emails are not offered today — if these
-matter for your rollout, tell us: [javi@valyd.id](mailto:javi@valyd.id).
+We're shaping this with early integrators — if hosted-flow branding matters for your rollout,
+tell us what you need: [javi@valyd.id](mailto:javi@valyd.id).

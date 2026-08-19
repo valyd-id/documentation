@@ -14,8 +14,8 @@ so no token ever touches the front end.
 - You're using the [drop-in button](/docs/flows/button), the `@valyd/sdk`, or
   [your own OIDC library](/docs/oidc) — all of them run this exact flow underneath.
 
-Don't use it for API-key-only verification with no user login — that's the
-[hosted verification flow](/docs/flows/hosted-verification).
+Don't use it for [standalone checks](/verifications/standalone) on data you supply yourself —
+those need only the [hosted verification flow](/docs/flows/hosted-verification) or a direct call.
 
 ## How it works
 

@@ -1,10 +1,17 @@
-# Account-connected verification
+# Verify the user
 
-> 🔑 **Auth:** App API key + the user's access token · 👤 **User login:** required (sign in first) · 💾 **Result:** proof saves to the user's Valyd account
+> 🔑 **Auth:** App API key + the user's `valyd_access_token` · 💾 **Result:** the proof saves to the user's Valyd ID
+
+Everything the user's token unlocks — reads and checks — lives on
+[one page](/docs/user-token); this page is the check reference.
+
+The user is signed in — now run any check for them. Pass their `valyd_access_token` alongside
+your App API key and the check pre-fills from their account, skips what's already proven, and
+saves the passed proof back to their Valyd ID:
 
 ```mermaid
 flowchart LR
-    L["Login (OIDC sign-in)"] --> V["Verify (check runs with the user token)"] --> P["Proof (saved to the user's account)"] --> R["Reuse (next login: read it — no re-run while still fresh for your policy)"]
+    L["Login (OIDC sign-in)"] --> V["Verify (check runs with the user token)"] --> P["Proof (saved to the user's Valyd ID)"] --> R["Reuse (next login: read it — no re-run while still fresh for your policy)"]
 ```
 
 **What is a proof?** The durable outcome of a passed check saved on the user's Valyd account — a
@@ -14,15 +21,16 @@ pseudonym, `id_verified`, verified license badges, age bands — read back any t
 carries the registry's own `status` and `expires_at`. Re-run a check when your policy needs a
 fresher answer.
 
-Use this path when a successful KYC or license result should be saved to a signed-in user's Valyd
-account. Two steps:
+Check first, run second:
 
-1. **[Sign in with Valyd](/docs) signs the user in** and gives your backend their access token.
-2. **The Verification API runs the check with that token** and the passed proof saves to the account.
+1. **Read the account** — [Account API](/docs/endpoints#resource-api--user-data): is KYC done?
+   Which licenses are already verified? If the proof is there and fresh, stop here.
+2. **Run what's missing with the user's token** — hosted session or direct call; the passed
+   proof saves to their Valyd ID.
 
-Prefer the result only in your own system? Use the
-[API-key-only quickstart](/verifications/quickstart) — no user sign-in, but the person's identity
-data then lives in your backend, yours to manage.
+Because the verified identity lives on the user's Valyd ID, it is **reused** everywhere: a
+returning user re-verifies with a **selfie only** (matched against their stored face vector), and
+already-verified KYC and licenses are skipped.
 
 ## Data-sharing rule (critical)
 
@@ -30,44 +38,36 @@ data then lives in your backend, yours to manage.
   bands. They **never** return raw KYC (legal name, date of birth, document images). In a decision,
   the `id_verification` check reduces to `{ status, id_verified }`; `identity` is
   `{ valyd_id, pseudonym, id_verified, age_bands, licenses, verified_at }`.
-- **Raw account KYC is released only through the consent Core API** — you request specific attributes,
+- **Raw account KYC is released only through the consent API** — you request specific attributes,
   the user approves in their Valyd app, and the values are returned end-to-end encrypted (X25519 sealed
-  box) to your public key. See "Consent Core API" below.
-- A **one-off KYC decision** releases raw data only after required ID, liveness, and face-match
-  checks pass. Before that gate, sensitive data remains encrypted. A one-off license lookup returns
-  its registry result directly.
+  box) to your public key. See "Consent API" below.
 
-## Why: Account vs Non-account
-
-- **Account**: the verified identity is stored on the user's Valyd account and **reused** everywhere.
-  A returning user re-verifies with a **selfie only** (matched against their stored face vector);
-  already-verified KYC and licenses are skipped. Data belongs to the user's account; integrators get
-  proofs.
-- **Non-account**: a one-shot capture; nothing is stored; the integrator receives the raw result.
-
-## Hosted flow (Account × Hosted)
+## Hosted flow (recommended)
 
 1. Register your app at the Developer Portal (https://dev.valyd.work) → `client_id` / `client_secret`, and set up its verification capability in the same portal (surfaced there as a Verify "project") → API key (`vrf_…`, shown once) + `workflow_id`. One console, all credentials.
 2. Log the user in with Valyd (OAuth2/OIDC), exchange the code → `valyd_access_token` + identity.
 3. If KYC is required and not done, **redirect the user to Valyd** to complete it (raw KYC is stored
-   under the user's per-user key; it can't be a plain API write).
+   under the user's per-user key; it can't be a plain API write — account KYC is hosted-only).
 4. Create a session: `POST https://idp.valyd.work/api/v2/session` with `workflow_id`, `valyd_access_token`,
    `vendor_data`, and (for redirect) `redirect_url` + `callback`.
 5. Redirect the user to the returned hosted `url`. Reuse skips already-completed steps.
 6. Read the result via the signed webhook and/or `GET /api/v2/session/{id}/decision` — **proofs only**
    (`origin: "managed"`).
 
-## Core APIs (Account × Core)
+## Direct API calls (same checks, your UI)
 
 - **License / credential**: matched against the account's real name, the verified badge is stored on the
   account, and a proof is returned.
 - **Face match**: a selfie is matched against the account's stored face vector (only the selfie leaves
   your server).
+- **Liveness**: confirms the selfie is a live person, not a photo or replay — runs with the token,
+  the assurance rides on the same account.
 - **Reuse read / revoke**: `GET /api/v2/identity?valyd_id=…` (proofs only) and
   `DELETE /api/v2/identity/{valyd_id}`.
-- **KYC**: redirect the user to Valyd (raw KYC needs the per-user encryption key to store).
+- **KYC**: redirect the user to Valyd (raw KYC needs the per-user encryption key to store —
+  hosted-only).
 
-## Consent Core API — request raw KYC (user approves)
+## Consent API — request raw KYC (user approves)
 
 There are **two ways** to get raw account attributes (full guide: `/docs/request-data`):
 
@@ -96,3 +96,8 @@ curl https://idp.valyd.work/api/auth/attribute-request/<request_id>/result \
 
 A second consent surface, `credential-share`, releases a specific vault credential and gates the release
 with a face scan as the user's consent.
+
+---
+
+Verifying data you hold yourself, with no user in the loop? See
+[Standalone checks](/verifications/standalone).

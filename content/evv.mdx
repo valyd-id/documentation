@@ -70,7 +70,7 @@ Server (Node 18+) and browser:
 
 ```bash
 # server: OAuth + Verify checks (v0.3+ has kyc.redirectUrl, evvPresence, locationMatch)
-npm i @valyd/sdk@^1.10.1
+npm i @valyd/sdk@^1.10.2
 
 # browser: the modal + high-accuracy location capture (v0.2+ has captureLocation)
 # No browser SDK — hosted verification is a redirect to the session url
@@ -88,7 +88,7 @@ No bundler? There is no browser SDK to include — hosted verification works by 
 **Both modes start the same way — "Connect Valyd".** The clinician logs in with Valyd (OAuth), and your server gets their access token via `exchangeCode`. That token is what identifies the person, gates KYC, and unlocks license/identity reuse — in *both* Hosted and Core.
 </Callout>
 
-<Tabs items={['Hosted by Valyd', 'Core APIs']}>
+<Tabs items={['Hosted by Valyd', 'Standalone checks']}>
 <Tabs.Tab>
 
 Valyd renders the UI in a modal. Already-verified clinicians skip KYC + license and do **only the face scan**.
@@ -138,7 +138,7 @@ window.location.href = url; // Valyd hosts the capture; result via webhook + dec
 </Tabs.Tab>
 <Tabs.Tab>
 
-Your own UI calls Verify directly. It still begins with Connect Valyd (to get the token); KYC is a redirect to Valyd (no KYC API); the license and face+location run as Core API calls.
+Your own UI calls Verify directly. It still begins with Connect Valyd (to get the token); KYC is a redirect to Valyd (no KYC API); the license and face+location run as standalone check calls.
 
 ```javascript filename="Backend (Node) — Connect Valyd → KYC gate → license → EVV Presence"
 import { Valyd } from "@valyd/sdk";
@@ -194,7 +194,7 @@ connectButton("#connect", { loginUrl: "/evv/login" });
 ```
 
 ```javascript filename="Browser — capture a trustworthy GPS fix"
-// Building your own capture UI (Core APIs path)? There is no Valyd browser
+// Building your own capture UI (standalone path)? There is no Valyd browser
 // SDK — use the browser's native camera + geolocation, then POST to your server.
 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
 // draw a video frame to a <canvas>, then canvas.toDataURL("image/jpeg") -> selfie
@@ -287,7 +287,7 @@ ACCOUNT / Managed-Identity model — the clinician logs in with Valyd once; thei
 license are stored and reused on later visits.
 
 SDKs (install):
-- Server (Node 18+):  npm i @valyd/sdk@^1.10.1    // valyd.auth (OIDC) + valyd.verify (checks)
+- Server (Node 18+):  npm i @valyd/sdk@^1.10.2    // valyd.auth (OIDC) + valyd.verify (checks)
 - Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
 
 Environment (IMPORTANT): you are on DEVELOPMENT — construct the SDK with env="development":
@@ -332,7 +332,7 @@ Flow A — Hosted (Valyd renders the UI in a modal):
 5. Webhook POST /webhooks/valyd: const e = valyd.verify.webhooks.constructEvent(raw, headers);
      const decision = await valyd.verify.sessions.decision(e.sessionId)   // source of truth
 
-Flow B — Core APIs (your own UI):
+Flow B — Standalone checks (your own UI):
 1. Same Connect-Valyd login/callback to get accessToken.
 2. KYC gate: if (valyd.verify.kyc.isRequired(await valyd.auth.getVerifications(accessToken))) redirect to kyc.redirectUrl.
 3. License: await valyd.verify.standalone.credentialVerification({ licenseState, licenseType:"MD", licenseNumber })

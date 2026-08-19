@@ -94,7 +94,7 @@ Available services that a workflow can bundle:
 
 There is no REST endpoint to create a workflow from this reference — workflows are defined in the Developer Portal, and you reference the resulting `workflow_id` in `POST /api/v2/session`.
 
-## Core checks
+## Standalone checks
 
 Run a single check directly without a hosted session.
 
@@ -136,7 +136,7 @@ Full URL: `https://idp.valyd.work/api/v2/session/{id}/decision`
 curl https://idp.valyd.work/api/v2/session/SES_ID/decision -H "X-API-Key: $VALYD_API_KEY"
 ```
 
-**Expected output:** HTTP 200 with the full decision and per-check data for the session. Call this after a terminal webhook to retrieve all extracted data (the webhook is only a notification).
+**Expected output:** HTTP 200 with the full decision and per-check breakdown (the webhook is only a notification) — full extracted data on standalone (tokenless) sessions, proofs + public data on sessions created with the user's `valyd_access_token`.
 
 ## POST /api/v2/location — the location check
 

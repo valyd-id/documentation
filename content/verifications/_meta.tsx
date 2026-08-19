@@ -10,6 +10,7 @@ import {
   Package,
   ScanFace,
   Server,
+  ShieldCheck,
   Tag,
   Webhook,
   Workflow,
@@ -17,23 +18,24 @@ import {
 } from 'lucide-react'
 import { MetaTitle } from '@/components/meta-title'
 
-// Journey order: overview → quickstart → the two integration surfaces →
-// what runs (types/workflows) → what comes back (decisions, webhooks) →
-// reusable identity → tooling and reference.
+// One user-centric journey: overview → setup → run a check for the user →
+// hosted delivery → what runs → what comes back — then the separate
+// standalone product (your data) at the bottom, then reference.
 export default {
   '--overview': { type: 'separator', title: 'Overview' },
   index: { title: <MetaTitle icon={BookOpen}>Verification API</MetaTitle> },
-  quickstart: { title: <MetaTitle icon={Zap}>Quickstart (API key)</MetaTitle> },
-  '--account': { type: 'separator', title: 'With the user\'s account' },
-  managed: { title: <MetaTitle icon={KeyRound}>Reusable identity</MetaTitle> },
-  '--build': { type: 'separator', title: 'Build' },
-  hosted: { title: <MetaTitle icon={Globe}>Hosted flow</MetaTitle> },
-  standalone: { title: <MetaTitle icon={Server}>Core API</MetaTitle> },
+  '--users': { type: 'separator', title: 'For your users' },
+  setup: { title: <MetaTitle icon={LayoutDashboard}>Setup</MetaTitle> },
+  quickstart: { title: <MetaTitle icon={Zap}>Quickstart</MetaTitle> },
+  managed: { title: <MetaTitle icon={KeyRound}>Verify the user</MetaTitle> },
+  hosted: { title: <MetaTitle icon={Globe}>Hosted delivery</MetaTitle> },
   types: { title: <MetaTitle icon={ScanFace}>Verification types</MetaTitle> },
   workflows: { title: <MetaTitle icon={Workflow}>Workflows</MetaTitle> },
-  '--results': { type: 'separator', title: 'Results' },
   statuses: { title: <MetaTitle icon={ListChecks}>Decisions & statuses</MetaTitle> },
   webhooks: { title: <MetaTitle icon={Webhook}>Webhooks</MetaTitle> },
+  '--standalone': { type: 'separator', title: 'Standalone checks (your data)' },
+  standalone: { title: <MetaTitle icon={Server}>Standalone checks</MetaTitle> },
+  'data-sharing': { title: <MetaTitle icon={ShieldCheck}>Data sharing</MetaTitle> },
   '--vref': { type: 'separator', title: 'Reference' },
   sdk: { title: <MetaTitle icon={Package}>Node SDK</MetaTitle> },
   console: { title: <MetaTitle icon={LayoutDashboard}>Developer Portal</MetaTitle> },

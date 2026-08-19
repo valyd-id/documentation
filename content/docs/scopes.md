@@ -9,7 +9,7 @@ language:
 
 | Scope | Required | Description | Grants access to |
 | --- | --- | --- | --- |
-| `profile` | Yes (Mandatory) | User profile information including name and age verification status (no photo is shared) | `/userinfo` |
+| `profile` | Yes (Mandatory) | User profile: legal name, username, country, and verification status (no photo is shared) | `/userinfo` |
 | `verifications` | Optional | Identity verification status: human (liveness) check, ID/KYC verification, and linked professional licenses | `/verifications` |
 | `doctor_license` | Optional | Medical/nursing license details for verified healthcare practitioners | Doctor/nursing license endpoints |
 | `zkp` | Optional | Zero-Knowledge Proof age verification data | ZKP-related endpoints |
@@ -49,7 +49,7 @@ IF unsure which scopes a token carries:                          → re-run the 
 
 ## `profile` scope (Required / Mandatory)
 
-User profile information including name and age verification status. No photo is shared.
+User profile: legal name, username, country, and verification status. No photo is shared.
 
 ### Grants access to
 

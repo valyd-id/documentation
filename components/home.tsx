@@ -155,7 +155,7 @@ export function Section({
 }
 
 /* Two-column capability panel: Login endpoints + Verification checks.
-   Every value comes from the docs (endpoints page / Core APIs page / scopes). */
+   Every value comes from the docs (endpoints page / Standalone checks page / scopes). */
 const ENDPOINTS = [
   ['GET', '/oidc/authorize', 'Standard OIDC authorization (code + state echo)'],
   ['POST', '/oidc/token', 'Exchange a code or refresh token for tokens'],
@@ -231,7 +231,7 @@ export function Capabilities() {
 const STEPS = [
   {
     title: 'Create an app',
-    body: 'One app gives you both credentials: an API key for verification and OIDC client credentials for sign-in. Start with either — add the other any time.'
+    body: 'An app gives you both credentials: an API key for verification and OIDC client credentials for sign-in. Never want login? A verification-only project gives you just the key.'
   },
   {
     title: 'Pick what you need',
@@ -262,7 +262,7 @@ export function Steps() {
 /* Developer resources: every target is a real, served asset or page. */
 const RESOURCES = [
   { href: '/openapi/valyd-id.json', icon: FileJson, label: 'OpenAPI — Valyd ID', desc: 'Machine-readable spec for OIDC + resource endpoints' },
-  { href: '/openapi/valyd-verify.json', icon: FileJson, label: 'OpenAPI — Verify', desc: 'Sessions, core checks, webhooks' },
+  { href: '/openapi/valyd-verify.json', icon: FileJson, label: 'OpenAPI — Verify', desc: 'Sessions, standalone checks, webhooks' },
   { href: '/valyd-postman-collection.json', icon: Send, label: 'Postman collection', desc: 'Ready-to-run Valyd ID requests' },
   { href: '/downloads/valyd-sdk-starter.zip', icon: Download, label: 'SDK starter project', desc: 'Minimal Express app with @valyd/sdk' },
   { href: '/llms.txt', icon: BookText, label: 'llms.txt', desc: 'Agent-readable index of these docs' }

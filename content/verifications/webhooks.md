@@ -79,7 +79,7 @@
 
    **Expected output:** On a valid signature your handler returns HTTP 200. On a bad signature it returns HTTP 400 with body `bad signature`.
 
-4. **Fetch the full decision after acknowledging the webhook.** The webhook body is a notification; retrieve the complete extracted data with the decision endpoint using the session id from the event.
+4. **Fetch the full decision after acknowledging the webhook.** The webhook body is a notification; the decision endpoint (session id from the event) returns the full per-check breakdown — complete extracted data on standalone (tokenless) sessions, proofs + public data on sessions created with the user's `valyd_access_token`.
 
    ```bash
    curl https://idp.valyd.work/api/v2/session/SES_ID/decision \

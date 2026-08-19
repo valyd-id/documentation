@@ -14,6 +14,10 @@ single person's account, or when you onboard a workforce whose members sign in b
 - **Member** — the workforce. Does **not** see the organization at all; a member exists only to log
   into the apps assigned to them, by face.
 
+**Assigning & changing roles:** an owner/admin does it in the portal — **Organization → Team**
+for staff (admin/developer), **Organization → Members** for the workforce. Every mutation is
+admin-gated; developers and members can't change anyone's role.
+
 ## What an organization gives you
 
 ![An organization in the Developer Portal: seats, members, team, and shared apps](/images/screenshots/portal-organization.png)
@@ -83,6 +87,14 @@ curl -X POST https://dev.valyd.work/api/sdk/members \
 # → { "success": true, "data": { "created": [...], "skipped": [], "notified": true } }
 ```
 
+### How a new member is notified
+
+Adding a member (portal, CSV, or `addMembers()`) emails them a **face-activation link** — they
+tap it, scan their face once, and their membership is bound to a real Valyd identity. Prefer to
+deliver it yourself (your own email/SMS/in-app message)? Pass `notify: false` and each created
+member comes back with its `activationLink`. Re-send anytime with `resendMemberInvite(memberId)`.
+To know when someone finished, poll `getMembers()` and watch for `status: "active"`.
+
 ### Member lifecycle (status)
 
 - `invited` — created, no email sent yet (the `notify:false` path).
@@ -113,6 +125,14 @@ member outright (permanent, same as the API's `permanent:true`).
 3. Invite teammates (developer or admin) and create apps under the organization.
 4. Add members (your workforce) by CSV, singly, or with `addMembers()`; they join by scanning their face.
 5. Mark apps public or private, and assign members to the private ones.
+
+## Account recovery — coming soon
+
+If a member loses access to their Valyd identity (new phone, device lost), an org-assisted
+**recovery** flow is on the roadmap: the admin triggers it, the member re-verifies, access is
+restored — without deleting the seat or its history. Until it ships, the working path is
+deactivate → re-invite. If recovery matters for your rollout, tell us:
+[javi@valyd.id](mailto:javi@valyd.id).
 
 ## Notes for integrators
 

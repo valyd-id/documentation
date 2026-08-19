@@ -60,6 +60,7 @@ providers: [
 | Full name | `name` |
 | First / last name | `first_name` / `last_name` |
 | Identity verified | `id_verified` |
+| Country | `country` |
 
 Sample userinfo response:
 
@@ -73,7 +74,8 @@ Sample userinfo response:
   "name": "John Doe",
   "first_name": "John",
   "last_name": "Doe",
-  "id_verified": true
+  "id_verified": true,
+  "country": "US"
 }
 ```
 

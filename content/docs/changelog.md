@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.10.2 — Anti-spoof in the SDK + idempotency (2026-08-19)
+
+- **Added (SDK):** `verify.standalone.antispoof()` and `verify.standalone.antispoofIdentity()` —
+  the `/api/v2/antispoof` endpoints are now first-class SDK methods (single `image` or 3–8 burst
+  `frames`; `/identity` resolves the proven-live face to a stable `valyd_` uuid).
+- **Added (SDK):** `verify.standalone.antispoofChallenge()` — single-use, 60s gesture challenge;
+  echo `challengeId` back on antispoof / face-uniqueness runs (required by strict projects, which
+  also accept `challengeId` on `faceUniqueness()`).
+- **Added (SDK):** optional `idempotencyKey` on every billable standalone check — sent as the
+  `Idempotency-Key` header so a network retry can never double-charge or double-run a check.
+- **Docs:** [Standalone checks](/verifications/standalone) split into per-endpoint pages, SDK
+  call first; every raw request now lives on one page — [Raw HTTP (cURL)](/verifications/standalone/http) —
+  for languages without an SDK.
+
 ## v1.10.1 — Secure OIDC transaction (2026-08-18)
 
 - **Added:** Login with Valyd is now standard OpenID Connect end to end. `valyd.auth.getAuthorizationUrl()`
@@ -19,7 +33,7 @@
 - **Added (API docs):** `POST /api/v2/antispoof` (single image or live burst → `human_score`),
   `POST /api/v2/antispoof/identity` (liveness + stable `valyd_` uuid for duplicate detection),
   `POST /api/v2/face-uniqueness` (+ unlink), and `POST /api/v2/location` are now in the
-  [Core APIs reference](/verifications/standalone).
+  [Standalone checks reference](/verifications/standalone).
 - **Added (page):** [Developer accounts & sign-in](/docs/developer-accounts) — passwordless
   sign-in (magic link or face), connecting a Valyd ID to an email-only account, and one identity
   owning several console accounts with account switching.
@@ -43,7 +57,7 @@
 
 - **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).
 - **Added:** One unified package `@valyd/sdk` — `valyd.auth` (Login with Valyd) + `valyd.verify` (verification) + workforce members; one credential, one host.
-- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.1`.
+- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.2`.
 
 ---
 

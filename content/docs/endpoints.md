@@ -11,7 +11,7 @@ not start KYC or license verification. To run a check—without requiring OIDC l
 - If you are using the SDK, prefer the typed helpers (`getAuthorizationUrl()`, `exchangeCode()`, `handleCallback()`, `refreshToken()`) — they call these endpoints for you.
 - **One API namespace:** authorize, token, JWKS, UserInfo, licenses, and verifications are under `https://idp.valyd.work/api/auth/oidc`. Discovery is at `/.well-known/openid-configuration` (the `/api/.well-known/...` alias also works).
 
-## SDK methods (@valyd/sdk 1.10.1)
+## SDK methods (@valyd/sdk 1.10.2)
 
 ### `valyd.auth.createAuthorizationRequest({ scope, redirectUri? })`
 Recommended login entry point. Generates strong `state`, `nonce`, and an S256 PKCE verifier/challenge together. Store the returned transaction server-side and redirect to `transaction.url`.

@@ -1,15 +1,15 @@
 # Hosted verification
 
-> 🔑 **Auth:** App API key (`X-API-Key`) + workflow · 👤 **User login:** not required · 🔗 **Account attach:** optional — add `valyd_access_token`
+> 🔑 **Auth:** App API key (`X-API-Key`) + workflow · 💾 With the user's `valyd_access_token` on the session, proofs save to their Valyd ID
 
-Create a verification session with your App API key and redirect the person to Valyd's capture
-page — Valyd handles the capture UI, camera, retries, and security, and all workflow checks come
-back together in one decision.
+Hosted is a **delivery mechanism** for the same checks: create a verification session with your
+App API key and redirect the user to Valyd's capture page — Valyd handles the capture UI, camera,
+retries, and security, and all workflow checks come back together in one decision.
 
-The decision belongs to your integration and is not saved to a Valyd account. Raw KYC fields are
-released only after the required ID, liveness, and face-match checks pass; otherwise they remain
-encrypted. For the optional account-connected variant, pass a signed-in user's
-`valyd_access_token`; see [Account-connected verification](/verifications/managed).
+Include the signed-in user's `valyd_access_token` when creating the session and the run pre-fills
+from their account, skips already-proven steps, and saves passed proofs to their Valyd ID — see
+[Verify the user](/verifications/managed). Raw KYC fields are released only after the required
+ID, liveness, and face-match checks pass; otherwise they remain encrypted.
 
 ## Overview
 
@@ -20,7 +20,7 @@ The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk)
 Install it:
 
 ```bash
-npm i @valyd/sdk@^1.10.1
+npm i @valyd/sdk@^1.10.2
 ```
 
 Initialize the client:
@@ -348,7 +348,10 @@ if (credential.status === "failed") {
 }
 ```
 
-Expected output — HTTP 200, `data`:
+Expected output — HTTP 200, `data`. **Mode note:** the raw extracted fields shown below
+(`fields`, `portrait`, DOB) appear only on sessions created **without** a `valyd_access_token`
+(the [standalone product](/verifications/standalone)); with the user's token the decision
+carries what passed, proofs, and public data — the PII stays on their account:
 
 ```json
 {

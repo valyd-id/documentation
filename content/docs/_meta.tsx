@@ -37,6 +37,8 @@ export default {
   oidc: { title: <MetaTitle icon={Fingerprint}>Use your own OIDC library</MetaTitle> },
   authentication: { title: <MetaTitle icon={KeyRound}>Raw HTTP flow</MetaTitle> },
   scopes: { title: <MetaTitle icon={Tags}>Scopes</MetaTitle> },
+  '--user-token': { type: 'separator', title: "With the user's token" },
+  'user-token': { title: <MetaTitle icon={ShieldCheck}>APIs & hosted flow</MetaTitle> },
   '--concepts': { type: 'separator', title: 'Concepts' },
   flows: { title: 'Flows' },
   tokens: { title: <MetaTitle icon={KeyRound}>Tokens</MetaTitle> },

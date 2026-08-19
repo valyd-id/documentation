@@ -10,7 +10,7 @@ The one package for both products: `valyd.auth` (Login with Valyd — OIDC trans
 verified ID tokens) and `valyd.verify` (verification sessions, checks, webhooks).
 
 ```bash
-npm install @valyd/sdk@^1.10.1
+npm install @valyd/sdk@^1.10.2
 ```
 
 - [Node quickstart](/docs/quickstart/node) · [SDK guide](/verifications/sdk) · npm: `@valyd/sdk`

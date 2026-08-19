@@ -1,35 +1,80 @@
 # Introduction
 
-Valyd does two things:
+Valyd gives your business two things — and they work together or apart:
 
-1. **Verification** — we verify people for you: KYC, liveness, face match, age, and professional
-   licenses. Call it as a plain API from your backend (App API key, no user login), or let our
-   hosted page handle the capture UI for you.
-2. **Login with Valyd** — users sign in with their verified identity, and your app reads what
-   their account already holds.
+1. **An OIDC identity provider** — "Sign in with Valyd", standard OpenID Connect. Works with
+   any OIDC library or a 2-line button.
+2. **Verification workflows** — KYC, liveness, face match, age, license checks — run on a
+   hosted page we serve, **with or without** a Valyd login.
 
-**The recommended way to verify is with the user's account:** run any verification with a
-signed-in user's token and the passed proof saves to their Valyd account — your app reads
-verified status instead of handling documents and personal data, and while the proof is still
-fresh enough for your policy there's no re-run and no new per-check cost. Verification also
-works without any login — but then the user's personal information is returned to your system,
-and managing it becomes your responsibility.
+## 1 · The identity provider
 
-Not sure which? → [Choose your integration](/docs/choose)
+Users sign in with a verified identity. Your backend gets an access token, and with it three
+APIs that read what the account already holds:
 
-## Every API, in one table
+| API | One call gets you |
+| --- | --- |
+| [`GET /oidc/userinfo`](/docs/endpoints#get-userinfo--get-user-profile) | Who they are — legal name, username, country, `id_verified` |
+| [`GET /oidc/licenses`](/docs/endpoints#get-licenses--get-professional-licenses) | Professional licenses already verified on their account |
+| [`GET /oidc/verifications`](/docs/endpoints#get-verifications--get-identity-verifications) | Every proof and badge they've earned — KYC done, age bands |
 
-| What | Needs login? | Credential | Where the result goes |
+If the account already proves what you need, **you're finished — no check, no cost.** One rule
+to remember: the **Account API never runs a check** — it reads what previous checks already
+proved. Raw identity data (DOB, document fields) is separate: it needs the user's explicit
+[approval](/docs/request-data).
+
+**Start here:** [add the login button](/docs) ·
+[everything the token unlocks — on one page](/docs/user-token) ·
+[use your own OIDC library](/docs/oidc) · [quickstart for your stack](/docs/quickstarts)
+
+## 2 · The verification workflows
+
+Need to run checks? Don't wire five APIs — **compose a workflow**: in the
+[Developer Portal](https://dev.valyd.work) select the checks you want (KYC, liveness, license,
+age), in order. That's your `workflowId`. Then one call:
+
+```typescript
+const session = await verify.sessions.create({ workflowId, redirectUrl });
+// → send the person to session.url — they complete every check on our hosted page
+// → the decision arrives on your webhook
+```
+
+The same call runs in two modes — that's the whole choice:
+
+| | You pass | The person's data | You get back |
 | --- | --- | --- | --- |
-| [Account API](/docs/endpoints#resource-api--user-data) — `userinfo`, `licenses`, `verifications` (badges/proofs) | **Yes** | Bearer access token | Read-only — returns what the account already holds |
-| [Checks API](/verifications/standalone) — KYC, liveness, face match, age, license lookup | No | `X-API-Key` | Your system (the HTTP response) |
-| [Hosted](/verifications/hosted) — same checks on a Valyd-hosted capture page | No | `X-API-Key` + workflow | Your system (webhook + decision endpoint, all checks together) |
-| [Account attach](/verifications/managed) — add `valyd_access_token` to any check | Yes, first | API key + user token | Your system **and** the user's account (reusable proof) |
+| **Tied to the user's identity** | `valydAccessToken` (they signed in) | Stays with us, encrypted | **Non-PII results + proofs** — saved to their Valyd ID, readable forever via the APIs above |
+| **Standalone** | nothing extra — no login, no token (a [verification-only project](/verifications/setup) is all the setup) | **Comes home to you** — we keep no [identity data](/verifications/data-sharing) | Full results, identity data included, yours to manage |
 
-Two rules cover everything:
+**Start here:** [hosted for your users — every portal step](/docs/user-token/hosted) ·
+[compose a workflow](/verifications/workflows)
 
-- **Account API never runs a check** — it reads what previous checks already proved.
-- **A check never touches an account** — unless you attach the user's token.
+## Working as an organization?
+
+Put apps, workflows, and billing in a shared [Organization](/docs/organizations) — and let us
+onboard your workforce: add people by API or CSV, each gets a face-activation link, and from
+then on they sign into your apps by face. Roles (owner, admin, developer, member), member
+management over the SDK, and one bill. Account **recovery** for members is coming soon.
+
+---
+
+## Verification without a Valyd account
+
+Some integrations never want a Valyd account in the picture — you just need checks run and the
+data delivered to **you**, Didit-style. Same call, same workflows — the setup is one dialog: a
+**verification-only project** on the dashboard (no login setup, just an API key), and the full
+results — identity data included — return to your system. We keep no identity data, only the
+check-outcome record for billing and audit.
+
+**[Standalone checks →](/verifications/standalone)** ·
+**[What data you receive & your responsibilities →](/verifications/data-sharing)**
+
+## Want to go deeper?
+
+The two pages above get you live. When you want the full picture:
+[how Valyd works](/docs/how-valyd-works) · [flows](/docs/flows/authorization-code) ·
+[tokens](/docs/tokens) · [scopes](/docs/scopes) · [API reference](/docs/endpoints) ·
+[errors](/docs/errors)
 
 ## Concepts & terms
 
@@ -46,12 +91,3 @@ Two rules cover everything:
 | **Organization** | A shared workspace: one team, shared apps, a workforce roster, one bill. [Details](/docs/organizations). |
 | **Workforce member** | A person in your org roster who signs into your apps by face — they never see the org itself. |
 | **Consent flow** | The explicit approval step for releasing raw identity data (DOB, document fields) — separate from login. |
-
-## What do you want to do?
-
-- **Add "Sign in with Valyd" to my app** → [Login with Valyd](/docs) (a 2-line button)
-- **See a full working login app** → [Complete example](/docs/quick-start)
-- **Run one check and get the result** → [Verification quickstart](/verifications/quickstart)
-- **Let Valyd handle the capture UI** → [Hosted verification](/verifications/hosted)
-- **Save a passed check to the user's account** → [Account-connected](/verifications/managed)
-- **Manage what my app may read** → [Scopes](/docs/scopes)

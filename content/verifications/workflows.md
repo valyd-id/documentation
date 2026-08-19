@@ -1,6 +1,6 @@
 # Workflows
 
-> 🔑 **Auth:** App API key (`X-API-Key`) · 👤 **User login:** not required · 🧩 **Used by:** hosted sessions (`workflow_id`)
+> 🔑 **Auth:** App API key (`X-API-Key`) · 🧩 **Used by:** hosted sessions (`workflow_id`)
 
 A **workflow** is a reusable configuration describing which checks run in a hosted session. You
 define it once — in the Developer Portal or via the API — and reference its `workflow_id` every

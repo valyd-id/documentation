@@ -42,11 +42,25 @@ import {
   <HeroCode>
 
 ```html
-<!-- "Sign in with Valyd" — the whole front end -->
+<!-- Front end — the whole button -->
 <script src="https://idp.valyd.work/signin/client.js" async></script>
 <div class="valyd-signin"
      data-client-id="YOUR_CLIENT_ID"
      data-redirect-uri="https://yourapp.com/callback"></div>
+```
+
+```typescript
+// Back end — one Valyd object from your keys
+import { Valyd } from "@valyd/sdk";
+const valyd = new Valyd({
+  clientId: process.env.VALYD_CLIENT_ID,
+  clientSecret: process.env.VALYD_CLIENT_SECRET,
+});
+
+const { user } = await valyd.auth.handleCallback(req.url, {
+  expectedState: req.cookies.valyd_oidc_state,  // the button set this cookie
+});
+// user.valyd_id · user.id_verified — signed in
 ```
 
   </HeroCode>
@@ -56,18 +70,22 @@ import {
   index={1}
   side="left"
   kicker="Recommended"
-  title="Verified once. Recognized everywhere."
-  cta={{ href: '/verifications/managed', label: 'How reusable identity works' }}
-  body={<>A person verifies once — their proof lives on their Valyd ID. When they sign in to your
-  app, you simply ask whether they're verified. No forms to rebuild, no documents to store, no
-  personal data in your database: we hold it, encrypted, under our <a href="/docs/data-and-trust">data
-  policies</a>.</>}
+  title="Host a flow of checks — tied to the user's identity"
+  cta={{ href: '/verifications/managed', label: 'How it works' }}
+  body={<>Pick the checks in the portal — KYC, liveness, license, age — that's your workflow.
+  Send the signed-in user to one hosted page; they complete everything there. You get back
+  <b> non-PII results and proofs</b> — the personal data stays with us, encrypted, and the proof
+  saves to their Valyd ID. Next time you just <a href="/docs/endpoints">read it</a>.</>}
 >
 
 ```typescript
-// The user signed in and verified — you just read:
-const proofs = await valyd.auth.getVerifications(token);
-// → id_verified: true · verified licenses · age bands
+// One call — the user's token ties the flow to their identity:
+const session = await verify.sessions.create({
+  workflowId,                      // the checks you picked in the portal
+  valydAccessToken: accessToken,   // ← ties it to the user
+  redirectUrl: "https://yourapp.com/verified",
+});
+// → send them to session.url — proofs come back, PII doesn't
 ```
 
 </ZigRow>
@@ -76,23 +94,23 @@ const proofs = await valyd.auth.getVerifications(token);
   index={2}
   side="right"
   kicker="Also supported"
-  title="Or keep everything in your own system"
-  cta={{ href: '/verifications/quickstart', label: 'Verification quickstart' }}
-  body={<>No sign-in of any kind: call a check with your API key — or send the person to our
-  hosted page — and the full result comes back to you. You store and protect the personal data
-  yourself.</>}
+  title="Want the data yourself? Same flow — just drop the token"
+  cta={{ href: '/verifications/standalone', label: 'Standalone checks' }}
+  body={<>The exact same hosted flow, no login, no token: we run the checks and hand the
+  <b> full results — identity data included — to your system</b>. We keep no identity data —
+  only the check-outcome record for billing and audit (<a href="/verifications/data-sharing">details</a>).
+  You don't even need a login app: one dialog creates a
+  <a href="/verifications/setup">verification-only project</a> with its own key and workflows.</>}
 >
 
 ```typescript
-// License lookup, direct — result in this response:
-const result = await verify.standalone.credentialVerification({
-  firstName: "Jane", lastName: "Doe",
-  providerCode: "MD", licenseState: "CA", licenseNumber: "A12345",
+// Same call — no token, so the data comes home to you:
+const session = await verify.sessions.create({
+  workflowId,                      // the same checks
+  redirectUrl: "https://yourapp.com/done",
 });
-
-// or the same hosted flow, no account attached:
-const session = await verify.sessions.create({ workflowId, redirectUrl });
-// → decision + identity data return to your system, yours to manage
+// → send them to session.url — full results return to you
+//   (we keep no identity data)
 ```
 
 </ZigRow>
@@ -135,7 +153,7 @@ const session = await verify.sessions.create({ workflowId, redirectUrl });
 <Section title="Popular pages" index={1}>
   <Cards>
     <Cards.Card icon={<Signpost />} title="Choose your integration" href="/docs/choose" arrow>
-      Hosted, Core API, or Login? A two-question decision tree and comparison table.
+      Hosted, standalone, or Login? A two-question decision tree.
     </Cards.Card>
     <Cards.Card icon={<Rocket />} title="Verification quickstart" href="/verifications/quickstart" arrow>
       Run a verification in your backend with just an API key — attach a user's login token only when the proof should save to their Valyd account.

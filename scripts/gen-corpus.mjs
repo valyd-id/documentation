@@ -70,12 +70,31 @@ async function writeSub(srcAbs, destAbs) {
   await fs.writeFile(destAbs, substitute(raw))
 }
 
+// Recursive .md listing (relative paths, posix separators) — sub-folder pages
+// (e.g. verifications/standalone/*) are part of the corpus too.
+async function listMd(dirAbs, prefix = '') {
+  const out = []
+  for (const e of await fs.readdir(dirAbs, { withFileTypes: true })) {
+    if (e.isDirectory()) out.push(...(await listMd(path.join(dirAbs, e.name), `${prefix}${e.name}/`)))
+    else if (e.name.endsWith('.md')) out.push(prefix + e.name)
+  }
+  return out
+}
+
+// A folder index page also mirrors to `<folder>.md` so the flat historical URL
+// (e.g. /verify/standalone.md) keeps working after a page splits into a folder.
+const folderAlias = f => (f.endsWith('/index.md') ? f.replace(/\/index\.md$/, '.md') : null)
+
 async function mdMirror(srcDir, destDir, indexAlias) {
-  const files = (await fs.readdir(path.join(ROOT, srcDir))).filter(f => f.endsWith('.md'))
-  const expected = new Set([...files, ...(indexAlias ? [indexAlias] : [])])
+  const files = await listMd(path.join(ROOT, srcDir))
+  const expected = new Set([
+    ...files,
+    ...files.map(folderAlias).filter(Boolean),
+    ...(indexAlias ? [indexAlias] : [])
+  ])
   try {
-    for (const existing of await fs.readdir(path.join(ROOT, destDir))) {
-      if (existing.endsWith('.md') && !expected.has(existing)) {
+    for (const existing of await listMd(path.join(ROOT, destDir))) {
+      if (!expected.has(existing)) {
         await fs.unlink(path.join(ROOT, destDir, existing))
       }
     }
@@ -88,6 +107,8 @@ async function mdMirror(srcDir, destDir, indexAlias) {
     if (f === 'index.md' && indexAlias) {
       await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, indexAlias))
     }
+    const alias = folderAlias(f)
+    if (alias) await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, alias))
   }
   return files.length
 }
@@ -116,12 +137,15 @@ const SEP = '='.repeat(80)
 
 // Read a content section in nav-ish order (index first, then alphabetical).
 async function section(srcDir, urlPrefix, indexAlias) {
-  const files = (await fs.readdir(path.join(ROOT, srcDir)))
-    .filter(f => f.endsWith('.md'))
+  const files = (await listMd(path.join(ROOT, srcDir)))
     .sort((a, b) => (a === 'index.md' ? -1 : b === 'index.md' ? 1 : a.localeCompare(b)))
   const blocks = []
   for (const f of files) {
-    const name = f === 'index.md' ? indexAlias : f.replace(/\.md$/, '')
+    // Folder index pages surface under their flat alias URL (…/standalone.md).
+    const name =
+      f === 'index.md' ? indexAlias
+      : f.endsWith('/index.md') ? f.replace(/\/index\.md$/, '')
+      : f.replace(/\.md$/, '')
     const url = `${DOCS_URL}/${urlPrefix}/${name}.md`
     const body = substitute(await fs.readFile(path.join(ROOT, srcDir, f), 'utf8')).trim()
     blocks.push(`${SEP}\n=== FILE: ${url} ===\n${SEP}\n\n> Source: ${url.replace(/\.md$/, '')}\n\n${body}\n`)

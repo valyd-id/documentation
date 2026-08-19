@@ -1,13 +1,11 @@
-# Verification API quickstart
+# Verification quickstart
 
-> 🔑 **Auth:** App API key (`X-API-Key`) · 👤 **User login:** not required · 🔗 **Account attach:** optional — add `valyd_access_token`
+> 🔑 **Auth:** App API key (`X-API-Key`) · 👤 To save the proof to the user's Valyd ID, include their `valyd_access_token`
 
-Only your developer/admin signs in to the Developer Portal once to create credentials — the person
-being checked never does.
-
-Use this path when you want the KYC or license result in your own system. If the result must be
-saved to a user's Valyd account, follow [Account-connected verification](/verifications/managed)
-instead.
+Run your first check in minutes. Only your developer/admin signs in to the Developer Portal once
+to create credentials — the person being checked never does; when the user is signed in to your
+app, their token simply rides along on the call and the passed proof lands on their Valyd ID
+([Verify the user](/verifications/managed) covers that end-to-end flow).
 
 ### Prerequisites
 - Access to the Developer Portal at https://dev.valyd.work. This is developer setup, not part of
@@ -97,7 +95,7 @@ instead.
    **Expected output:** HTTP `200` with `{ "success": true, "data": { "url": "https://..." } }`. Redirect the user's browser to `data.url`. The verification result arrives later via your configured webhook (step 4).
 
 ### Verification
-- Core APIs: the license curl in step 5 returns HTTP `200` and a body where `success` is `true`.
+- Standalone checks: the license curl in step 5 returns HTTP `200` and a body where `success` is `true`.
 
   ```bash
   curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/credential-verification \

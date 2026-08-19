@@ -1,0 +1,51 @@
+# Age Verification
+
+`POST /api/v2/age-verification` — JSON body. **Computes age bands from the DOB you supply — it
+does not independently verify that DOB** (no document check, no ZKP). For a *verified* age, either
+run [ID verification](/verifications/standalone/id-verification) first and use the OCR'd DOB, or
+attach a signed-in user's `valyd_access_token`: in account mode the `dob` field is ignored and the
+bands are computed from the **account's KYC-verified date of birth** (a `422
+account_dob_unavailable` is returned if the account holds no verified DOB).
+
+**Method:** POST
+**Full URL:** `https://idp.valyd.work/api/v2/age-verification`
+**Auth header:** `X-API-Key: <App API key>`
+**Content-Type:** `application/json`
+
+**Fields:**
+- `dob` (string, `YYYY-MM-DD`) **required** (omitted in account mode — the account's verified DOB is used) — Date of birth, as supplied by you. Not independently verified.
+- `bands` (string[]) — e.g. `["is_18_plus","is_21_plus"]`. Defaults to `["is_18_plus"]`.
+
+**Request (SDK, Node):**
+
+```javascript
+import { VerifyClient } from "@valyd/sdk";
+const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
+
+const { check } = await verify.standalone.ageVerification({
+  dob: "1995-06-01",
+  bands: ["is_18_plus", "is_21_plus"],
+});
+```
+
+**Raw HTTP:** [cURL example →](/verifications/standalone/http#age-verification)
+
+**Expected output:** HTTP 200 with the standard envelope (`success: true`); `check.type` is `"age"`. `check.data` is:
+
+```json
+{
+  "age": 30,
+  "dob": "1995-06-01",
+  "bands": {
+    "is_18_plus": { "satisfied": true, "verified": true, "min_age": 18 },
+    "is_21_plus": { "satisfied": true, "verified": true, "min_age": 21 }
+  }
+}
+```
+
+`satisfied` means the band condition holds for the DOB used — the account's KYC-verified DOB in
+account mode, or the DOB you supplied in direct mode. `verified` is a deprecated alias of
+`satisfied`; prefer `satisfied`.
+
+> `bands.*.verified` means *the DOB used satisfies this band* — in direct mode that DOB is the one
+> you supplied, so the flag is only as trustworthy as your DOB source.

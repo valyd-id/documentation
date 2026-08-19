@@ -16,7 +16,7 @@
 ```text
 IF you are building a hosted flow (redirect the user to a Valyd-hosted page):
   → you need VALYD_API_KEY, VALYD_WEBHOOK_SECRET, and VALYD_WORKFLOW_ID
-IF you are building a Core APIs flow (call individual checks server-side):
+IF you are building a standalone-checks flow (call individual checks server-side):
   → you only need VALYD_API_KEY
 IF unsure which credentials you have:
   → log in to https://dev.valyd.work and check your app's API keys / webhooks / workflows
@@ -26,9 +26,9 @@ IF unsure which credentials you have:
 
 1. **Install the SDK.**
    ```bash
-   npm i @valyd/sdk@^1.10.1
+   npm i @valyd/sdk@^1.10.2
    ```
-   **Expected output:** npm adds `@valyd/sdk` at `^1.10.1` to `dependencies` in `package.json`. This allows backwards-compatible patch and minor upgrades while keeping the documented minimum version.
+   **Expected output:** npm adds `@valyd/sdk` at `^1.10.2` to `dependencies` in `package.json`. This allows backwards-compatible patch and minor upgrades while keeping the documented minimum version.
 
 2. **Set environment variables** (e.g. in a `.env` file or your process environment). Get each value from the Valyd Developer Portal: https://dev.valyd.work.
    ```bash
@@ -96,12 +96,23 @@ After initialising `verify`, use these resource namespaces.
 #### `verify.standalone`
 - `idVerification({ frontImage, backImage? }): Promise<CheckEnvelope>` — OCR + authenticity from a government ID.
 - `liveness({ image }): Promise<CheckEnvelope>` — Passive liveness on a selfie.
+- `antispoof({ image? | frames?, challengeId? }): Promise<CheckEnvelope>` — "Is this a live human capture?" — `human_score` 0–100 in `check.data`. Single `image` (score capped at 85) or 3–8 burst `frames`. *v1.10.2+*
+- `antispoofIdentity({ image? | frames?, challengeId? }): Promise<CheckEnvelope>` — Anti-spoof, then resolves the proven-live face to a stable `valyd_` uuid (`check.data.identity`). *v1.10.2+*
+- `antispoofChallenge(): Promise<LivenessChallengeResult>` — Single-use 60s gesture challenge; echo `challengeId` back on antispoof / face-uniqueness runs. *v1.10.2+*
 - `faceMatch({ idImage, selfie }): Promise<CheckEnvelope>` — 1:1 face match.
+- `faceUniqueness({ selfie? | frames?, externalRef?, challengeId? }): Promise<CheckEnvelope>` — One face = one uuid: enroll-or-match against the global gallery (`check.data.valyd_uuid`, `registered`).
+- `faceUniquenessUnlink(valydUuid): Promise<{ valyd_uuid, unlinked, deleted }>` — GDPR forget: unlink a face from your project.
+- `locationMatch({ latitude, longitude, accuracy?, expectedLatitude?, expectedLongitude?, radiusM? }): Promise<CheckEnvelope>` — Record or verdict a geolocation fix.
 - `ageVerification({ dob, bands? }): Promise<CheckEnvelope>` — Age + bands (e.g. `["is_18_plus"]`).
 - `credentialVerification({ licenseState, licenseNumber, ...name, ...license, npi? }): Promise<CheckEnvelope>` — Professional license lookup. Give the holder's **name** as `firstName` + `lastName` **or** `fullName`; identify the **license** with `licenseType` (Valyd resolves the provider board for you — no `providerCode` needed) **or** pass `providerCode` directly. `npi?` is optional.
 - `kycCredential({ frontImage, selfie, backImage?, providerCode, licenseState, licenseNumber, npi? }): Promise<KycCredentialResult>` — ID + liveness + face match + license, matched against the OCR'd name.
+- `evvPresence({ selfie, idImage? | valydAccessToken?, latitude, longitude, expectedLatitude?, expectedLongitude?, radiusM? }): Promise<CheckEnvelope>` — EVV bundle: face match + location match in one call.
 
-See the Core APIs guide for full field details.
+Every billable check also accepts an optional `idempotencyKey` (*v1.10.2+*) — sent as the
+`Idempotency-Key` header so a network retry can never double-charge or double-run
+([how it behaves](/verifications/standalone#idempotency)).
+
+See the [Standalone checks](/verifications/standalone) reference for full field details.
 
 #### `verify.credentials`
 - `states(): Promise<CredentialState[]>` — List supported states.
@@ -204,7 +215,7 @@ const decision = await verify.sessions.decision(event.sessionId);
 
 **Expected output:** `verify.sessions.create(...)` resolves to a `Session` with `.url` (redirect the user here) and `.sessionId`. After the user finishes, your webhook fires; `constructEvent` returns the parsed `WebhookEvent`, and `verify.sessions.decision(...)` resolves to a `Decision` with `.status` and `.checks[]`.
 
-#### Core APIs quickstart
+#### Standalone checks quickstart
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";
@@ -268,8 +279,8 @@ app.post(
   ```bash
   npm ls @valyd/sdk
   ```
-  **Expected output:** `@valyd/sdk@1.10.1` (or a newer compatible version allowed by `^1.10.1`).
-- Confirm credentials are wired (Core APIs path, only needs `VALYD_API_KEY`):
+  **Expected output:** `@valyd/sdk@1.10.2` (or a newer compatible version allowed by `^1.10.2`).
+- Confirm credentials are wired (standalone path, only needs `VALYD_API_KEY`):
   ```javascript
   import { VerifyClient } from "@valyd/sdk";
   const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
