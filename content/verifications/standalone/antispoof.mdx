@@ -19,7 +19,10 @@ consistency, which is far stronger than a single frame.
 - `image` (image) — single still. Analysis-only; `human_score` is capped at 85 (`assurance: "upload"`).
 - `frames[]` (3–8 images) — chronological stills captured over ~2s (`assurance: "burst"`).
 
-**Request (SDK, Node — v1.10.2+):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";
@@ -38,7 +41,20 @@ const { check } = await verify.standalone.antispoof({
 console.log(check.score, check.data.assurance); // 100 "burst"
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#anti-spoof-single-image-or-burst)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/antispoof \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg" \
+  -F "frames[]=@./f4.jpg" -F "frames[]=@./f5.jpg"
+```
+
+Single still instead of a burst: send one `-F "image=@./selfie.jpg"`.
+
+</Tabs.Tab>
+</Tabs>
 
 **Expected output:** HTTP 200; `check.type` is `"antispoof"`, `check.score` is the `human_score`. `check.data`:
 
@@ -73,7 +89,10 @@ none is billed).
 
 **Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/antispoof/identity` · **Auth:** `X-API-Key`
 
-**Request (SDK, Node — v1.10.2+):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 const { check } = await verify.standalone.antispoofIdentity({
@@ -82,7 +101,19 @@ const { check } = await verify.standalone.antispoofIdentity({
 // check.data.identity.valyd_uuid, check.data.identity.registered
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#anti-spoof--identity)
+</Tabs.Tab>
+<Tabs.Tab>
+
+Same input as `/antispoof` (`image` or `frames[]`), different path:
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/antispoof/identity \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg"
+```
+
+</Tabs.Tab>
+</Tabs>
 
 Same input as `/antispoof` (`image` or `frames[]`). Response adds `identity` to `check.data`:
 
@@ -103,7 +134,10 @@ burst while they perform it, then echo the `challenge_id` on the run. Optional o
 `/antispoof`; **strict projects require it** (plus a 3–8 frame burst) on `/antispoof/identity`
 and [face uniqueness](/verifications/standalone/face-uniqueness) enrollments.
 
-**Request (SDK, Node — v1.10.2+):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 const { challengeId, challenge } = await verify.standalone.antispoofChallenge();
@@ -112,7 +146,26 @@ const { challengeId, challenge } = await verify.standalone.antispoofChallenge();
 const { check } = await verify.standalone.antispoofIdentity({ frames, challengeId });
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#gesture-challenge)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/antispoof/challenge \
+  -H "X-API-Key: $VALYD_API_KEY"
+```
+
+Returns `data: { "challenge_id": "…", "challenge": "turn_head", "expires_in": 60 }` —
+single-use, 60s. Echo it back as a `challenge_id` field on the antispoof / face-uniqueness run:
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/antispoof/identity \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "challenge_id=<challenge_id>" \
+  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg"
+```
+
+</Tabs.Tab>
+</Tabs>
 
 An expired or reused id returns `400 challenge_expired`; a strict project run without one
 returns `400 challenge_required`.

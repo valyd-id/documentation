@@ -12,11 +12,14 @@ same page, your composition.
 
 ## Your name on the consent screen
 
-Pass `product_name` on the authorize URL (the button's `data-product-name`, the SDK's
-`productName` option, or the raw query param) and the consent screen shows **your** product's
-name and initial:
+The consent screen shows **your app's registered name and icon** — set them once when you create
+the app in the [Developer Portal](https://dev.valyd.work). The name is not something a request
+can pass in, so it can't be spoofed: an app registered as *Acme* always appears as *Acme*.
 
-![The consent screen showing the requesting app's name](/images/screenshots/idp-consent-screen.png)
+![The consent screen showing the requesting app's registered name](/images/screenshots/idp-consent-screen.png)
+
+To change how your app appears, edit its name (and upload an icon) in the portal — not on the
+authorize URL.
 
 ## The Sign-in button
 
@@ -26,7 +29,6 @@ The drop-in button accepts:
 | --- | --- | --- |
 | `data-theme` | `dark` · `light` | `dark` |
 | `data-text` | any label | `Sign in with Valyd` |
-| `data-mode` | `redirect` · `popup` | `redirect` |
 
 Or skip it entirely and render your own button — it only needs to link to the
 [authorize URL](/docs/flows/authorization-code).

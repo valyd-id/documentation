@@ -23,6 +23,10 @@ status, you don't re-run it, and you never store personal data.
 Raw identity attributes (DOB, document fields) are separate — the user approves them explicitly
 via the [consent flow](/docs/request-data).
 
+Reads are only half of it — with the same token you can **re-prove who they are, right now**:
+match their face before a sensitive action, confirm their location, or re-check a live license.
+See [what the verification APIs let you build](/docs/how-valyd-works#what-the-verification-apis-let-you-build).
+
 Something missing? Run the check from the sidebar — [face match](/docs/user-token/face-match),
 [liveness](/docs/user-token/liveness), [license](/docs/user-token/license),
 [age](/docs/user-token/age), [KYC](/docs/user-token/kyc) — or

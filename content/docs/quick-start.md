@@ -12,5 +12,5 @@ Prefer to clone it? [`valyd-sandbox-starter`](https://github.com/valyd-id/valyd-
 on GitHub (or [download the zip](/downloads/valyd-sdk-starter.zip)) — fill `.env`, `npm run dev`:
 
 ```bash
-npm install @valyd/sdk@^1.10.2 express express-session dotenv
+npm install @valyd/sdk@^1.10.3 express express-session dotenv
 ```

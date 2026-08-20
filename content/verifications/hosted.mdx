@@ -20,7 +20,7 @@ The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk)
 Install it:
 
 ```bash
-npm i @valyd/sdk@^1.10.2
+npm i @valyd/sdk@^1.10.3
 ```
 
 Initialize the client:
@@ -98,7 +98,25 @@ The steps are identical for both products. Swap the `workflow_id` to switch betw
 
 POST `/api/v2/session` from your backend. The response includes the hosted `url` you'll send the user to.
 
-cURL:
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
+
+```javascript
+const session = await verify.sessions.create({
+  workflowId:  process.env.VALYD_WORKFLOW_ID!, // license-only OR kyc+license workflow
+  redirectUrl: "https://app.example.com/verify/callback",
+  callback:    "https://api.example.com/webhooks/valyd",
+  vendorData:  "user_123",          // your internal ref — echoed back on the webhook
+  ttlSeconds:  900,
+  metadata:    { plan: "pro" },
+});
+
+// session.url       → redirect the user here
+// session.sessionId, session.sessionToken, session.expiresAt
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
 
 ```bash
 curl -X POST https://idp.valyd.work/api/v2/session \
@@ -114,21 +132,8 @@ curl -X POST https://idp.valyd.work/api/v2/session \
   }'
 ```
 
-SDK (Node):
-
-```javascript
-const session = await verify.sessions.create({
-  workflowId:  process.env.VALYD_WORKFLOW_ID!, // license-only OR kyc+license workflow
-  redirectUrl: "https://app.example.com/verify/callback",
-  callback:    "https://api.example.com/webhooks/valyd",
-  vendorData:  "user_123",          // your internal ref — echoed back on the webhook
-  ttlSeconds:  900,
-  metadata:    { plan: "pro" },
-});
-
-// session.url       → redirect the user here
-// session.sessionId, session.sessionToken, session.expiresAt
-```
+</Tabs.Tab>
+</Tabs>
 
 Expected output: HTTP 200 with the envelope `{ success: true, data: { … } }`. The `data` object:
 
@@ -221,7 +226,7 @@ On a terminal session, Valyd POSTs to your `callback` URL with these headers:
 
 - `X-Valyd-Timestamp` — unix seconds the request was signed.
 - `X-Valyd-Event-Id` — unique event id (use to dedupe).
-- `X-Valyd-Signature` — `hmac_sha256(`${timestamp}.${rawBody}`, webhook_signing_secret)`, lowercase hex.
+- `X-Valyd-Signature` — `hmac_sha256("${timestamp}.${rawBody}", webhook_signing_secret)`, lowercase hex.
 
 Verify against the RAW request body (no JSON re-serialisation), use a constant-time compare, and reject stale timestamps (e.g. > 5 minutes old).
 
@@ -324,14 +329,8 @@ Per check in d.checks (each: { type, status, score, data, error }):
   IF check.status == "pending" or "running": → not finished yet.
 ```
 
-cURL:
-
-```bash
-curl https://idp.valyd.work/api/v2/session/ses_…/decision \
-  -H "X-API-Key: $VALYD_API_KEY"
-```
-
-SDK (Node):
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 const d = await verify.sessions.decision(sessionId);
@@ -347,6 +346,17 @@ if (credential.status === "failed") {
   // e.g. "License belongs to a different name"
 }
 ```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl https://idp.valyd.work/api/v2/session/ses_…/decision \
+  -H "X-API-Key: $VALYD_API_KEY"
+```
+
+</Tabs.Tab>
+</Tabs>
 
 Expected output — HTTP 200, `data`. **Mode note:** the raw extracted fields shown below
 (`fields`, `portrait`, DOB) appear only on sessions created **without** a `valyd_access_token`

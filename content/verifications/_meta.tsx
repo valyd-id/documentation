@@ -11,6 +11,7 @@ import {
   ScanFace,
   Server,
   ShieldCheck,
+  Signpost,
   Tag,
   Webhook,
   Workflow,
@@ -24,6 +25,7 @@ import { MetaTitle } from '@/components/meta-title'
 export default {
   '--overview': { type: 'separator', title: 'Overview' },
   index: { title: <MetaTitle icon={BookOpen}>Verification API</MetaTitle> },
+  choose: { title: <MetaTitle icon={Signpost}>Choose your integration</MetaTitle>, href: '/docs/choose' },
   '--users': { type: 'separator', title: 'For your users' },
   setup: { title: <MetaTitle icon={LayoutDashboard}>Setup</MetaTitle> },
   quickstart: { title: <MetaTitle icon={Zap}>Quickstart</MetaTitle> },

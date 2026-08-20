@@ -8,7 +8,7 @@ export default {
   '--overview': { type: 'separator', title: 'Overview' },
   index: { title: <MetaTitle icon={BookOpen}>Valyd for AI Agents</MetaTitle> },
   '--mcp': { type: 'separator', title: 'MCP server' },
-  'mcp-setup': { title: <MetaTitle icon={Plug}>Connect a client</MetaTitle> },
+  'mcp-setup': { title: <MetaTitle icon={Plug}>Quick start</MetaTitle> },
   'mcp-tools': { title: <MetaTitle icon={Bot}>Tool reference</MetaTitle> },
   'mcp-auth': { title: <MetaTitle icon={KeyRound}>Authentication</MetaTitle> },
   '--direct': { type: 'separator', title: 'Direct integration' },

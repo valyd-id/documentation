@@ -73,8 +73,8 @@ const { user } = await valyd.auth.handleCallback(req.url, {
   title="Host a flow of checks — tied to the user's identity"
   cta={{ href: '/verifications/managed', label: 'How it works' }}
   body={<>Pick the checks in the portal — KYC, liveness, license, age — that's your workflow.
-  Send the signed-in user to one hosted page; they complete everything there. You get back
-  <b> non-PII results and proofs</b> — the personal data stays with us, encrypted, and the proof
+  Send the signed-in user to one hosted page; they complete everything there. You get back{' '}
+  <b>non-PII results and proofs</b> — the personal data stays with us, encrypted, and the proof
   saves to their Valyd ID. Next time you just <a href="/docs/endpoints">read it</a>.</>}
 >
 
@@ -96,10 +96,10 @@ const session = await verify.sessions.create({
   kicker="Also supported"
   title="Want the data yourself? Same flow — just drop the token"
   cta={{ href: '/verifications/standalone', label: 'Standalone checks' }}
-  body={<>The exact same hosted flow, no login, no token: we run the checks and hand the
-  <b> full results — identity data included — to your system</b>. We keep no identity data —
+  body={<>The exact same hosted flow, no login, no token: we run the checks and hand the{' '}
+  <b>full results — identity data included — to your system</b>. We keep no identity data —
   only the check-outcome record for billing and audit (<a href="/verifications/data-sharing">details</a>).
-  You don't even need a login app: one dialog creates a
+  You don't even need a login app: one dialog creates a{' '}
   <a href="/verifications/setup">verification-only project</a> with its own key and workflows.</>}
 >
 

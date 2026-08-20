@@ -15,8 +15,8 @@ export default {
       copyPage: false
     }
   },
-  docs: { title: 'Valyd ID', type: 'page' },
-  verifications: { title: 'Verification APIs', type: 'page' },
+  docs: { title: 'Auth API', type: 'page', href: '/docs/introduction' },
+  verifications: { title: 'Verification API', type: 'page' },
   ai: { title: 'AI & Agents', type: 'page' },
   // Old single-page entries stay reachable by URL but out of the navbar —
   // superseded by the AI & Agents section.

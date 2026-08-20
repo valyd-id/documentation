@@ -15,6 +15,11 @@ verification proofs. Add the button, done:
 
 That's the whole front end.
 
+> 🌐 **Your OIDC provider is `https://idp.valyd.work`** — discovery at
+> [`/api/.well-known/openid-configuration`](https://idp.valyd.work/api/.well-known/openid-configuration).
+> The button and SDK point at it for you; using your own library? See
+> [Use your own OIDC library](/docs/oidc).
+
 ## 1. Get your credentials
 
 In the [Developer Portal](https://dev.valyd.work) create an app, enable the [scopes](/docs/scopes) you need
@@ -32,7 +37,7 @@ framework works; `req` is the incoming callback request):
 ```typescript
 import express from "express";
 import cookieParser from "cookie-parser";
-import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.2 cookie-parser
+import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.3 cookie-parser
 
 const app = express();
 app.use(cookieParser());

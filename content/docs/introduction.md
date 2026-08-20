@@ -7,10 +7,22 @@ Valyd gives your business two things — and they work together or apart:
 2. **Verification workflows** — KYC, liveness, face match, age, license checks — run on a
    hosted page we serve, **with or without** a Valyd login.
 
+## Where everything lives
+
+| Host | What it is |
+| --- | --- |
+| **`idp.valyd.work`** | The Valyd API + **OIDC provider** — sign-in (`/api/auth/oidc/*`), the account APIs, and the verification API (`/api/v2/*`). This is the host your app and SDK talk to. |
+| **`dev.valyd.work`** | The **Developer Portal** — create apps, copy `client_id`/`client_secret`, get verification API keys, and compose workflows. |
+| **`docs.valyd.work`** | These docs, the [API Playground](/sandbox), and the [live demos](/demos). |
+
+OIDC discovery is at
+[`https://idp.valyd.work/api/.well-known/openid-configuration`](https://idp.valyd.work/api/.well-known/openid-configuration).
+
 ## 1 · The identity provider
 
-Users sign in with a verified identity. Your backend gets an access token, and with it three
-APIs that read what the account already holds:
+Users sign in with a verified identity at **`https://idp.valyd.work`** (standard OIDC —
+discovery at `/api/.well-known/openid-configuration`). Your backend gets an access token, and
+with it three APIs that read what the account already holds:
 
 | API | One call gets you |
 | --- | --- |
@@ -58,13 +70,15 @@ management over the SDK, and one bill. Account **recovery** for members is comin
 
 ---
 
-## Verification without a Valyd account
+## Want to manage the user's personal data yourself?
 
-Some integrations never want a Valyd account in the picture — you just need checks run and the
-data delivered to **you**, Didit-style. Same call, same workflows — the setup is one dialog: a
-**verification-only project** on the dashboard (no login setup, just an API key), and the full
-results — identity data included — return to your system. We keep no identity data, only the
-check-outcome record for billing and audit.
+Use our **non-account APIs**. You call the checks with just an API key, and we return **all the
+verification data, checks, and results** to your system — identity fields included — for you to
+store and manage. Setup is one dialog: a **verification-only project** on the dashboard (no login,
+just an API key). We keep no identity data — only the check-outcome record for billing and audit.
+
+**Prefer not to hold personal data?** Use the account flow above — Valyd keeps it, encrypted, and
+you just read proofs.
 
 **[Standalone checks →](/verifications/standalone)** ·
 **[What data you receive & your responsibilities →](/verifications/data-sharing)**

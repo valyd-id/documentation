@@ -64,6 +64,7 @@ User profile: legal name, username, country, and verification status. No photo i
 | `first_name` | User's first name |
 | `last_name` | User's last name |
 | `full_name` | User's full name |
+| `country` | User's country |
 | `valyd_id` | The user's unique Valyd account identifier |
 | `id_verified` | Whether ID is verified (boolean) |
 | `created_at` | Account creation timestamp |

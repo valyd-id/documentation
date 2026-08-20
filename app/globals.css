@@ -97,14 +97,47 @@ article blockquote {
   background: var(--vd-surface);
 }
 
-/* Professional tables: tinted header, soft row separators, hover tint */
+/* Professional tables: clean horizontal rules, tinted uppercase header,
+   no vertical cell borders, subtle zebra + hover tint, full width. */
 article table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--vd-border);
   border-radius: calc(var(--vd-radius) - 2px);
   overflow: hidden;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+article table th,
+article table td {
+  border: none;
+  text-align: left;
+  vertical-align: top;
+  padding: 0.6rem 0.95rem;
 }
 
 article thead th {
   background: var(--vd-surface);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in oklab, currentColor 72%, transparent);
+  border-bottom: 1px solid var(--vd-border);
+}
+
+article tbody td {
+  border-top: 1px solid color-mix(in oklab, var(--vd-border) 55%, transparent);
+}
+
+article tbody tr:first-child td {
+  border-top: none;
+}
+
+article tbody tr:nth-child(even) {
+  background: color-mix(in oklab, var(--vd-surface) 45%, transparent);
 }
 
 article tbody tr {
@@ -113,6 +146,11 @@ article tbody tr {
 
 article tbody tr:hover {
   background: var(--vd-primary-soft);
+}
+
+article table code {
+  font-size: 0.8em;
+  white-space: nowrap;
 }
 
 /* Code blocks: rounder corners + soft elevation, calm border */
@@ -261,6 +299,12 @@ article .nextra-card svg {
   display: block;
 }
 
+.vd-logo-mark {
+  display: none;
+  height: 1.6rem;
+  width: auto;
+}
+
 .vd-logo-docs {
   font-size: 0.8rem;
   font-weight: 600;
@@ -271,9 +315,39 @@ article .nextra-card svg {
 }
 
 @media (max-width: 640px) {
-  .vd-logo img {
-    height: 1.4rem;
+  /* Compact mark instead of the wide wordmark lockup. */
+  .vd-logo-light,
+  .vd-logo-dark,
+  .vd-logo-docs {
+    display: none !important;
   }
+  .vd-logo-mark {
+    display: block;
+  }
+
+  /* Smaller headings that fit long words on a phone without breaking mid-word. */
+  .vd-page article h1,
+  article h1 {
+    font-size: 1.6rem;
+    line-height: 1.2;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+  article h2 {
+    font-size: 1.3rem;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+}
+
+/* Grid-blowout safety net: homepage two-column sections (HeroGrid / ZigRow)
+   collapse to a single column on small screens. A grid item's default
+   `min-width: auto` lets a wide code line size the track to its content and
+   push the page sideways. Force min-width:0 on the direct grid children so
+   `overflow-x: auto` on the inner <pre> scrolls instead of the whole page. */
+.vd-page :is(header, section) > * {
+  min-width: 0;
 }
 
 /* Navbar theme toggle button */

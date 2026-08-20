@@ -102,7 +102,7 @@ export function ZigRow({
   children: ReactNode
 }) {
   const text = (
-    <div>
+    <div className="min-w-0">
       {kicker && (
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--vd-primary)">{kicker}</p>
       )}
@@ -118,7 +118,7 @@ export function ZigRow({
     </div>
   )
   const code = (
-    <div className="overflow-hidden rounded-(--vd-radius) border border-(--vd-border) bg-white shadow-lg shadow-cyan-900/5 dark:bg-slate-950 dark:shadow-black/30">
+    <div className="min-w-0 overflow-hidden rounded-(--vd-radius) border border-(--vd-border) bg-white shadow-lg shadow-cyan-900/5 dark:bg-slate-950 dark:shadow-black/30">
       <div className="[&_pre]:!m-0 [&_pre]:!rounded-none [&_pre]:!border-0 [&_pre]:!shadow-none">{children}</div>
     </div>
   )
@@ -126,8 +126,8 @@ export function ZigRow({
     <section className="vd-rise mx-auto grid max-w-6xl items-center gap-10 px-6 pt-24 sm:pt-28 lg:grid-cols-2 lg:gap-16" style={rise(index)}>
       {side === 'right' ? (<>{text}{code}</>) : (
         <>
-          <div className="max-lg:order-2">{code}</div>
-          <div className="max-lg:order-1">{text}</div>
+          <div className="min-w-0 max-lg:order-2">{code}</div>
+          <div className="min-w-0 max-lg:order-1">{text}</div>
         </>
       )}
     </section>

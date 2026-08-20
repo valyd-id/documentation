@@ -49,10 +49,11 @@ const navbar = (
             logo renders at an identical width regardless of mode. */}
         <Image src="/images/valyd-lockup-navy.png" alt="Valyd" className="vd-logo-light" width={3578} height={447} priority />
         <Image src="/images/valyd-lockup-white.png" alt="Valyd" className="vd-logo-dark" width={3578} height={447} priority />
+        {/* Compact mark shown only on small screens (the wide lockup is hidden there). */}
+        <Image src="/vid.png" alt="Valyd" className="vd-logo-mark" width={64} height={64} priority />
         <span className="vd-logo-docs">Docs</span>
       </span>
     }
-    projectLink={SITE.devUrl}
   >
     <NavbarAskAiButton />
     {/* Single-button light/dark toggle, immediately right of the project link */}

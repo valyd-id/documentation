@@ -10,7 +10,7 @@ The one package for both products: `valyd.auth` (Login with Valyd — OIDC trans
 verified ID tokens) and `valyd.verify` (verification sessions, checks, webhooks).
 
 ```bash
-npm install @valyd/sdk@^1.10.2
+npm install @valyd/sdk@^1.10.3
 ```
 
 - [Node quickstart](/docs/quickstart/node) · [SDK guide](/verifications/sdk) · npm: `@valyd/sdk`
@@ -27,7 +27,7 @@ cookies, and starts the standard flow. Environment follows the script host.
      data-redirect-uri="https://yourapp.com/auth/valyd/callback"></div>
 ```
 
-- [Button flow (redirect & popup modes)](/docs/flows/button)
+- [Button flow](/docs/flows/button)
 
 ## Starter project
 

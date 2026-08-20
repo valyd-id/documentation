@@ -7,7 +7,10 @@ registered. Accepts a single `image`/`selfie` (single-frame liveness gate) or `f
 
 **Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/face-uniqueness` · **Auth:** `X-API-Key`
 
-**Request (SDK, Node):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";
@@ -25,7 +28,17 @@ const { check } = await verify.standalone.faceUniqueness({
 console.log(check.data.valyd_uuid, check.data.registered); // "new" | "existing"
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#face-uniqueness)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/face-uniqueness \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "selfie=@./selfie.jpg"
+```
+
+</Tabs.Tab>
+</Tabs>
 
 **Expected output** (`check.data`):
 
@@ -34,9 +47,23 @@ console.log(check.data.valyd_uuid, check.data.registered); // "new" | "existing"
 ```
 
 **Unlink:** `DELETE /api/v2/face-uniqueness/{valyd_uuid}` removes a face from the gallery
-(e.g. to clear test data). In the SDK:
+(e.g. to clear test data):
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 await verify.standalone.faceUniquenessUnlink("valyd_8f2…");
 // → { valyd_uuid, unlinked, deleted } — deleted: true when no project links remain
 ```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X DELETE https://idp.valyd.work/api/v2/face-uniqueness/valyd_8f2… \
+  -H "X-API-Key: $VALYD_API_KEY"
+```
+
+</Tabs.Tab>
+</Tabs>

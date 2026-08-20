@@ -16,7 +16,10 @@ account_dob_unavailable` is returned if the account holds no verified DOB).
 - `dob` (string, `YYYY-MM-DD`) **required** (omitted in account mode — the account's verified DOB is used) — Date of birth, as supplied by you. Not independently verified.
 - `bands` (string[]) — e.g. `["is_18_plus","is_21_plus"]`. Defaults to `["is_18_plus"]`.
 
-**Request (SDK, Node):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 import { VerifyClient } from "@valyd/sdk";
@@ -28,7 +31,18 @@ const { check } = await verify.standalone.ageVerification({
 });
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#age-verification)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/age-verification \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "dob": "1995-06-01", "bands": ["is_18_plus","is_21_plus"] }'
+```
+
+</Tabs.Tab>
+</Tabs>
 
 **Expected output:** HTTP 200 with the standard envelope (`success: true`); `check.type` is `"age"`. `check.data` is:
 

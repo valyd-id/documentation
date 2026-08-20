@@ -26,7 +26,7 @@ IF unsure which credentials you have:
 
 1. **Install the SDK.**
    ```bash
-   npm i @valyd/sdk@^1.10.2
+   npm i @valyd/sdk@^1.10.3
    ```
    **Expected output:** npm adds `@valyd/sdk` at `^1.10.2` to `dependencies` in `package.json`. This allows backwards-compatible patch and minor upgrades while keeping the documented minimum version.
 

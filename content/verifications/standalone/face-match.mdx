@@ -10,7 +10,10 @@
 - `image1` (image) **required** — Reference image (typically the ID portrait).
 - `image2` (image) **required** — Selfie to compare against the reference.
 
-**Request (SDK, Node):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";
@@ -23,7 +26,18 @@ const { check } = await verify.standalone.faceMatch({
 // check.data.similarity, check.data.threshold
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#face-match)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/face-match \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "image1=@./id_portrait.jpg" \
+  -F "image2=@./selfie.jpg"
+```
+
+</Tabs.Tab>
+</Tabs>
 
 **Expected output:** HTTP 200 with the standard envelope (`success: true`); `check.type` is `"face_match"`. `check.data` is:
 

@@ -60,6 +60,8 @@ for (const f of files) {
   for (const link of links) {
     const clean = link.replace(/\/$/, '') || '/'
     if (clean.startsWith('/_pagefind')) continue
+    // /demos is a separate app nginx-mounted at this origin (not a Nextra route).
+    if (clean === '/demos' || clean.startsWith('/demos/')) continue
     if (!routes.has(clean)) {
       broken.push(`${path.relative(ROOT, f)} → ${link}`)
     }

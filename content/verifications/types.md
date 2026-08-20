@@ -68,7 +68,7 @@ a `valyd_access_token` to compute bands from the account's KYC-verified DOB inst
 ## License / credential verification — `credential`
 
 Looks up a professional license in the provider registry and matches it to a name. You provide
-name + license type, state, and number (use the [discovery endpoints](/verifications/standalone/credential-verification#credential-discovery)
+name + license type, state, and number (use the [state → license type → verify flow](/verifications/standalone/credential-verification#the-full-flow-state--license-type--verify)
 to build pickers); you get `match` and the registry's `license` record (status, expiry, specialty).
 Registry lookups can take 10–60 s. Use it to verify doctors, nurses, and other licensed
 professionals.

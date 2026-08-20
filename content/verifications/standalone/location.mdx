@@ -9,7 +9,10 @@ workflows like EVV).
 Optionally add an expected point — `expected_latitude`, `expected_longitude`, and `radius_m`
 (metres) — to turn the capture into a verdict.
 
-**Request (SDK, Node):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 import { VerifyClient } from "@valyd/sdk";
@@ -26,7 +29,19 @@ const { check } = await verify.standalone.locationMatch({
 // check.data.match, check.data.distance_m
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#location)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/location \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "latitude": 34.0522, "longitude": -118.2437, "accuracy": 12,
+        "expected_latitude": 34.0511, "expected_longitude": -118.244, "radius_m": 250 }'
+```
+
+</Tabs.Tab>
+</Tabs>
 
 What `status` means depends on what you ask for:
 

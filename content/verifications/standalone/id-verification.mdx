@@ -10,7 +10,10 @@
 - `front_image` (image) **required** — Front of the ID. File, Buffer, or base64/data-URL.
 - `back_image` (image) — Back of the ID (when applicable).
 
-**Request (SDK, Node):**
+**Request:**
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";
@@ -24,7 +27,18 @@ const { check } = await verify.standalone.idVerification({
 console.log(check.data.fields.full_name, check.data.fields.document_number);
 ```
 
-**Raw HTTP:** [cURL example →](/verifications/standalone/http#id-verification)
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/id-verification \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -F "front_image=@./id_front.jpg" \
+  -F "back_image=@./id_back.jpg"
+```
+
+</Tabs.Tab>
+</Tabs>
 
 **Expected output:** HTTP 200 with the standard envelope (`success: true`); `check.type` is `"id_verification"` and `check.data` is:
 

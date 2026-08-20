@@ -50,8 +50,8 @@ const required = [
   ['content/verifications/managed.md', 'valyd_access_token'],
   ['content/verifications/quickstart.md', 'being checked never does'],
   // SDK version pin.
-  ['content/docs/quick-start.md', '@valyd/sdk@^1.10.2'],
-  ['content/verifications/sdk.md', '@valyd/sdk@^1.10.2'],
+  ['content/docs/quick-start.md', '@valyd/sdk@^1.10.3'],
+  ['content/verifications/sdk.md', '@valyd/sdk@^1.10.3'],
 ]
 
 for (const [relative, phrase] of required) {

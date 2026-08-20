@@ -4,8 +4,8 @@
 
 The drop-in button (`https://idp.valyd.work/signin/client.js`) is a front end for the
 [Authorization Code flow](/docs/flows/authorization-code). It generates `state` and `nonce`,
-builds the authorize URL, and hands the result to your backend. It has two delivery modes:
-**redirect** (default) and **popup**.
+builds the authorize URL, and redirects the user to Valyd. The code exchange still happens on
+your backend with your `client_secret`.
 
 ```html
 <script src="https://idp.valyd.work/signin/client.js" async></script>
@@ -14,17 +14,6 @@ builds the authorize URL, and hands the result to your backend. It has two deliv
      data-redirect-uri="https://yourapp.com/auth/valyd/callback"
      data-scope="profile verifications"></div>
 ```
-
-## When to use which mode
-
-| | Redirect mode | Popup mode |
-| --- | --- | --- |
-| Feel | Full-page navigation to Valyd and back | Your page stays put; login happens in a popup |
-| Best for | Classic server-rendered apps, simplest setup | SPAs and pages with state you don't want to lose |
-| Code delivery | Browser lands on your callback route | `postMessage` → your JS → your backend |
-| State check | Your backend compares the cookie | Pre-checked by the button before handoff |
-
-Either way, the **code exchange still happens on your backend** with your `client_secret`.
 
 ## Redirect mode
 
@@ -59,55 +48,16 @@ app.get("/auth/valyd/callback", async (req, res) => {
 });
 ```
 
-## Popup mode
-
-The button opens the Valyd login in a popup window. When the user finishes, the popup delivers
-`{ code, state }` back to your page via `postMessage` — with the `state` already checked against
-the value the button generated — and calls your `window.onValydSignIn` handler. Your JS then
-POSTs the code to your backend for the exchange.
-
-```mermaid
-sequenceDiagram
-    participant P as Your page
-    participant U as Valyd popup
-    participant Y as Your backend
-    participant V as Valyd IdP
-    P->>U: click button — open popup
-    Note over U: login + consent, callback with code
-    U-->>P: postMessage with code + state (state pre-checked), popup closes
-    Note over P: window.onValydSignIn fires
-    P->>Y: POST /auth/valyd/exchange with the code
-    Y->>V: exchange code
-    V-->>Y: tokens
-    Y-->>P: your app session
-```
-
-```javascript
-window.onValydSignIn = async ({ code }) => {
-  // state was already verified by the button before this fires
-  const res = await fetch("/auth/valyd/exchange", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  });
-  if (res.ok) location.assign("/dashboard");
-};
-```
-
-Your `/auth/valyd/exchange` route exchanges the code exactly like a redirect callback
-(`valyd.auth.exchangeCode(code)` with `@valyd/sdk@^1.10.2`), then verifies the ID token and sets
-your session.
-
 ## Security notes
 
-- The popup's `state` pre-check protects the browser handoff, but your backend still owns the
-  code exchange, ID-token validation (RS256/JWKS, `nonce`, `aud` = your `client_id`), and
-  session creation. Never accept tokens minted anywhere but your own backend.
+- Your backend owns the code exchange, ID-token validation (RS256/JWKS, `nonce`,
+  `aud` = your `client_id`), and session creation. Never accept tokens minted anywhere but your
+  own backend.
 - Codes are single-use and expire fast — send them to your backend immediately.
-- In redirect mode, the cookie comparison **is** the CSRF check; if cookies are being blocked
+- The cookie comparison **is** the CSRF check; if cookies are being blocked
   (third-party contexts, `SameSite`), legitimate logins fail with `state mismatch` — see
   [Errors](/docs/errors).
-- `client_secret` never appears in the page in either mode.
+- `client_secret` never appears in the page.
 
 ## Build it
 

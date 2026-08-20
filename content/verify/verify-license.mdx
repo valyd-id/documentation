@@ -80,7 +80,10 @@ Call `POST /api/v2/credential-verification` — just **state + license type (def
 number**. No `provider_code`; Valyd resolves the board. The check runs synchronously
 (10–60 s) — set your timeout to at least 90 s.
 
-```javascript filename="Valyd SDK (recommended)"
+<Tabs items={['SDK', 'cURL', 'Node (fetch)']} storageKey="valyd-lang">
+<Tabs.Tab>
+
+```javascript
 import { VerifyClient } from "@valyd/sdk";
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY, timeoutMs: 90_000 });
 
@@ -93,7 +96,27 @@ const { check } = await verify.standalone.credentialVerification({
 // check.status === "passed" · check.data.license.status ("active" | "expired" | …)
 ```
 
-```javascript filename="Node.js (fetch)"
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/credential-verification \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -H "Content-Type: application/json" \
+  --max-time 90 \
+  -d '{
+    "first_name":     "Jane",
+    "last_name":      "Smith",
+    "license_type":   "MD",
+    "license_state":  "CA",
+    "license_number": "G12345"
+  }'
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```javascript
 const response = await fetch(
   "https://idp.valyd.work/api/v2/credential-verification",
   {
@@ -116,19 +139,8 @@ const response = await fetch(
 const result = await response.json();
 ```
 
-```bash filename="cURL"
-curl -X POST https://idp.valyd.work/api/v2/credential-verification \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -H "Content-Type: application/json" \
-  --max-time 90 \
-  -d '{
-    "first_name":     "Jane",
-    "last_name":      "Smith",
-    "license_type":   "MD",
-    "license_state":  "CA",
-    "license_number": "G12345"
-  }'
-```
+</Tabs.Tab>
+</Tabs>
 
 <Callout type="warning">
   This endpoint is **server-side only**. Never call it from the browser — your API key would

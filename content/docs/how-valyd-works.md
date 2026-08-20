@@ -51,6 +51,26 @@ Prefer to keep results in your own system instead? Every check also runs with
 [just an API key](/verifications/quickstart) — no login — and then storing and protecting the
 person's data is your responsibility.
 
+## What the verification APIs let you build
+
+The checks aren't just onboarding KYC — you run them **whenever** you need fresh proof, tied to
+the signed-in person:
+
+- **Prove it's really them, right now** — a [face match](/docs/user-token/face-match) against
+  their enrolled face before a sensitive action (a payout, a settings change, a shift clock-in).
+- **Confirm they're actually there** — a [location check](/verifications/standalone/location)
+  proves the person is where they claim (home-visit care, field work, geofenced access).
+- **Re-check a live credential** — [re-verify a professional license](/docs/user-token/license)
+  against the registry so an expired or revoked one is caught, not trusted from last year.
+- **Confirm they're a live human** — [liveness](/docs/user-token/liveness) stops a photo or
+  replay standing in for the real person.
+- **Gate by age** — an [age band](/docs/user-token/age) (`is_18_plus`, …) without ever touching
+  their date of birth.
+
+Compose several into one [hosted flow](/docs/user-token/hosted), or call them one at a time —
+each passed check saves as a reusable proof on the person's Valyd ID, so next time you just read
+it. **Verify once, then re-prove exactly what your policy needs, exactly when it needs it.**
+
 ## Where to next
 
 - Not sure which integration fits → [Choose your integration](/docs/choose)

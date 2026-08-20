@@ -92,30 +92,132 @@
 
    **Expected output:** On a legitimate flow the values are identical and processing continues. On a mismatch (missing cookie, forged callback), respond HTTP 400 and stop.
 
-6. **Exchange the code for tokens, then fetch the user (server-side).** Exchange the `code` immediately (it is single-use). Full Node/Express + SDK handler:
+6. **Exchange the code for tokens, then fetch the user (server-side).** Exchange the `code` immediately (it is single-use). The callback handler in your stack — pick your language once and every code block on the page follows:
 
-   ```javascript
-   // Recommended: @valyd/sdk 1.10.1+
-   import { ValydClient } from "@valyd/sdk";
+<Tabs items={['Node (SDK)', 'Python', 'PHP', 'Java']} storageKey="valyd-lang">
+<Tabs.Tab>
 
-   const valyd = new ValydClient({
-     clientId: process.env.VALYD_CLIENT_ID!,
-     clientSecret: process.env.VALYD_CLIENT_SECRET!,
-     redirectUri: process.env.VALYD_REDIRECT_URI!,
-   });
+```javascript
+// Recommended: @valyd/sdk 1.10.1+
+import { ValydClient } from "@valyd/sdk";
 
-   app.get("/callback", async (req, res) => {
-     const transaction = req.session.valydOidc;
-     if (!transaction) return res.status(400).send("login transaction missing");
-     delete req.session.valydOidc;
+const valyd = new ValydClient({
+  clientId: process.env.VALYD_CLIENT_ID,
+  clientSecret: process.env.VALYD_CLIENT_SECRET,
+  redirectUri: process.env.VALYD_REDIRECT_URI,
+});
 
-     const callbackUrl = new URL(req.originalUrl, process.env.VALYD_REDIRECT_URI).toString();
-     const { tokens, user } = await valyd.handleCallback(callbackUrl, { transaction });
-     // ...set your own app session, then redirect to /dashboard
-   });
-   ```
+app.get("/callback", async (req, res) => {
+  const transaction = req.session.valydOidc;
+  if (!transaction) return res.status(400).send("login transaction missing");
+  delete req.session.valydOidc;
 
-   `handleCallback()` compares state, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
+  const callbackUrl = new URL(req.originalUrl, process.env.VALYD_REDIRECT_URI).toString();
+  const { tokens, user } = await valyd.handleCallback(callbackUrl, { transaction });
+  // ...set your own app session, then redirect to /dashboard
+});
+```
+
+`handleCallback()` compares state, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```python
+from flask import Flask, request, redirect, session, abort
+import requests
+
+app = Flask(__name__)
+
+@app.route("/callback")
+def callback():
+    code = request.args.get("code")
+    state = request.args.get("state")
+    if not code:
+        return "missing code", 400
+    if not state or state != session.pop("valyd_state", None):
+        return "state mismatch", 400
+
+    response = requests.post(
+        "https://idp.valyd.work/api/auth/oidc/token",
+        json={
+            "grant_type": "authorization_code",
+            "client_id": "YOUR_CLIENT_ID",
+            "client_secret": "YOUR_CLIENT_SECRET",
+            "code": code,
+            "redirect_uri": "https://yourapp.com/callback",
+        },
+    )
+    tokens = response.json()  # top-level: access_token, refresh_token, id_token, ...
+    session["access_token"] = tokens["access_token"]
+    return redirect("/dashboard")
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```php
+<?php
+session_start();
+$code = $_GET['code'] ?? null;
+$state = $_GET['state'] ?? null;
+if (!$code) { http_response_code(400); exit('missing code'); }
+if (!$state || !hash_equals($_SESSION['valyd_state'] ?? '', $state)) {
+    http_response_code(400); exit('state mismatch');
+}
+unset($_SESSION['valyd_state']);
+
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => 'https://idp.valyd.work/api/auth/oidc/token',
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => json_encode([
+        'grant_type' => 'authorization_code',
+        'client_id' => 'YOUR_CLIENT_ID',
+        'client_secret' => 'YOUR_CLIENT_SECRET',
+        'code' => $code,
+        'redirect_uri' => 'https://yourapp.com/callback'
+    ]),
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$tokens = json_decode(curl_exec($ch), true); // top-level token JSON
+$_SESSION['access_token'] = $tokens['access_token'];
+header('Location: /dashboard');
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```java
+@GetMapping("/callback")
+public ResponseEntity<?> callback(@RequestParam String code,
+                                  @RequestParam String state,
+                                  HttpSession session) {
+    String expected = (String) session.getAttribute("valyd_state");
+    if (expected == null || !expected.equals(state)) {
+        return ResponseEntity.badRequest().body("state mismatch");
+    }
+    session.removeAttribute("valyd_state");
+
+    RestTemplate rt = new RestTemplate();
+    Map<String, String> body = Map.of(
+        "grant_type", "authorization_code",
+        "client_id", "YOUR_CLIENT_ID",
+        "client_secret", "YOUR_CLIENT_SECRET",
+        "code", code,
+        "redirect_uri", "https://yourapp.com/callback"
+    );
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    rt.postForEntity("https://idp.valyd.work/api/auth/oidc/token",
+        new HttpEntity<>(body, headers), String.class);
+    return ResponseEntity.status(302).header("Location", "/dashboard").build();
+}
+```
+
+</Tabs.Tab>
+</Tabs>
 
    **Expected output:** `exchangeCode(code)` returns tokens (`accessToken`, `refreshToken`, `idToken`, `expiresIn`, `scope`); `getUserInfo(accessToken)` returns the user's profile data. Then set your own app session and redirect (e.g. to `/dashboard`).
 
@@ -185,98 +287,8 @@ rotated-away token is treated as theft and revokes every refresh token for that 
 With the SDK this is one call — `const next = await valyd.auth.refreshToken(stored)` — then
 persist both `next.accessToken` and `next.refreshToken`. Requires `@valyd/sdk` **1.10.1 or newer**.
 
-Python (Flask):
 
-```python
-from flask import Flask, request, redirect, session, abort
-import requests
 
-app = Flask(__name__)
-
-@app.route("/callback")
-def callback():
-    code = request.args.get("code")
-    state = request.args.get("state")
-    if not code:
-        return "missing code", 400
-    if not state or state != session.pop("valyd_state", None):
-        return "state mismatch", 400
-
-    response = requests.post(
-        "https://idp.valyd.work/api/auth/oidc/token",
-        json={
-            "grant_type": "authorization_code",
-            "client_id": "YOUR_CLIENT_ID",
-            "client_secret": "YOUR_CLIENT_SECRET",
-            "code": code,
-            "redirect_uri": "https://yourapp.com/callback",
-        },
-    )
-    tokens = response.json()  # top-level: access_token, refresh_token, id_token, ...
-    session["access_token"] = tokens["access_token"]
-    return redirect("/dashboard")
-```
-
-PHP:
-
-```php
-<?php
-session_start();
-$code = $_GET['code'] ?? null;
-$state = $_GET['state'] ?? null;
-if (!$code) { http_response_code(400); exit('missing code'); }
-if (!$state || !hash_equals($_SESSION['valyd_state'] ?? '', $state)) {
-    http_response_code(400); exit('state mismatch');
-}
-unset($_SESSION['valyd_state']);
-
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_URL => 'https://idp.valyd.work/api/auth/oidc/token',
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode([
-        'grant_type' => 'authorization_code',
-        'client_id' => 'YOUR_CLIENT_ID',
-        'client_secret' => 'YOUR_CLIENT_SECRET',
-        'code' => $code,
-        'redirect_uri' => 'https://yourapp.com/callback'
-    ]),
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_RETURNTRANSFER => true,
-]);
-$tokens = json_decode(curl_exec($ch), true); // top-level token JSON
-$_SESSION['access_token'] = $tokens['access_token'];
-header('Location: /dashboard');
-```
-
-Java (Spring):
-
-```java
-@GetMapping("/callback")
-public ResponseEntity<?> callback(@RequestParam String code,
-                                  @RequestParam String state,
-                                  HttpSession session) {
-    String expected = (String) session.getAttribute("valyd_state");
-    if (expected == null || !expected.equals(state)) {
-        return ResponseEntity.badRequest().body("state mismatch");
-    }
-    session.removeAttribute("valyd_state");
-
-    RestTemplate rt = new RestTemplate();
-    Map<String, String> body = Map.of(
-        "grant_type", "authorization_code",
-        "client_id", "YOUR_CLIENT_ID",
-        "client_secret", "YOUR_CLIENT_SECRET",
-        "code", code,
-        "redirect_uri", "https://yourapp.com/callback"
-    );
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    rt.postForEntity("https://idp.valyd.work/api/auth/oidc/token",
-        new HttpEntity<>(body, headers), String.class);
-    return ResponseEntity.status(302).header("Location", "/dashboard").build();
-}
-```
 
 In all raw-HTTP examples, replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with your real values (get these from the Developer Portal → your app → Credentials: https://dev.valyd.work). Never expose `YOUR_CLIENT_SECRET` in client-side code — the token exchange must run on your server.
 

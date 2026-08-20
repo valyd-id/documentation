@@ -30,7 +30,7 @@ APP_URL=https://api.example.com
 ```
 
 ```bash filename="Install the SDK"
-npm i @valyd/sdk@^1.10.2
+npm i @valyd/sdk@^1.10.3
 ```
 
 <Steps>
@@ -40,7 +40,10 @@ npm i @valyd/sdk@^1.10.2
 Call `POST /api/v2/session` from your server. The response includes a hosted `url` — that's
 where you'll send the user. Pass `vendor_data` to correlate the result back to your user later.
 
-```javascript filename="SDK (Node.js)"
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
+
+```javascript
 import { VerifyClient } from "@valyd/sdk";
 
 const verify = new VerifyClient({
@@ -61,7 +64,10 @@ const session = await verify.sessions.create({
 // session.sessionId → store this for later lookups
 ```
 
-```bash filename="cURL"
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
 curl -X POST https://idp.valyd.work/api/v2/session \
   -H "X-API-Key: $VALYD_API_KEY" \
   -H "Content-Type: application/json" \
@@ -73,6 +79,9 @@ curl -X POST https://idp.valyd.work/api/v2/session \
     "ttl_seconds":  900
   }'
 ```
+
+</Tabs.Tab>
+</Tabs>
 
 <Callout type="info">
   **Which workflow_id?** Use the "License Verification" workflow to check a professional
@@ -167,7 +176,10 @@ Call `GET /api/v2/session/{id}/decision` to get the final outcome plus per-check
 this inside your webhook handler (or from a polling mechanism if the webhook hasn't arrived
 yet).
 
-```javascript filename="SDK (Node.js)"
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
+
+```javascript
 const d = await verify.sessions.decision(event.sessionId);
 
 // d.status  → "APPROVED" | "DECLINED" | "IN_REVIEW"
@@ -180,10 +192,16 @@ if (credential?.status === "failed") {
 }
 ```
 
-```bash filename="cURL"
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
 curl https://idp.valyd.work/api/v2/session/ses_…/decision \
   -H "X-API-Key: $VALYD_API_KEY"
 ```
+
+</Tabs.Tab>
+</Tabs>
 
 </Steps>
 

@@ -83,7 +83,7 @@ The official Node SDK is published on npm as `@valyd/sdk` (https://www.npmjs.com
 Install:
 
 ```bash
-npm i @valyd/sdk@^1.10.2
+npm i @valyd/sdk@^1.10.3
 ```
 
 Create a client (do this once and reuse it):

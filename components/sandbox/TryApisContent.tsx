@@ -1,5 +1,6 @@
 'use client'
 
+import { VerifyPlayground } from './VerifyPlayground'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
@@ -24,7 +25,7 @@ import { ScopePicker } from './ScopePicker'
 import { PasteInput } from './PasteInput'
 import { JsonPanel } from './JsonPanel'
 import { SnippetTabs } from './SnippetTabs'
-import { DEFAULT_SCOPES, type DemoUser } from './constants'
+import { DEFAULT_SCOPES, type DemoUser, DEV_PORTAL_URL } from './constants'
 import {
   issueCode,
   exchangeToken,
@@ -417,12 +418,13 @@ npm run dev`}
               <span className="font-semibold">Just an API key — the person never signs in.</span> Every call below is
               server-to-server with your App API key (<code className="font-mono">X-API-Key</code>)
               from the{' '}
-              <a href="https://dev.valyd.work" className="font-medium underline" target="_blank" rel="noopener noreferrer">
+              <a href={DEV_PORTAL_URL} className="font-medium underline" target="_blank" rel="noopener noreferrer">
                 Developer Portal
               </a>
               . Results come back to <em>your</em> system — nothing is added to any Valyd account
               unless you use the account-connected flow after a login.
             </Alert>
+            <VerifyPlayground />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {[
                 {
