@@ -43,7 +43,7 @@ for (const relative of files) {
 const required = [
   // Login section: reads the account, never runs a check.
   ['content/docs/index.md', 'read what the account already holds'],
-  ['content/docs/introduction.md', 'Account API never runs a check'],
+  ['content/docs/endpoints.md', 'Account API never runs a check'],
   // Verify section: API-key checks, account attach is optional.
   ['content/verifications/index.md', 'X-API-Key'],
   ['content/verifications/index.md', 'valyd_access_token'],

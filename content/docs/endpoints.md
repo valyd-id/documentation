@@ -116,7 +116,9 @@ Returns top-level standard OIDC claims such as `sub`, `valyd_id`, `preferred_use
 > 🔑 **Auth:** Bearer access token (from login) · 👤 **User login:** required · 📄 **Scope-gated** — these READ the account; they never run a new check
 
 These canonical `/api/auth/oidc/*` endpoints accept access tokens minted by the
-[OIDC token endpoint](#post-apiauthoidctoken--token-exchange--refresh).
+[OIDC token endpoint](#post-apiauthoidctoken--token-exchange--refresh). The **Account API never
+runs a check** — it reads what previous checks already proved. To run a new check, see
+[Verification](/verifications).
 
 **Raw identity data** (DOB, document number, address …) is never returned by these endpoints — it
 requires the user's explicit approval via the [consent flow](/docs/request-data), and comes back

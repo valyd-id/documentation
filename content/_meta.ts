@@ -15,7 +15,7 @@ export default {
       copyPage: false
     }
   },
-  docs: { title: 'Auth API', type: 'page', href: '/docs/introduction' },
+  docs: { title: 'Get started', type: 'page', href: '/docs/introduction' },
   verifications: { title: 'Verification API', type: 'page' },
   ai: { title: 'AI & Agents', type: 'page' },
   // Old single-page entries stay reachable by URL but out of the navbar —
