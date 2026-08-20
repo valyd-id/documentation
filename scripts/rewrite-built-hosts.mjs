@@ -58,7 +58,13 @@ async function* walk(dir) {
 const TARGET = path.join(ROOT, '.next/server/app')
 let changed = 0
 for await (const file of walk(TARGET)) {
-  if (!/\.(html|js|rsc|txt|json)$/.test(file)) continue
+  // NEVER touch .rsc/.html: they carry React Flight byte-length-prefixed string
+  // rows (the embedded page sourceCode). A blind host swap changes string length
+  // without updating the prefix → the client's RSC parser throws "Connection
+  // closed" and the page crashes. Host substitution for that source now happens at
+  // render time in app/[[...mdxPath]]/page.tsx via lib/host-substitute. Only patch
+  // plain asset text here (llms.txt, sitemaps, JSON, JS with hardcoded hosts).
+  if (!/\.(js|txt|json)$/.test(file)) continue
   const txt = await fs.readFile(file, 'utf8')
   if (!txt.includes('valyd.work')) continue
   const out = sub(txt)
