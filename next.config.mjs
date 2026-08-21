@@ -46,7 +46,9 @@ export default withNextra({
         destination: `/verifications/${s}`,
         permanent: true
       })),
-      { source: '/verify/api', destination: '/verifications/api', permanent: true }
+      { source: '/verify/api', destination: '/verifications/api', permanent: true },
+      // The API Playground moved into the Docs tree so it gets the docs sidebar.
+      { source: '/sandbox', destination: '/docs/sandbox', permanent: true }
     ]
   }
 })

@@ -144,5 +144,5 @@ export default {
 
   // ============================ API PLAYGROUND ============================
   '--playground': { type: 'separator', title: 'API PLAYGROUND' },
-  'pg-sandbox': { title: <MetaTitle icon={Play}>API Playground</MetaTitle>, href: '/sandbox' }
+  'pg-sandbox': { title: <MetaTitle icon={Play}>API Playground</MetaTitle>, href: '/docs/sandbox' }
 } satisfies MetaRecord

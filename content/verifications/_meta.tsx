@@ -138,7 +138,7 @@ export default {
 
   // ============================ API PLAYGROUND ============================
   '--playground': { type: 'separator', title: 'API PLAYGROUND' },
-  'pg-sandbox': { title: <MetaTitle icon={Play}>API Playground</MetaTitle>, href: '/sandbox' },
+  'pg-sandbox': { title: <MetaTitle icon={Play}>API Playground</MetaTitle>, href: '/docs/sandbox' },
 
   // ============================ Hidden (reachable by URL, out of nav) ============================
   console: { display: 'hidden' },

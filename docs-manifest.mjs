@@ -131,7 +131,7 @@ export const SECTIONS = [
   {
     id: 'playground', label: 'API PLAYGROUND',
     items: [
-      { title: 'API Playground', route: '/sandbox', home: 'ext', icon: 'Play' },
+      { title: 'API Playground', route: '/docs/sandbox', home: 'docs', icon: 'Play' },
     ],
   },
 ]

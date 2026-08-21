@@ -25,8 +25,8 @@ export default {
   // superseded by the AI & Agents section.
   mcp: { display: 'hidden' },
   agents: { display: 'hidden' },
-  // Interactive playground lives at app/sandbox (not in content/)
-  sandbox: { title: 'API Playground', type: 'page', href: '/sandbox' },
+  // Interactive playground — a content page under docs (so it gets the docs sidebar); /sandbox 301s here.
+  sandbox: { title: 'API Playground', type: 'page', href: '/docs/sandbox' },
   // Recipe + demo pages keep their old URLs but stay out of the navbar;
   // they are linked from within the docs.
   verify: { display: 'hidden' },

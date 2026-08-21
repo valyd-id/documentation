@@ -48,7 +48,7 @@ const ROUTES = [
   '/verify/verify-license',
   '/mcp',
   '/agents',
-  '/sandbox',
+  '/docs/sandbox',
   '/evv',
   '/antispoof',
   '/llms.txt',
