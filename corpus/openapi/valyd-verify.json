@@ -4,7 +4,7 @@
     "title": "Verification API",
     "version": "2.0.0",
     "summary": "Hosted and server-to-server identity verification: ID checks, liveness, face match, age, and credential verification.",
-    "description": "REST API for Verification APIs (`/api/v2`).\n\n- **Hosted** — create a session with a `workflow_id`, redirect the user to the returned hosted `url`, receive a signed webhook on a terminal state, then pull the authoritative result from `GET /api/v2/session/{id}/decision`. The redirect-back `?status=` is a hint only — never treat it as final.\n- **Standalone** — call individual check endpoints (`/api/v2/id-verification`, `/liveness`, `/face-match`, `/age-verification`, `/credential-verification`, `/kyc-credential`) directly for a synchronous result.\n\nAll responses use a `{ success, data, error }` envelope. Authenticate with `X-API-Key: <App API key>` (a Bearer token with the same key is also accepted). API keys are created by a human in the Developer Portal — not via API.",
+    "description": "REST API for Verification APIs (`/api/v2`).\n\n- **Hosted** — create a session with a `workflow_id`, redirect the user to the returned hosted `url`, receive a signed webhook on a terminal state, then pull the authoritative result from `GET /api/v2/session/{id}/decision`. The redirect-back `?status=` is a hint only — never treat it as final.\n- **Standalone** — call individual check endpoints (`/api/v2/id-verification`, `/liveness`, `/face-match`, `/age-verification`, `/credential-verification`, `/kyc-credential`) directly for a synchronous result.\n\nSuccessful responses are `{ success: true, data }` — there is no `error` key on success. Error responses are `{ success: false, data, error }` where `data` is `[]` (an empty array) or a populated object, never `null`. Authenticate with `X-API-Key: <App API key>` (a Bearer token with the same key is also accepted). API keys are created by a human in the Developer Portal — not via API.\n\nAll `/api/v2` routes are rate limited per client IP at ~150 requests/minute (env `VERIFY_RATE_LIMIT_PER_MINUTE`). A 429 body is `{ success: false, data: [], error: { code: \"rate_limited\", message } }` and carries no `Retry-After` header; successful responses include `X-RateLimit-Limit` / `X-RateLimit-Remaining`. POST endpoints accept an optional `Idempotency-Key` request header so a retry cannot double-run or double-charge.",
     "contact": {
       "name": "Valyd Developer Docs",
       "url": "https://docs.valyd.work/verify/intro.md"
@@ -35,7 +35,7 @@
     },
     {
       "name": "Workflows",
-      "description": "Service bundles for hosted sessions. NOTE: these paths are inferred from the Node SDK; the API reference does not confirm a REST endpoint to manage workflows. Confirm against your tenant before relying on them."
+      "description": "Feature bundles for hosted sessions, managed via a full REST resource (`WorkflowController`). Create a workflow from a list of `features`, then pass its `id` as `workflow_id` when creating a session."
     },
     {
       "name": "Location",
@@ -57,7 +57,7 @@
           "Sessions"
         ],
         "summary": "Create a hosted verification session",
-        "description": "Creates a hosted session and returns a Valyd-hosted `url` to redirect the user to. `workflow_id` selects the bundle of services to run.",
+        "description": "Creates a hosted session and returns a Valyd-hosted `url` to redirect the user to. `workflow_id` is the UUID of a workflow (from the Developer Portal or the Workflows API) that selects the bundle of features to run. If you pass a `callback`, it must EXACTLY match an active, approved HTTPS webhook registered for the project, or you get 422 `callback_not_allowed`. Pass `valyd_access_token` to bind the session to a Managed-by-Valyd account.",
         "operationId": "createSession",
         "requestBody": {
           "required": true,
@@ -67,7 +67,7 @@
                 "$ref": "#/components/schemas/CreateSessionRequest"
               },
               "example": {
-                "workflow_id": "wf_kyc_license",
+                "workflow_id": "3f1c9e2a-6b4d-4a1e-9c2f-7d8e0a1b2c3d",
                 "redirect_url": "https://app.example.com/verify/callback",
                 "callback": "https://api.example.com/webhooks/valyd",
                 "vendor_data": "user_123",
@@ -80,7 +80,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Session created.",
             "content": {
               "application/json": {
@@ -102,8 +102,7 @@
                     ],
                     "redirect_url": "https://app.example.com/verify/callback",
                     "expires_at": "2026-06-11T12:00:00Z"
-                  },
-                  "error": null
+                  }
                 }
               }
             }
@@ -113,6 +112,15 @@
           },
           "401": {
             "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "402": {
+            "$ref": "#/components/responses/BillingRequired"
+          },
+          "404": {
+            "$ref": "#/components/responses/WorkflowNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/CallbackNotAllowed"
           }
         }
       },
@@ -121,7 +129,7 @@
           "Sessions"
         ],
         "summary": "List sessions",
-        "description": "Lists session objects. The exact list/pagination schema is not printed in the docs; `data` is an array of session objects.",
+        "description": "Returns session summary objects newest-first (by `created_at`). This endpoint is NOT paginated: there is no cursor, page, or offset parameter and no total/next metadata. Use `limit` to cap the number returned (default 50; there is no server-enforced maximum). Narrow results with the `status` and `vendor_data` equality filters. `data` is an object with a `sessions` array.",
         "operationId": "listSessions",
         "parameters": [
           {
@@ -146,17 +154,16 @@
             "name": "limit",
             "in": "query",
             "required": false,
+            "description": "Max sessions to return (default 50; no cursor/offset/page pagination is available and no server-enforced maximum).",
             "schema": {
               "type": "integer",
-              "examples": [
-                50
-              ]
+              "default": 50
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "A list of session objects.",
+            "description": "An object with a `sessions` array of session summaries, newest-first.",
             "content": {
               "application/json": {
                 "schema": {
@@ -166,16 +173,15 @@
                       "type": "boolean"
                     },
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Session"
+                      "type": "object",
+                      "properties": {
+                        "sessions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SessionSummary"
+                          }
+                        }
                       }
-                    },
-                    "error": {
-                      "type": [
-                        "object",
-                        "null"
-                      ]
                     }
                   }
                 }
@@ -203,11 +209,11 @@
         "operationId": "getSession",
         "responses": {
           "200": {
-            "description": "Session object.",
+            "description": "Session summary object.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionEnvelope"
+                  "$ref": "#/components/schemas/SessionSummaryEnvelope"
                 }
               }
             }
@@ -245,9 +251,12 @@
                 "example": {
                   "success": true,
                   "data": {
+                    "session_id": "ses_abc123",
                     "status": "APPROVED",
+                    "vendor_data": "user_123",
+                    "valyd_id": null,
+                    "origin": "fresh",
                     "decision": "APPROVED",
-                    "decided_at": "2026-06-11T12:05:00Z",
                     "checks": [
                       {
                         "type": "id_verification",
@@ -288,9 +297,18 @@
                         },
                         "error": null
                       }
-                    ]
-                  },
-                  "error": null
+                    ],
+                    "verifications": {
+                      "id_verification": {
+                        "status": "passed"
+                      },
+                      "liveness": {
+                        "status": "passed"
+                      }
+                    },
+                    "identity": null,
+                    "decided_at": "2026-06-11T12:05:00Z"
+                  }
                 }
               }
             }
@@ -314,8 +332,8 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Manually override a session decision",
-        "description": "Force a terminal decision on a session — the manual-review escape hatch, for when a human overrules the automated outcome.\n\nThis overwrites the verdict and is **not** reversible; the session stops accepting further checks. It is an audited action: use it deliberately, not to retry a flaky check (re-run the check instead).",
+        "summary": "Decide an IN_REVIEW session",
+        "description": "The manual-decision endpoint for a session that is currently `IN_REVIEW`. It only decides an IN_REVIEW session — calling it on any other state returns 409 `review_not_pending`. Setting `APPROVED` additionally requires that id_verification, liveness and face_match have all passed, otherwise you get 409 `required_face_checks_incomplete`. The decision is terminal and the session stops accepting further checks. It is an audited action.",
         "operationId": "updateSessionStatus",
         "requestBody": {
           "required": true,
@@ -345,11 +363,11 @@
         },
         "responses": {
           "200": {
-            "description": "Updated session reflecting the override.",
+            "description": "Updated session summary reflecting the decision.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionEnvelope"
+                  "$ref": "#/components/schemas/SessionSummaryEnvelope"
                 }
               }
             }
@@ -359,6 +377,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReviewConflict"
           }
         }
       }
@@ -369,7 +390,7 @@
           "Standalone"
         ],
         "summary": "ID verification (OCR + authenticity)",
-        "description": "OCR + authenticity extraction from a government ID. Images may be sent as `multipart/form-data` files or as base64/data-URL strings in a JSON body of the same field names.",
+        "description": "OCR + authenticity extraction from a government ID. Images may be sent as `multipart/form-data` files or as base64/data-URL strings in a JSON body of the same field names. Alternatively, pass `valyd_access_token` for ACCOUNT mode — the identity comes from the user's stored Valyd document and no `front_image` is required. A missing or unreadable image returns 400 `invalid_image`.",
         "operationId": "idVerification",
         "requestBody": {
           "required": true,
@@ -377,19 +398,20 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "front_image"
-                ],
                 "properties": {
                   "front_image": {
                     "type": "string",
                     "format": "binary",
-                    "description": "Front of the ID."
+                    "description": "Front of the ID (file or base64). Required unless valyd_access_token is given."
                   },
                   "back_image": {
                     "type": "string",
                     "format": "binary",
                     "description": "Back of the ID, when applicable."
+                  },
+                  "valyd_access_token": {
+                    "type": "string",
+                    "description": "Optional. The user's Valyd access token → ACCOUNT mode: identity comes from the stored Valyd document, no document scan required."
                   }
                 }
               }
@@ -431,20 +453,16 @@
                       },
                       "error": null
                     }
-                  },
-                  "error": null
+                  }
                 }
               }
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationError"
+            "$ref": "#/components/responses/InvalidImage"
           },
           "401": {
             "$ref": "#/components/responses/InvalidApiKey"
-          },
-          "422": {
-            "$ref": "#/components/responses/Unprocessable"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -458,7 +476,7 @@
           "Standalone"
         ],
         "summary": "Passive liveness",
-        "description": "Passive liveness from a single selfie — proves a live person is present, NOT who they are (pair with /face-match for identity).\n\nPasses when `live_score === 1`. A photo-of-a-photo, screen replay or print attack fails. No user action needed — nothing to blink or turn.\n\nSend the frame straight from the camera at full quality: recompressing or downscaling destroys the very texture the check reads and causes false rejects.",
+        "description": "Passive liveness from a single selfie — proves a live person is present, NOT who they are (pair with /face-match for identity).\n\nPasses when `live_score === 1`. A photo-of-a-photo, screen replay or print attack fails. No user action needed — nothing to blink or turn.\n\nSend the frame straight from the camera at full quality: recompressing or downscaling destroys the very texture the check reads and causes false rejects. The selfie field is accepted as either `image` or `selfie`; file upload or base64/data-URL. Alternatively, pass `valyd_access_token` for ACCOUNT mode. A missing or unreadable image returns 400 `invalid_image`.",
         "operationId": "liveness",
         "requestBody": {
           "required": true,
@@ -466,14 +484,20 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "image"
-                ],
                 "properties": {
                   "image": {
                     "type": "string",
                     "format": "binary",
-                    "description": "REQUIRED. The selfie — file upload or base64. Full quality, straight from the camera."
+                    "description": "The selfie — file upload or base64. Full quality, straight from the camera. Alias: selfie."
+                  },
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Alias for image."
+                  },
+                  "valyd_access_token": {
+                    "type": "string",
+                    "description": "Optional. The user's Valyd access token → ACCOUNT mode."
                   }
                 }
               }
@@ -503,20 +527,19 @@
                       },
                       "error": null
                     }
-                  },
-                  "error": null
+                  }
                 }
               }
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationError"
+            "$ref": "#/components/responses/InvalidImage"
           },
           "401": {
             "$ref": "#/components/responses/InvalidApiKey"
           },
-          "422": {
-            "$ref": "#/components/responses/Unprocessable"
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -527,7 +550,7 @@
           "Standalone"
         ],
         "summary": "Face match",
-        "description": "1:1 face comparison: does the selfie show the same person as the reference portrait? Passes when similarity ≥ threshold (default ~0.95).\n\n`image1` = the reference (e.g. the ID portrait). `image2` = the live selfie. Order matters only for reporting; the comparison is symmetric.\n\nThis answers *same person?* — it does NOT prove the selfie is live. Pair it with /liveness to stop someone matching a photo of the ID holder.\n\nUse the original, full-resolution images: a downscaled ID portrait is the most common cause of a false 'no match'.",
+        "description": "1:1 face comparison: does the selfie show the same person as the reference portrait? Passes when similarity ≥ threshold (default ~0.95).\n\n`image1` = the reference (e.g. the ID portrait). `image2` = the live selfie. Order matters only for reporting; the comparison is symmetric. Field aliases: `image1` accepts `id_image`, `image2` accepts `selfie`; files or base64/data-URL.\n\nIn ACCOUNT mode (`valyd_access_token`) send only the selfie — it is matched against the account's stored Valyd face vector, so no reference image is required.\n\nThis answers *same person?* — it does NOT prove the selfie is live. Pair it with /liveness to stop someone matching a photo of the ID holder.\n\nUse the original, full-resolution images: a downscaled ID portrait is the most common cause of a false 'no match'. A missing or unreadable image returns 400 `invalid_image`.",
         "operationId": "faceMatch",
         "requestBody": {
           "required": true,
@@ -535,20 +558,20 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "image1",
-                  "image2"
-                ],
                 "properties": {
                   "image1": {
                     "type": "string",
                     "format": "binary",
-                    "description": "REQUIRED. Reference portrait (e.g. the ID photo) — file or base64."
+                    "description": "Reference portrait (e.g. the ID photo) — file or base64. Alias: id_image. Not required in account mode."
                   },
                   "image2": {
                     "type": "string",
                     "format": "binary",
-                    "description": "REQUIRED. The live selfie to compare — file or base64."
+                    "description": "The live selfie to compare — file or base64. Alias: selfie."
+                  },
+                  "valyd_access_token": {
+                    "type": "string",
+                    "description": "Optional. The user's Valyd access token → ACCOUNT mode: the selfie is matched against the stored Valyd face vector; image1 is not needed."
                   }
                 }
               }
@@ -578,17 +601,19 @@
                       },
                       "error": null
                     }
-                  },
-                  "error": null
+                  }
                 }
               }
             }
           },
           "400": {
-            "$ref": "#/components/responses/ValidationError"
+            "$ref": "#/components/responses/InvalidImage"
           },
           "401": {
             "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -599,7 +624,7 @@
           "Standalone"
         ],
         "summary": "Age verification",
-        "description": "Computes the age from a date of birth and answers the age bands you ask for. Returns `data.age` plus a `data.bands` map — one entry per band you requested.\n\n**Bands are flexible:** `\"18\"`, `18`, `\"18+\"` and `\"is_18_plus\"` all mean the same thing. Each answer is `{ verified: true|false, min_age }`; an unparseable band comes back `{ verified: null, error: \"unknown_band\" }`.\n\n`status` is `passed` only when EVERY requested band is satisfied — ask for one band if you want one verdict.\n\nFresh mode (a raw `dob`) can answer ANY band, including odd ones like `\"20\"`. Account mode answers only the canonical thresholds (16/18/21/30/65) — a KYC'd account keeps those proofs but drops the raw DOB, so anything else returns `unknown_band`.",
+        "description": "Computes the age from a date of birth and answers the age bands you ask for. Returns `data.age` plus a `data.bands` map — one entry per band you requested.\n\n**Bands are flexible:** `\"18\"`, `18`, `\"18+\"` and `\"is_18_plus\"` all mean the same thing. Each answer is `{ satisfied: true|false, min_age }` (`verified` is emitted as a deprecated alias of `satisfied`); an unparseable band comes back `{ satisfied: null, error: \"unknown_band\" }`.\n\n`status` is `passed` only when EVERY requested band is satisfied — ask for one band if you want one verdict.\n\nFresh mode (a raw `dob`) can answer ANY band, including odd ones like `\"20\"`. In ACCOUNT mode (`valyd_access_token` / `valyd_id`) NO `dob` is sent — the bands are derived from the account's stored DOB, and the response is `data: { source: \"account\", bands }` with no `age`/`dob`; an account with no stored DOB returns 422 `account_dob_unavailable`. Account mode answers only the canonical thresholds (16/18/21/30/65).",
         "operationId": "ageVerification",
         "requestBody": {
           "required": true,
@@ -608,13 +633,12 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "dob",
-                  "bands"
+                  "dob"
                 ],
                 "properties": {
                   "dob": {
                     "type": "string",
-                    "description": "REQUIRED. Date of birth, ISO preferred (YYYY-MM-DD, e.g. 1990-04-12).",
+                    "description": "REQUIRED in fresh mode (omit in account mode). Date of birth, ISO preferred (YYYY-MM-DD, e.g. 1990-04-12).",
                     "example": "1990-04-12"
                   },
                   "bands": {
@@ -622,11 +646,15 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "REQUIRED. Bands to assert. Accepts \"18\" / 18 / \"18+\" / \"is_18_plus\". Defaults to is_18_plus if empty.",
+                    "description": "Optional. Bands to assert. Accepts \"18\" / 18 / \"18+\" / \"is_18_plus\". Defaults to is_18_plus if omitted.",
                     "example": [
                       "18",
                       "21"
                     ]
+                  },
+                  "valyd_access_token": {
+                    "type": "string",
+                    "description": "Optional. The user's Valyd access token → ACCOUNT mode: bands are derived from the account's stored DOB; do not send `dob`."
                   }
                 }
               },
@@ -661,10 +689,12 @@
                         "dob": "1995-06-01",
                         "bands": {
                           "is_18_plus": {
+                            "satisfied": true,
                             "verified": true,
                             "min_age": 18
                           },
                           "is_21_plus": {
+                            "satisfied": true,
                             "verified": true,
                             "min_age": 21
                           }
@@ -672,8 +702,7 @@
                       },
                       "error": null
                     }
-                  },
-                  "error": null
+                  }
                 }
               }
             }
@@ -683,6 +712,12 @@
           },
           "401": {
             "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "422": {
+            "$ref": "#/components/responses/AccountDobUnavailable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -693,7 +728,7 @@
           "Standalone"
         ],
         "summary": "Credential (professional licence) — search or verify",
-        "description": "One endpoint, and **what you send decides what you get**:\n\n**1. No name → SEARCH (details).** You ask \"what's on file for this licence number?\". We skip identity matching and return the board's record: `mode: \"search\"`, `found: true`, **`match: null`**. A finding is NOT proof the licence belongs to anyone — never treat it as a verification.\n\n**2. Name → VERIFY.** The identity agent runs and matches your name against the board record: `mode: \"verify\"`, `match: true`/`false`. A wrong name fails even when the number is right.\n\n**3. `valyd_access_token` → ACCOUNT mode.** We resolve the account from the token and match against its **verified KYC name**. Any name you send is IGNORED — so an integrator cannot claim someone else's licence. Returns proofs, and badges the licence on the account.\n\n**Always discover first** (GET /credential/states → /credential/states/{state}/providers) and pass the selected `provider_code` + `credential_name`. `license_state` + the licence number are always required.\n\nLive board lookups take 10–60s — use a generous timeout. Send the number exactly as the board writes it (e.g. `TL.0011377`, not `TL0011377`), or set `do_ai_clean: true` to let us normalise the format.",
+        "description": "One endpoint, and **what you send decides what you get**:\n\n**1. No name → SEARCH (details).** You ask \"what's on file for this licence number?\". We skip identity matching and return the board's record: `mode: \"search\"`, `found: true`, **`match: null`**. A finding is NOT proof the licence belongs to anyone — never treat it as a verification.\n\n**2. Name → VERIFY.** The identity agent runs and matches your name against the board record: `mode: \"verify\"`, `match: true`/`false`. A wrong name fails even when the number is right.\n\n**3. `valyd_access_token` → ACCOUNT mode.** We resolve the account from the token and match against its **verified KYC name**. Any name you send is IGNORED — so an integrator cannot claim someone else's licence. Returns proofs, and badges the licence on the account.\n\n**Always discover first** (GET /credential/states → /credential/states/{state}/providers) and pass the selected `provider_code` + `credential_name`. `license_state` + the licence number are always required.\n\nLive board lookups take 10–60s — use a generous timeout. Send the number exactly as the board writes it (e.g. `TL.0011377`, not `TL0011377`).",
         "operationId": "credentialVerification",
         "requestBody": {
           "required": true,
@@ -741,10 +776,6 @@
                   "valyd_access_token": {
                     "type": "string",
                     "description": "Optional. The user's Valyd access token → ACCOUNT mode: identity comes from their verified KYC name and any name you send is ignored."
-                  },
-                  "do_ai_clean": {
-                    "type": "boolean",
-                    "description": "Optional. Let us AI-normalise an odd licence-number format and retry on not-found. Use when you can't guarantee the board's exact punctuation."
                   }
                 }
               },
@@ -787,8 +818,7 @@
                       },
                       "error": null
                     }
-                  },
-                  "error": null
+                  }
                 }
               }
             }
@@ -801,6 +831,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -811,7 +844,7 @@
           "Standalone"
         ],
         "summary": "Combined KYC + credential",
-        "description": "ID verification + liveness + face match + license lookup in one call. The license is matched against the name OCR'd from the ID (never client-supplied), preventing impersonation. Returns a multi-check `data` object with `identity` and `checks`.",
+        "description": "ID verification + liveness + face match + license lookup in one call. The license is matched against the name OCR'd from the ID (never client-supplied), preventing impersonation. Returns `data` = { session_id, status, checks[] } only — raw name/dob are deliberately NOT echoed. Images accept a file upload or a base64/data-URL string.",
         "operationId": "kycCredential",
         "requestBody": {
           "required": true,
@@ -822,14 +855,14 @@
                 "required": [
                   "front_image",
                   "selfie",
-                  "license_type",
                   "license_state",
                   "license_number"
                 ],
                 "properties": {
                   "front_image": {
                     "type": "string",
-                    "format": "binary"
+                    "format": "binary",
+                    "description": "Front of the ID (file or base64)."
                   },
                   "back_image": {
                     "type": "string",
@@ -839,19 +872,23 @@
                   "selfie": {
                     "type": "string",
                     "format": "binary",
-                    "description": "Live selfie for liveness + face match."
+                    "description": "Live selfie for liveness + face match (file or base64)."
                   },
                   "license_type": {
                     "type": "string",
-                    "description": "Alias: provider_code."
+                    "description": "Optional. Alias: provider_code."
+                  },
+                  "provider_code": {
+                    "type": "string",
+                    "description": "Optional. Pins the exact board (alias of license_type)."
                   },
                   "license_state": {
                     "type": "string",
-                    "description": "Alias: state."
+                    "description": "REQUIRED. Alias: state."
                   },
                   "license_number": {
                     "type": "string",
-                    "description": "Alias: license_no."
+                    "description": "REQUIRED. Alias: license_no."
                   },
                   "npi": {
                     "type": "string"
@@ -881,18 +918,6 @@
                         "status": {
                           "$ref": "#/components/schemas/CheckStatus"
                         },
-                        "identity": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string"
-                            },
-                            "dob": {
-                              "type": "string",
-                              "format": "date"
-                            }
-                          }
-                        },
                         "checks": {
                           "type": "array",
                           "items": {
@@ -900,12 +925,6 @@
                           }
                         }
                       }
-                    },
-                    "error": {
-                      "type": [
-                        "object",
-                        "null"
-                      ]
                     }
                   }
                 }
@@ -917,6 +936,9 @@
           },
           "401": {
             "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -976,8 +998,7 @@
                         "state_code": "CA"
                       }
                     ]
-                  },
-                  "error": null
+                  }
                 }
               }
             }
@@ -1035,6 +1056,9 @@
                               "credential_name": {
                                 "type": "string"
                               },
+                              "state_code": {
+                                "type": "string"
+                              },
                               "required_fields": {
                                 "type": "array",
                                 "items": {
@@ -1067,8 +1091,7 @@
                         ]
                       }
                     ]
-                  },
-                  "error": null
+                  }
                 }
               }
             }
@@ -1087,46 +1110,46 @@
         "tags": [
           "Workflows"
         ],
-        "summary": "Create a workflow (inferred)",
-        "description": "Inferred from the Node SDK (`workflows.create`); not confirmed by the API reference. Bundles a set of services into a reusable `workflow_id`.",
+        "summary": "Create a workflow",
+        "description": "Bundles a set of `features` into a reusable workflow. Pass the returned workflow `id` as `workflow_id` when creating a hosted session. Adding `age` without `id_verification` auto-injects `id_verification`.",
         "operationId": "createWorkflow",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "name",
-                  "services"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "services": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/CheckType"
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/WorkflowCreateRequest"
               },
               "example": {
                 "name": "KYC + License",
-                "services": [
+                "features": [
                   "id_verification",
                   "liveness",
                   "face_match",
                   "credential"
-                ]
+                ],
+                "settings": {},
+                "is_active": true
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Workflow created. Response schema not documented."
+          "201": {
+            "description": "Workflow created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
           }
         }
       },
@@ -1134,14 +1157,40 @@
         "tags": [
           "Workflows"
         ],
-        "summary": "List workflows (inferred)",
+        "summary": "List workflows",
         "operationId": "listWorkflows",
+        "description": "List your workflows — the reusable feature bundles a hosted session runs. Returns `data: { workflows: [...] }`; pass a workflow `id` as `workflow_id` when creating a session.",
         "responses": {
           "200": {
-            "description": "Workflow list. Response schema not documented."
+            "description": "Workflow list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "workflows": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Workflow"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
           }
-        },
-        "description": "List your workflows — the reusable check pipelines a hosted session runs (id_verification, liveness, face_match, credential, …). Returns each workflow's id + steps; pass an id as `workflow_id` when creating a session."
+        }
       }
     },
     "/api/v2/workflows/{id}": {
@@ -1159,61 +1208,106 @@
         "tags": [
           "Workflows"
         ],
-        "summary": "Retrieve a workflow (inferred)",
+        "summary": "Retrieve a workflow",
         "operationId": "getWorkflow",
+        "description": "Fetch one workflow: its features and configuration. Returns `data: { workflow: {...} }`.",
         "responses": {
           "200": {
-            "description": "Workflow. Response schema not documented."
+            "description": "Workflow.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
-        },
-        "description": "Fetch one workflow: its steps, in order, and their configuration."
+        }
       },
       "patch": {
         "tags": [
           "Workflows"
         ],
-        "summary": "Update a workflow (inferred)",
+        "summary": "Update a workflow",
         "operationId": "updateWorkflow",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "services": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/CheckType"
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/WorkflowUpdateRequest"
               },
               "example": {
-                "name": "KYC + License (v2)"
+                "name": "KYC + License (v2)",
+                "is_active": false
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Updated workflow. Response schema not documented."
+            "description": "Updated workflow.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         },
-        "description": "Update a workflow's steps or settings. Applies to sessions created AFTER the change — sessions already running keep the pipeline they started with."
+        "description": "Update a workflow's features or settings. Applies to sessions created AFTER the change — sessions already running keep the pipeline they started with."
       },
       "delete": {
         "tags": [
           "Workflows"
         ],
-        "summary": "Delete a workflow (inferred)",
+        "summary": "Delete a workflow",
         "operationId": "deleteWorkflow",
         "responses": {
           "200": {
-            "description": "Workflow deleted."
+            "description": "Workflow deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "deleted": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         },
         "description": "Delete a workflow. Sessions already created with it keep working; new sessions can no longer reference it."
@@ -1491,7 +1585,15 @@
             "const": false
           },
           "data": {
-            "type": "null"
+            "description": "Empty array `[]` on most errors, or a populated object for some codes (e.g. `review_not_pending` returns `{ status }`). Never null.",
+            "oneOf": [
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              }
+            ]
           },
           "error": {
             "type": "object",
@@ -1504,9 +1606,16 @@
                 "type": "string",
                 "enum": [
                   "validation_error",
+                  "API_KEY_MISSING",
                   "invalid_api_key",
                   "not_found",
-                  "unprocessable",
+                  "workflow_not_found",
+                  "callback_not_allowed",
+                  "valyd_login_required",
+                  "review_not_pending",
+                  "required_face_checks_incomplete",
+                  "invalid_image",
+                  "account_dob_unavailable",
                   "rate_limited",
                   "internal_error"
                 ]
@@ -1526,7 +1635,13 @@
         "properties": {
           "workflow_id": {
             "type": "string",
-            "description": "Service bundle to run (from the Developer Portal)."
+            "format": "uuid",
+            "description": "REQUIRED. The UUID of the workflow (feature bundle) to run, from the Developer Portal or the Workflows API."
+          },
+          "valyd_access_token": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Optional. Binds the session to a Managed-by-Valyd account. sso/reuse workflows require it — a missing token on those returns 401 `valyd_login_required`."
           },
           "redirect_url": {
             "type": "string",
@@ -1592,6 +1707,7 @@
           "success",
           "data"
         ],
+        "description": "Success envelope — success responses carry only `success` + `data` (no `error` key).",
         "properties": {
           "success": {
             "type": "boolean",
@@ -1599,9 +1715,69 @@
           },
           "data": {
             "$ref": "#/components/schemas/Session"
+          }
+        }
+      },
+      "SessionSummary": {
+        "type": "object",
+        "description": "The session summary shape returned by list, get, decision-status and update-status. It has NO `url` or `session_token`.",
+        "properties": {
+          "session_id": {
+            "type": "string"
           },
-          "error": {
-            "type": "null"
+          "workflow_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "vendor_data": {
+            "type": "string",
+            "nullable": true
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckType"
+            }
+          },
+          "decision": {
+            "type": "string",
+            "nullable": true,
+            "description": "Terminal decision status string, or null while not decided."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SessionSummaryEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SessionSummary"
           }
         }
       },
@@ -1639,32 +1815,55 @@
       "Decision": {
         "type": "object",
         "properties": {
+          "session_id": {
+            "type": "string"
+          },
           "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "vendor_data": {
+            "type": "string",
+            "nullable": true
+          },
+          "valyd_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Linked Valyd account id, or null for a fresh (non-Valyd) session."
+          },
+          "origin": {
             "type": "string",
             "enum": [
-              "APPROVED",
-              "DECLINED",
-              "IN_REVIEW"
+              "managed",
+              "fresh"
             ],
-            "description": "Session outcome (narrower set than full session status)."
+            "description": "`managed` for a Valyd-linked session, `fresh` otherwise."
           },
           "decision": {
             "type": "string",
-            "enum": [
-              "APPROVED",
-              "DECLINED"
-            ],
-            "description": "Final business outcome."
-          },
-          "decided_at": {
-            "type": "string",
-            "format": "date-time"
+            "description": "The final decision as a single status string (e.g. \"APPROVED\"), normalised from the session decision."
           },
           "checks": {
             "type": "array",
+            "description": "Per-check results (SDK array shape).",
             "items": {
               "$ref": "#/components/schemas/Check"
             }
+          },
+          "verifications": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Per-check outcomes keyed by check type."
+          },
+          "identity": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "description": "Verified profile + licenses for a Valyd-linked session; null otherwise."
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         }
       },
@@ -1681,9 +1880,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/Decision"
-          },
-          "error": {
-            "type": "null"
           }
         }
       },
@@ -1712,9 +1908,107 @@
                 "$ref": "#/components/schemas/Check"
               }
             }
+          }
+        }
+      },
+      "Workflow": {
+        "type": "object",
+        "description": "A reusable feature bundle for hosted sessions.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
-          "error": {
-            "type": "null"
+          "name": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Enabled features (from `config('verify.features')`, e.g. id_verification, liveness, face_match, age, credential, location, antispoof, face_uniqueness)."
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkflowCreateRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "features"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "REQUIRED."
+          },
+          "features": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            },
+            "description": "REQUIRED. At least one feature. Each value must be one of `config('verify.features')` (id_verification, liveness, face_match, age, credential, location, antispoof, face_uniqueness, …). Adding `age` without `id_verification` auto-injects id_verification."
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Optional per-workflow settings."
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Optional. Defaults to active."
+          }
+        }
+      },
+      "WorkflowUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkflowEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "workflow": {
+                "$ref": "#/components/schemas/Workflow"
+              }
+            }
           }
         }
       },
@@ -1745,7 +2039,7 @@
             "type": "string"
           },
           "decision": {
-            "description": "Documented inconsistently: a short string (e.g. \"approved\") in webhooks.md, an object matching the decision API in hosted.md.",
+            "description": "A short status string (e.g. \"approved\"), consistent with the decision API which now returns `decision` as a single status string. [owner: confirm the exact webhook payload against the queue-worker dispatcher (idp-queue.service) before relying on an object form.]",
             "oneOf": [
               {
                 "type": "string"
@@ -1772,7 +2066,7 @@
             },
             "example": {
               "success": false,
-              "data": null,
+              "data": [],
               "error": {
                 "code": "validation_error",
                 "message": "Missing required field: workflow_id"
@@ -1782,7 +2076,7 @@
         }
       },
       "InvalidApiKey": {
-        "description": "Missing or invalid X-API-Key.",
+        "description": "Missing or invalid API key. A completely missing key uses code `API_KEY_MISSING` ('API key is required. Provide X-API-Key or Authorization: Bearer.'); an invalid key uses `invalid_api_key`.",
         "content": {
           "application/json": {
             "schema": {
@@ -1790,10 +2084,10 @@
             },
             "example": {
               "success": false,
-              "data": null,
+              "data": [],
               "error": {
-                "code": "invalid_api_key",
-                "message": "Invalid API key"
+                "code": "API_KEY_MISSING",
+                "message": "API key is required. Provide X-API-Key or Authorization: Bearer."
               }
             }
           }
@@ -1808,7 +2102,7 @@
             },
             "example": {
               "success": false,
-              "data": null,
+              "data": [],
               "error": {
                 "code": "not_found",
                 "message": "Session not found"
@@ -1817,8 +2111,8 @@
           }
         }
       },
-      "Unprocessable": {
-        "description": "Input could not be processed (e.g. unreadable image).",
+      "WorkflowNotFound": {
+        "description": "The referenced workflow_id does not exist for this project.",
         "content": {
           "application/json": {
             "schema": {
@@ -1826,17 +2120,91 @@
             },
             "example": {
               "success": false,
-              "data": null,
+              "data": [],
               "error": {
-                "code": "unprocessable",
+                "code": "workflow_not_found",
+                "message": "Workflow not found"
+              }
+            }
+          }
+        }
+      },
+      "CallbackNotAllowed": {
+        "description": "The `callback` URL does not exactly match an active, approved HTTPS webhook registered for the project.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
+              "error": {
+                "code": "callback_not_allowed",
+                "message": "Callback URL is not an approved webhook for this project."
+              }
+            }
+          }
+        }
+      },
+      "BillingRequired": {
+        "description": "Billing could not cover the requested session/checks.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
+              "error": {
+                "code": "internal_error",
+                "message": "Payment required."
+              }
+            }
+          }
+        }
+      },
+      "ReviewConflict": {
+        "description": "The session is not in a state that can be decided. `review_not_pending` (session is not IN_REVIEW) returns `data: { status }`; `required_face_checks_incomplete` is returned when approving before id_verification, liveness and face_match have all passed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": {
+                "status": "APPROVED"
+              },
+              "error": {
+                "code": "review_not_pending",
+                "message": "Session is not pending review."
+              }
+            }
+          }
+        }
+      },
+      "InvalidImage": {
+        "description": "A required image was missing or could not be read.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
+              "error": {
+                "code": "invalid_image",
                 "message": "Could not read image"
               }
             }
           }
         }
       },
-      "RateLimited": {
-        "description": "Rate limit exceeded.",
+      "AccountDobUnavailable": {
+        "description": "Account mode was requested but the resolved Valyd account has no stored date of birth.",
         "content": {
           "application/json": {
             "schema": {
@@ -1844,7 +2212,25 @@
             },
             "example": {
               "success": false,
-              "data": null,
+              "data": [],
+              "error": {
+                "code": "account_dob_unavailable",
+                "message": "Account has no stored date of birth."
+              }
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded. All `/api/v2` routes are throttled per client IP at ~150 requests/minute (env `VERIFY_RATE_LIMIT_PER_MINUTE`). The 429 body carries NO `Retry-After` or `X-RateLimit-*` headers.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
               "error": {
                 "code": "rate_limited",
                 "message": "Too many requests"

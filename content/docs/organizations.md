@@ -1,3 +1,14 @@
+---
+product: valyd-id
+api_version: oidc
+sdk_min_version: 1.10.3
+auth: client-credentials
+billable: true
+pii_mode: proofs
+human_setup_required: true
+source_of_truth: openapi
+---
+
 # Organizations & teams
 
 An **organization** is a shared Valyd workspace for a company: one team, one set of apps, one

@@ -1,0 +1,73 @@
+{
+  "$comment": "Machine-readable Valyd capability matrix for AI agents. Each entry maps a real integration goal to its path, product, auth header, required credentials, whether it is billable, how PII is handled, whether a proof is saved to the user's Valyd account, and the agent-fetchable .md doc (root-relative; resolve against the docs host you fetched this file from). Every field is derived from the Agent Integration Guide (/ai/agent-guide) and llms.txt — nothing here is invented. Credentials cannot be minted by an agent; a human creates apps/keys in the Developer Portal.",
+  "version": "1",
+  "source_of_truth": "openapi",
+  "capabilities": [
+    {
+      "goal": "Sign a user in and read their verified Valyd account (profile, licenses, verification proofs)",
+      "path": "Login with Valyd (OIDC)",
+      "product": "valyd-id",
+      "auth": "client-credentials",
+      "credential": "client_id + client_secret (server-side)",
+      "billable": false,
+      "pii_mode": "proofs",
+      "saves_proof": false,
+      "doc": "/docs/overview.md"
+    },
+    {
+      "goal": "Read the proofs a signed-in user's account already holds (id_verified, age bands, licenses) — free, no check runs",
+      "path": "With the user's token (Account API)",
+      "product": "valyd-id",
+      "auth": "oidc-bearer",
+      "credential": "the user's Bearer valyd_access_token (from Login with Valyd)",
+      "billable": false,
+      "pii_mode": "proofs",
+      "saves_proof": false,
+      "doc": "/docs/user-token.md"
+    },
+    {
+      "goal": "Run a verification for a signed-in user and save the passed proof to their Valyd ID; PII stays with Valyd",
+      "path": "Account-connected verification",
+      "product": "valyd-verify",
+      "auth": "x-api-key",
+      "credential": "App X-API-Key + the user's valyd_access_token (attached to the check in the documented request field)",
+      "billable": true,
+      "pii_mode": "proofs",
+      "saves_proof": true,
+      "doc": "/verify/managed.md"
+    },
+    {
+      "goal": "Run a one-off verification check on data you supply; the full result including extracted identity fields returns to your system for you to store and protect",
+      "path": "Standalone checks",
+      "product": "valyd-verify",
+      "auth": "x-api-key",
+      "credential": "App X-API-Key",
+      "billable": true,
+      "pii_mode": "standalone",
+      "saves_proof": false,
+      "doc": "/verify/standalone.md"
+    },
+    {
+      "goal": "Send the user to Valyd's hosted capture page for a composed workflow; the combined decision arrives on a signed webhook",
+      "path": "Hosted verification",
+      "product": "valyd-verify",
+      "auth": "x-api-key",
+      "credential": "App X-API-Key + workflow_id (add the user's valyd_access_token to the session to save proofs to their account instead of returning results to you)",
+      "billable": true,
+      "pii_mode": "standalone",
+      "saves_proof": false,
+      "doc": "/verify/hosted.md"
+    },
+    {
+      "goal": "Onboard and control a workforce as organization members (face-activation, owner/admin/developer/member roles, per-seat billing); track who logged in via the valyd_org_member_id claim",
+      "path": "Organizations",
+      "product": "valyd-id",
+      "auth": "client-credentials",
+      "credential": "client_id + client_secret (Login with Valyd) + Members API headers X-Client-Id / X-Client-Secret (server-side only)",
+      "billable": true,
+      "pii_mode": "proofs",
+      "saves_proof": true,
+      "doc": "/docs/organizations.md"
+    }
+  ]
+}

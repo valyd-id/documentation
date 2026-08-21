@@ -1,3 +1,14 @@
+---
+product: valyd-id
+api_version: oidc
+sdk_min_version: 1.10.3
+auth: client-credentials
+billable: false
+pii_mode: proofs
+human_setup_required: true
+source_of_truth: openapi
+---
+
 # Login with Valyd
 
 > 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 Standard OpenID Connect · 📖 **After login:** read the user's account with a Bearer access token

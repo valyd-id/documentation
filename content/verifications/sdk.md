@@ -86,12 +86,8 @@ After initialising `verify`, use these resource namespaces.
 - `decision(id): Promise<Decision>` — Authoritative result with `.checks[]` — call this after the webhook.
 - `updateStatus(id, "APPROVED" | "DECLINED"): Promise<Session>` — Manual override (e.g. after agent review).
 
-#### `verify.workflows`
-- `create({ name, features, settings? }): Promise<Workflow>` — e.g. `features: ["id_verification","liveness","face_match","credential"]`.
-- `list(): Promise<Workflow[]>` — List all workflows in the app.
-- `retrieve(id): Promise<Workflow>` — Fetch a workflow.
-- `update(id, patch): Promise<Workflow>` — Partial update.
-- `remove(id): Promise<void>` — Delete a workflow.
+> **Workflows** are composed in the [Developer Portal](https://dev.valyd.work) — the Node SDK does
+> not expose workflow CRUD. You pass the resulting `workflowId` to `sessions.create(...)`.
 
 #### `verify.standalone`
 - `idVerification({ frontImage, backImage? }): Promise<CheckEnvelope>` — OCR + authenticity from a government ID.
@@ -106,7 +102,8 @@ After initialising `verify`, use these resource namespaces.
 - `ageVerification({ dob, bands? }): Promise<CheckEnvelope>` — Age + bands (e.g. `["is_18_plus"]`).
 - `credentialVerification({ licenseState, licenseNumber, ...name, ...license, npi? }): Promise<CheckEnvelope>` — Professional license lookup. Give the holder's **name** as `firstName` + `lastName` **or** `fullName`; identify the **license** with `licenseType` (Valyd resolves the provider board for you — no `providerCode` needed) **or** pass `providerCode` directly. `npi?` is optional.
 - `kycCredential({ frontImage, selfie, backImage?, providerCode, licenseState, licenseNumber, npi? }): Promise<KycCredentialResult>` — ID + liveness + face match + license, matched against the OCR'd name.
-- `evvPresence({ selfie, idImage? | valydAccessToken?, latitude, longitude, expectedLatitude?, expectedLongitude?, radiusM? }): Promise<CheckEnvelope>` — EVV bundle: face match + location match in one call.
+
+There is no combined EVV bundle endpoint. To pair a face match with a location check, run the two real checks separately: `faceMatch({ idImage, selfie })` + `locationMatch({ latitude, longitude, expectedLatitude, expectedLongitude, radiusM })`.
 
 Every billable check also accepts an optional `idempotencyKey` (*v1.10.2+*) — sent as the
 `Idempotency-Key` header so a network retry can never double-charge or double-run

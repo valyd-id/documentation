@@ -1,3 +1,14 @@
+---
+product: valyd-id
+api_version: oidc
+sdk_min_version: 1.10.3
+auth: oidc-bearer
+billable: true
+pii_mode: proofs
+human_setup_required: true
+source_of_truth: openapi
+---
+
 # With the user's token
 
 > 🔑 **Auth:** the user's Bearer `valyd_access_token` (from [login](/docs)) · 💾 Passed checks save to the user's Valyd ID · 🔒 PII stays with Valyd

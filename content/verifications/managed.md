@@ -1,3 +1,14 @@
+---
+product: valyd-verify
+api_version: v2
+sdk_min_version: 1.10.3
+auth: x-api-key
+billable: true
+pii_mode: proofs
+human_setup_required: true
+source_of_truth: openapi
+---
+
 # Verify the user
 
 > 🔑 **Auth:** App API key + the user's `valyd_access_token` · 💾 **Result:** the proof saves to the user's Valyd ID

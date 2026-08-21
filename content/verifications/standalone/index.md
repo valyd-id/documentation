@@ -1,3 +1,14 @@
+---
+product: valyd-verify
+api_version: v2
+sdk_min_version: 1.10.3
+auth: x-api-key
+billable: true
+pii_mode: standalone
+human_setup_required: true
+source_of_truth: openapi
+---
+
 # Standalone checks
 
 > 🔑 **Auth:** API key (`X-API-Key`) · 👤 **User login:** not required · 💾 **Result:** returned to your system — you supply and keep the data

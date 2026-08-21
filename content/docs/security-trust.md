@@ -1,0 +1,69 @@
+# Trust Center
+
+How Valyd protects the data an integration touches, and where to find the formal
+assurances your security review will ask for. The controls below are drawn from Valyd's
+documented [Data & trust](/docs/data-and-trust) policies; the compliance rows are
+marked as owner-to-confirm until the underlying evidence (report, policy, or attestation) is
+supplied — nothing on this page is a claim Valyd has not verified.
+
+## Encryption
+
+- **In transit** — every documented endpoint is HTTPS/TLS. Production apps must register
+  HTTPS redirect URIs. See [Data & trust](/docs/data-and-trust#security-properties).
+- **At rest** — the personal data a Valyd account holds (legal name, KYC fields) is stored
+  encrypted at rest on Valyd's systems.
+- **Raw KYC data** — document fields extracted during a hosted KYC stay encrypted and are
+  released to your integration only after the required ID, liveness, and face-match checks
+  pass.
+- **Consent-released attributes** — vault-only attributes (DOB, document number, gender,
+  nationality) are sealed on the user's device to a key only you hold (libsodium sealed
+  box, X25519); Valyd cannot read the released values in transit.
+- **Secrets** — API keys and webhook signing secrets are stored encrypted.
+
+## Biometrics are irreversible vectors, never images
+
+Valyd does not store or return face images. Enrollment converts a selfie into a one-way
+biometric vector (template); every later face match compares vectors. The template is never
+exposed through any API — not to the user, not to integrators. Full detail:
+[Biometrics: vectors, never images](/docs/data-and-trust#biometrics-vectors-never-images).
+
+## Transient handling of submitted images
+
+The photos you submit to a check (ID images and selfies) are processed transiently for that
+check and are **not retrievable from a Valyd account** afterward. The KYC `portrait` field
+is extracted from the ID document you submitted in that request and returned in that
+response only — it is not a stored account photo. See
+[What data goes where](/docs/data-and-trust#what-data-goes-where).
+
+## Data minimization by design
+
+Account-connected verification returns **proofs only** (verified status, license badges, age
+bands), never raw account KYC. The Account API reads what previous checks already proved and
+never runs a check itself. This is the recommended integration mode precisely because the
+sensitive data stays inside Valyd's controls.
+
+## Compliance & assurance
+
+The following are standard requests in an enterprise security review. Each is a placeholder
+until the owner supplies the underlying evidence — Valyd does not assert any of these below
+until confirmed.
+
+| Item | Status |
+| --- | --- |
+| SOC 2 (Type I / Type II) | [owner: confirm — SOC 2 status, type, report date, and how prospects request the report] |
+| ISO / IEC 27001 | [owner: confirm — ISO 27001 certification status and certificate scope, if any] |
+| GDPR alignment | [owner: confirm — GDPR posture, lawful basis, and whether Valyd acts as processor or controller] |
+| Data Processing Agreement (DPA) | [owner: confirm — whether a signable DPA exists and how customers execute it] |
+| Penetration testing | [owner: confirm — pen-test cadence, most recent test date, and whether a summary letter is shareable] |
+| Vulnerability / breach response | [owner: confirm — incident-response and breach-notification process and notification SLA] |
+| Subprocessors & data residency | See [Data residency](/docs/data-residency) — currently unconfirmed |
+| Data retention | See [Data retention](/docs/data-retention) |
+| Responsible disclosure | See [Security disclosure](/docs/security-disclosure) |
+
+## See also
+
+- [Data retention](/docs/data-retention) — what is kept and for how long
+- [Data residency](/docs/data-residency) — where data is processed
+- [Operations & SLA](/docs/operations-sla) — uptime, status, incident comms
+- [API key lifecycle](/docs/api-key-lifecycle) — key rotation and access model
+- [Security disclosure](/docs/security-disclosure) — how to report a vulnerability

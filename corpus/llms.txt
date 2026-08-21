@@ -103,6 +103,10 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
   secret or webhook secret to a browser).
 - **Machine-readable API specs (OpenAPI 3.1):** for endpoint discovery, schemas, and codegen, fetch
   `https://docs.valyd.work/openapi/valyd-id.json` and `https://docs.valyd.work/openapi/valyd-verify.json`.
+- **Capability matrix (machine-readable):** to pick a path deterministically, fetch
+  `https://docs.valyd.work/agent/capabilities.json` — a JSON array mapping each real goal to its
+  `path`, `product`, `auth`, `credential`, `billable`, `pii_mode`, `saves_proof`, and the `.md`
+  `doc` to follow (Login, account-read, account-connected verify, standalone, hosted, organizations).
 
 ## Valyd ID — Getting started
 
