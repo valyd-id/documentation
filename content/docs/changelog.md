@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.10.4 — Workflow CRUD & evvPresence removed from the SDK (2026-08-21)
+
+- **Removed (SDK):** `verify.workflows.*` CRUD — workflows are composed in the
+  [Developer Portal](https://dev.valyd.work); the SDK no longer exposes create/list/update/remove.
+  Pass the resulting `workflowId` to `verify.sessions.create({ workflowId, ... })`. Returns if/when
+  the server contract is a confirmed public API.
+- **Removed (SDK):** `verify.standalone.evvPresence` — the `/evv-presence` endpoint does not exist
+  server-side (it always 404'd). Compose presence from `faceMatch` + `locationMatch` instead.
+
+## v1.10.3 — Credential-type discovery (2026-08-20)
+
+- **Added (SDK):** `verify.credentials.types(state?, provider?)` — list credential/license types
+  (whole catalog, per-state, or per-provider-in-a-state), routed through the Valyd API (never `vc.*`
+  directly).
+
 ## v1.10.2 — Anti-spoof in the SDK + idempotency (2026-08-19)
 
 - **Added (SDK):** `verify.standalone.antispoof()` and `verify.standalone.antispoofIdentity()` —
@@ -57,7 +72,7 @@
 
 - **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).
 - **Added:** One unified package `@valyd/sdk` — `valyd.auth` (Login with Valyd) + `valyd.verify` (verification) + workforce members; one credential, one host.
-- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.3`.
+- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.4`.
 
 ---
 

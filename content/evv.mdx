@@ -70,7 +70,7 @@ Server (Node 18+) and browser:
 
 ```bash
 # server: OAuth + Verify checks (v0.3+ has kyc.redirectUrl, locationMatch)
-npm i @valyd/sdk@^1.10.3
+npm i @valyd/sdk@^1.10.4
 
 # browser: the modal + high-accuracy location capture (v0.2+ has captureLocation)
 # No browser SDK — hosted verification is a redirect to the session url
@@ -287,7 +287,7 @@ ACCOUNT / Managed-Identity model — the clinician logs in with Valyd once; thei
 license are stored and reused on later visits.
 
 SDKs (install):
-- Server (Node 18+):  npm i @valyd/sdk@^1.10.3    // valyd.auth (OIDC) + valyd.verify (checks)
+- Server (Node 18+):  npm i @valyd/sdk@^1.10.4    // valyd.auth (OIDC) + valyd.verify (checks)
 - Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
 
 Environment (IMPORTANT): you are on DEVELOPMENT — construct the SDK with env="development":

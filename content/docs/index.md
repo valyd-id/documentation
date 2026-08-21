@@ -48,7 +48,7 @@ framework works; `req` is the incoming callback request):
 ```typescript
 import express from "express";
 import cookieParser from "cookie-parser";
-import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.3 cookie-parser
+import { ValydClient } from "@valyd/sdk";   // npm i @valyd/sdk@^1.10.4 cookie-parser
 
 const app = express();
 app.use(cookieParser());
