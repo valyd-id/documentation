@@ -63,5 +63,5 @@ app.get("/auth/valyd/callback", async (req, res) => {
 
 - The flow underneath: [Authorization Code flow](/docs/flows/authorization-code)
 - Button + callback walkthrough: [Login with Valyd](/docs)
-- Full working app: [Complete example](/docs/quick-start)
+- Full working app: [Complete example](/docs/quickstart/node)
 - What comes back in the tokens: [Tokens](/docs/tokens)

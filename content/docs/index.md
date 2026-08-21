@@ -64,7 +64,7 @@ app.get("/auth/valyd/callback", async (req, res) => {
 });
 ```
 
-Done. See the [complete example](/docs/quick-start), or plug in
+Done. See the [complete example](/docs/quickstart/node), or plug in
 [your own OIDC library](/docs/oidc) instead.
 
 ## The user is signed in — see what they already have

@@ -5,6 +5,6 @@ export default {
   node: { title: 'Node.js (Express)' },
   nextjs: { title: 'Next.js (App Router)' },
   python: { title: 'Python (Flask)' },
-  php: { title: 'PHP (Laravel)' },
-  curl: { title: 'cURL (raw HTTP)' }
+  php: { title: 'Laravel' },
+  curl: { title: 'Raw HTTP' }
 } satisfies MetaRecord

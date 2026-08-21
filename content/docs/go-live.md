@@ -17,7 +17,7 @@ one place for the day you flip to production.
 - [ ] **Exact HTTPS redirect URI** registered — swap the `http://localhost` URI you used in
       development for your real callback URL, matched character-for-character.
 - [ ] **State, nonce, and PKCE handled by the SDK** (`createAuthorizationRequest` →
-      `handleCallback`). Never hand-roll them — the [complete example](/docs/quick-start) shows
+      `handleCallback`). Never hand-roll them — the [complete example](/docs/quickstart/node) shows
       the pattern, including the server-side transaction store.
 - [ ] **Production session config**: shared session store, `secure: true` cookies, correct
       trusted-proxy handling ([details](/docs/quick-start#five-minute-acceptance-check)).

@@ -9,7 +9,7 @@ human_setup_required: true
 source_of_truth: openapi
 ---
 
-# Verify the user
+# Verify & save a proof
 
 > 🔑 **Auth:** App API key + the user's `valyd_access_token` · 💾 **Result:** the proof saves to the user's Valyd ID
 

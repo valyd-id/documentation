@@ -65,4 +65,4 @@ your own app session — Valyd can't do that for you.
 - Where the first refresh token comes from: [Authorization Code flow](/docs/flows/authorization-code)
 - Token/logout endpoint details: [API reference](/docs/endpoints#post-apiauthoidctoken--token-exchange--refresh)
 - Lifetimes and claims: [Tokens](/docs/tokens)
-- Login session vs verification session: [Sessions](/docs/sessions)
+- Login session vs verification session: [Sessions](/docs/tokens)

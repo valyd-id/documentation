@@ -1,0 +1,53 @@
+---
+title: Machine-readable docs
+description: Every agent-readable resource in one place — llms.txt, the full corpus, both OpenAPI specs, and the Valyd capability manifest — fetchable directly, no MCP server required.
+---
+
+import { Cards } from 'nextra/components'
+import { BookOpenCheck, FileText, Braces, Bot } from 'lucide-react'
+
+# Machine-readable docs
+
+Point any agent at these resources to **read and learn** Valyd by plain fetch — the lightweight
+alternative to a docs MCP server, with nothing to run. Everything here is same-origin and served as
+static files.
+
+<Cards>
+  <Cards.Card icon={<BookOpenCheck />} title="llms.txt — the docs index" href="/llms.txt" arrow>
+    A compact, link-first index of the whole documentation set. Start here: fetch it, then follow
+    the per-page `.md` mirrors it links to.
+  </Cards.Card>
+  <Cards.Card icon={<FileText />} title="llms-full.txt — the full corpus" href="/llms-full.txt" arrow>
+    Every page concatenated into one file for whole-corpus ingestion or a single retrieval pass.
+  </Cards.Card>
+  <Cards.Card icon={<Braces />} title="Verification OpenAPI" href="/openapi/valyd-verify.json" arrow>
+    OpenAPI 3.1 for the Verification API (`/api/v2/*`): sessions, standalone checks, workflows,
+    and webhooks.
+  </Cards.Card>
+  <Cards.Card icon={<Braces />} title="Login OpenAPI" href="/openapi/valyd-id.json" arrow>
+    OpenAPI 3.1 for Login with Valyd (OAuth 2.0 / OIDC) and the account APIs.
+  </Cards.Card>
+  <Cards.Card icon={<Bot />} title="Capability manifest" href="/agent/capabilities.json" arrow>
+    A machine-readable summary of what Valyd can do — the capabilities an agent can discover and map
+    to the docs above.
+  </Cards.Card>
+  <Cards.Card icon={<Bot />} title="Agent integration guide" href="/ai/agent-guide" arrow>
+    The human-readable companion: how an agent should reason about login vs verification vs data
+    ownership before writing code.
+  </Cards.Card>
+</Cards>
+
+## The resources in one table
+
+| Resource | URL | What it is |
+| --- | --- | --- |
+| Docs index | [`/llms.txt`](/llms.txt) | Link-first index of every page. |
+| Full corpus | [`/llms-full.txt`](/llms-full.txt) | Every page concatenated into one file. |
+| Verification OpenAPI | [`/openapi/valyd-verify.json`](/openapi/valyd-verify.json) | OpenAPI 3.1 for the Verification API. |
+| Login OpenAPI | [`/openapi/valyd-id.json`](/openapi/valyd-id.json) | OpenAPI 3.1 for Login with Valyd. |
+| Capability manifest | [`/agent/capabilities.json`](/agent/capabilities.json) | Discoverable capability summary. |
+| Agent guide | [`/ai/agent-guide`](/ai/agent-guide) | How to integrate as an agent. |
+
+Per-page `.md` mirrors are linked from `llms.txt` — every doc page is also fetchable as plain
+Markdown at its own `.md` URL. Prefer callable tools over reading? See the
+[MCP server quickstart](/ai/mcp-setup).

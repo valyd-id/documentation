@@ -12,6 +12,21 @@ one token for another's job.
 | ID token | Validated once at login (`exp` ≈ 15 min) | Prove *who* logged in, to *your* backend |
 | Refresh token | 30 days, **rotates on every refresh** | Mint new access tokens without the user |
 
+## Login sessions
+
+Together, these three tokens **are** a login session — a signed-in user your backend holds. There
+is no separate session object to create: your backend keeps the access token (to call APIs, ~15
+min) and the rotating refresh token (to renew quietly, 30 days), usually mirrored by your own app
+session cookie. The login lasts as long as you keep refreshing — up to 30 days per rotating refresh
+token — and ends at [logout](/docs/flows/refresh#logout--revocation), on refresh-token theft
+detection, or after 30 days of silence.
+
+> 🧭 **One word, two things.** A *login session* (this page) is unrelated to a *verification
+> session* (one person's run through a check, ending in a decision). "Session expired" from a
+> resource API means *refresh the access token*; `EXPIRED` from the decision API means *create a new
+> [verification session](/verifications/session-lifecycle)*. A dead login session never invalidates
+> a verification result, and a finished verification session never logs anyone in.
+
 ## Access token
 
 Sent as `Authorization: Bearer …` to `/userinfo`, `/licenses`, `/verifications`, and to the

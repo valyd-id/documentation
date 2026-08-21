@@ -9,7 +9,7 @@ human_setup_required: true
 source_of_truth: openapi
 ---
 
-# With the user's token
+# Reusable Identity
 
 > 🔑 **Auth:** the user's Bearer `valyd_access_token` (from [login](/docs)) · 💾 Passed checks save to the user's Valyd ID · 🔒 PII stays with Valyd
 
@@ -18,16 +18,16 @@ makes Valyd cheap and fast: **read first, verify only what's missing.**
 
 | Page | What it does |
 | --- | --- |
-| [Read the account](/docs/user-token/account) | Profile, licenses, proofs — free, instant, the KYC-reuse story |
-| [Face match](/docs/user-token/face-match) | The person on your screen is the account holder |
-| [Liveness](/docs/user-token/liveness) | A live person, not a photo or replay |
-| [License verification](/docs/user-token/license) | A professional license, verified at the source |
-| [Age check](/docs/user-token/age) | An age band (`is_18_plus`, …) — never the date of birth |
+| [Read proofs](/docs/user-token/account) | Profile, licenses, proofs — free, instant, the KYC-reuse story |
+| [Face match](/verifications/standalone/face-match) | The person on your screen is the account holder |
+| [Liveness](/verifications/standalone/liveness) | A live person, not a photo or replay |
+| [License verification](/verifications/standalone/credential-verification) | A professional license, verified at the source |
+| [Age check](/verifications/standalone/age-verification) | An age band (`is_18_plus`, …) — never the date of birth |
 | [KYC / ID verification](/docs/user-token/kyc) | Government-ID identity — hosted page only |
-| [Hosted for your users](/docs/user-token/hosted) | Select checks in the portal, we run them all on one page |
+| [Hosted for your users](/verifications/hosted) | Select checks in the portal, we run them all on one page |
 
-Every check is one call with `valydAccessToken` on the request — the passed proof saves to the
-user's Valyd ID, and next time [the read](/docs/user-token/account) answers yes.
+Every check is the **same call as a one-off**, plus `valydAccessToken` on the request — the passed
+proof saves to the user's Valyd ID, and next time [the read](/docs/user-token/account) answers yes.
 
 ## Or let us host the whole thing
 
@@ -46,7 +46,7 @@ const session = await verify.sessions.create({
 // → webhook: what passed + proofs + public data — the account updates itself
 ```
 
-Full walkthrough with every portal step: **[Hosted for your users →](/docs/user-token/hosted)**
+Full walkthrough with every portal step: **[Hosted verification →](/verifications/hosted)**
 
 ## Raw identity data is separate
 

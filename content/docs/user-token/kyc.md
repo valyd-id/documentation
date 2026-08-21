@@ -38,6 +38,6 @@ if (valyd.verify.kyc.isRequired(verifications)) {
 Steps their account has already passed are skipped automatically. Once done,
 `id_verified: true` is readable forever via [the account reads](/docs/user-token/account).
 
-Full walkthrough with portal screenshots: [Hosted for your users](/docs/user-token/hosted).
+Full walkthrough with portal screenshots: [Hosted for your users](/verifications/hosted).
 Need the raw document data in *your* system instead? That's the
 [standalone product](/verifications/standalone) — no token, data returns to you.

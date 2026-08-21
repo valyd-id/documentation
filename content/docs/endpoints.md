@@ -1,4 +1,4 @@
-# API Reference
+# Login API Reference
 
 This page is only for Login with Valyd and reading a signed-in user's account. These endpoints do
 not start KYC or license verification. To run a check—without requiring OIDC login—use the

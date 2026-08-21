@@ -35,7 +35,7 @@ flowchart LR
 
 - **Hosted verification** → [Hosted delivery](/verifications/hosted) · [Quickstart](/verifications/quickstart)
 - **Standalone checks on your own data** → [Standalone checks](/verifications/standalone)
-- **Login with Valyd** → [Add the button](/docs) · [Complete example](/docs/quick-start)
+- **Login with Valyd** → [Add the button](/docs) · [Complete example](/docs/quickstart/node)
 - **Run a check for a signed-in user** → [Verify the user](/verifications/managed)
 
 > OIDC does not run a verification check — it signs the user in. The Verification API runs the

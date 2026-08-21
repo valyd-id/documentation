@@ -13,7 +13,7 @@ with shared test credentials — pick a demo user, choose scopes, and walk from 
 to `userinfo` without writing code. Use it to see exactly what your app will receive at login
 before you register your own app.
 
-For your own app, the [complete example](/docs/quick-start) runs on `localhost`:
+For your own app, the [complete example](/docs/quickstart/node) runs on `localhost`:
 `http://localhost:8080/callback` is a valid redirect URI for development — register it exactly in
 the [Developer Portal](https://dev.valyd.work). For production, switch to your exact HTTPS
 callback URL.
@@ -57,7 +57,7 @@ the test app's key without touching production.
 This documentation environment talks to `https://idp.valyd.work`. Each Valyd environment has its
 own hosts and its own credentials — an app registered in one environment does not exist in
 another, so keep per-environment values in your `.env` (as the
-[complete example](/docs/quick-start) does with `VALYD_IDP_URL`).
+[complete example](/docs/quickstart/node) does with `VALYD_IDP_URL`).
 
 ## Testing webhooks
 
