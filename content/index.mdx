@@ -8,7 +8,6 @@ import {
   HeroGrid,
   ZigRow,
   Hero,
-  HeroCode,
   Section,
   Steps,
   Resources,
@@ -35,11 +34,37 @@ import {
     primary={{ href: '/docs/introduction', label: 'Start here' }}
     secondary={{ href: '/docs/choose', label: 'Choose your integration' }}
   >
-    KYC, liveness, face match, age, and professional licenses — verified by Valyd, saved to the
-    person's Valyd ID, and reusable everywhere they sign in. Their documents and personal data
-    stay with us, encrypted. Prefer raw results in your own system? That works too.
+    Valyd runs identity checks — KYC, liveness, face match, age, and professional licenses — and
+    saves each result to the person's Valyd ID, so it's reusable everywhere they sign in. Three
+    ways to use it: run checks from your **backend**, let us **host** the capture flow, or let
+    people **sign in** and reuse proofs they already hold. You decide who holds the data — Valyd
+    (you read proofs) or you.
   </Hero>
-  <HeroCode>
+  <div className="vd-rise max-lg:hidden">
+    <div className="rounded-(--vd-radius) border border-(--vd-primary-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent p-6">
+      <div className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-(--vd-primary)">
+        <Bot className="h-4 w-4" /> Machine-readable — hand this to your AI agent
+      </div>
+      <a
+        href="/llms.txt"
+        className="inline-flex items-center rounded-xl border border-(--vd-border) bg-white/70 px-4 py-2.5 font-mono text-sm text-(--vd-primary) shadow-sm transition hover:border-(--vd-primary-border) dark:bg-slate-950/60"
+      >
+        docs.valyd.work/llms.txt
+      </a>
+      <ul className="mt-4 space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
+        <li><a href="/llms-full.txt" className="font-medium text-(--vd-primary) underline">llms-full.txt</a> — every page in one file</li>
+        <li><a href="/ai/agent-guide" className="font-medium text-(--vd-primary) underline">Agent integration guide</a> — the decision flow</li>
+        <li><a href="/docs/endpoints" className="font-medium text-(--vd-primary) underline">API reference</a> · <a href="https://idp.valyd.work/api/.well-known/openid-configuration" className="font-medium text-(--vd-primary) underline">OpenID config</a></li>
+      </ul>
+    </div>
+  </div>
+</HeroGrid>
+
+<Section
+  title="Add “Sign in with Valyd” — the whole login"
+  sub="A two-line button on the front end, one Valyd object on the back. That is the login."
+  index={1}
+>
 
 ```html
 <!-- Front end — the whole button -->
@@ -63,8 +88,7 @@ const { user } = await valyd.auth.handleCallback(req.url, {
 // user.valyd_id · user.id_verified — signed in
 ```
 
-  </HeroCode>
-</HeroGrid>
+</Section>
 
 <ZigRow
   index={1}
@@ -174,32 +198,6 @@ const session = await verify.sessions.create({
       Error envelope, common causes, and fixes.
     </Cards.Card>
   </Cards>
-</Section>
-
-<Section
-  title="Point your AI agent at the docs"
-  sub="One machine-readable index — hand it over and your agent knows the product, the integration paths, and the questions to ask you first."
-  index={1}
->
-  <div className="rounded-2xl border border-(--vd-primary-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent p-6 sm:p-8">
-    <div className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-(--vd-primary)">
-      <Bot className="h-4 w-4" /> For Claude, Cursor, Lovable & other coding agents
-    </div>
-    <p className="mb-4 max-w-2xl text-[15px] leading-relaxed text-gray-600 dark:text-gray-400">
-      Give your agent this one URL and it can study the entire docs — every page, machine-readable:
-    </p>
-    <a
-      href="/llms.txt"
-      className="inline-flex items-center rounded-xl border border-(--vd-border) bg-white/70 px-4 py-2.5 font-mono text-sm text-(--vd-primary) shadow-sm transition hover:border-(--vd-primary-border) dark:bg-slate-950/60"
-    >
-      https://docs.valyd.work/llms.txt
-    </a>
-    <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-      Prefer everything inline? <a href="/llms-full.txt" className="font-medium text-(--vd-primary) underline">llms-full.txt</a>{' '}
-      has every page in one file. New to Valyd as an agent? Start with the{' '}
-      <a href="/ai/agent-guide" className="font-medium text-(--vd-primary) underline">agent integration guide</a>.
-    </p>
-  </div>
 </Section>
 
 <Section
