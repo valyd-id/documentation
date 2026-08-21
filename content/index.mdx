@@ -6,10 +6,10 @@ description: 'Developer documentation for Valyd: Login with Valyd (OAuth 2.0 / O
 import { Cards } from 'nextra/components'
 import {
   HeroGrid,
-  ZigRow,
   Hero,
   Section,
   Steps,
+  Matrix,
   Resources,
   SupportBand
 } from '@/components/home'
@@ -23,7 +23,10 @@ import {
   Users,
   Play,
   Bot,
-  AlertTriangle
+  AlertTriangle,
+  Braces,
+  FileCheck,
+  Server
 } from 'lucide-react'
 
 <div className="vd-page">
@@ -35,10 +38,9 @@ import {
     secondary={{ href: '/docs/choose', label: 'Choose your integration' }}
   >
     Valyd runs identity checks — KYC, liveness, face match, age, and professional licenses — and
-    saves each result to the person's Valyd ID, so it's reusable everywhere they sign in. Three
-    ways to use it: run checks from your **backend**, let us **host** the capture flow, or let
-    people **sign in** and reuse proofs they already hold. You decide who holds the data — Valyd
-    (you read proofs) or you.
+    saves each result to the person's Valyd ID, reusable everywhere they sign in. Three ways to use
+    it: run checks from your **backend**, let us **host** the capture flow, or let people **sign in**
+    and reuse proofs they already hold.
   </Hero>
   <div className="vd-rise max-lg:hidden">
     <div className="rounded-(--vd-radius) border border-(--vd-primary-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent p-6">
@@ -61,86 +63,7 @@ import {
 </HeroGrid>
 
 <Section
-  title="Add “Sign in with Valyd” — the whole login"
-  sub="A two-line button on the front end, one Valyd object on the back. That is the login."
-  index={1}
->
-
-```html
-<!-- Front end — the whole button -->
-<script src="https://idp.valyd.work/signin/client.js" async></script>
-<div class="valyd-signin"
-     data-client-id="YOUR_CLIENT_ID"
-     data-redirect-uri="https://yourapp.com/callback"></div>
-```
-
-```typescript
-// Back end — one Valyd object from your keys
-import { Valyd } from "@valyd/sdk";
-const valyd = new Valyd({
-  clientId: process.env.VALYD_CLIENT_ID,
-  clientSecret: process.env.VALYD_CLIENT_SECRET,
-});
-
-const { user } = await valyd.auth.handleCallback(req.url, {
-  expectedState: req.cookies.valyd_oidc_state,  // the button set this cookie
-});
-// user.valyd_id · user.id_verified — signed in
-```
-
-</Section>
-
-<ZigRow
-  index={1}
-  side="left"
-  kicker="Recommended"
-  title="Host a flow of checks — tied to the user's identity"
-  cta={{ href: '/verifications/managed', label: 'How it works' }}
-  body={<>Pick the checks in the portal — KYC, liveness, license, age — that's your workflow.
-  Send the signed-in user to one hosted page; they complete everything there. You get back{' '}
-  <b>non-PII results and proofs</b> — the personal data stays with us, encrypted, and the proof
-  saves to their Valyd ID. Next time you just <a href="/docs/endpoints">read it</a>.</>}
->
-
-```typescript
-// One call — the user's token ties the flow to their identity:
-const session = await verify.sessions.create({
-  workflowId,                      // the checks you picked in the portal
-  valydAccessToken: accessToken,   // ← ties it to the user
-  redirectUrl: "https://yourapp.com/verified",
-});
-// → send them to session.url — proofs come back, PII doesn't
-```
-
-</ZigRow>
-
-<ZigRow
-  index={2}
-  side="right"
-  kicker="Also supported"
-  title="Want the data yourself? Same flow — just drop the token"
-  cta={{ href: '/verifications/standalone', label: 'Standalone checks' }}
-  body={<>The exact same hosted flow, no login, no token: we run the checks and hand the{' '}
-  <b>full results — identity data included — to your system</b>. We keep no identity data —
-  only the check-outcome record for billing and audit (<a href="/verifications/data-sharing">details</a>).
-  You don't even need a login app: one dialog creates a{' '}
-  <a href="/verifications/setup">verification-only project</a> with its own key and workflows.</>}
->
-
-```typescript
-// Same call — no token, so the data comes home to you:
-const session = await verify.sessions.create({
-  workflowId,                      // the same checks
-  redirectUrl: "https://yourapp.com/done",
-});
-// → send them to session.url — full results return to you
-//   (we keep no identity data)
-```
-
-</ZigRow>
-
-<Section
-  title="What do you want to do?"
+  title="What do you want to build?"
   sub="Pick a goal — each takes you straight to its guide."
   index={1}
 >
@@ -167,37 +90,76 @@ const session = await verify.sessions.create({
 </Section>
 
 <Section
-  title="How to choose"
+  title="How Valyd delivers a check — and who holds the data"
+  sub="Two choices: where the capture runs (a hosted page or your own API) and who ends up holding the data (reusable on the Valyd ID, or returned to you). Pick a cell — the code lives on the page it links to."
+  index={1}
+>
+  <Matrix />
+</Section>
+
+<Section
+  title="Get running in 3 steps"
   sub="Start from the result you need. Add Login with Valyd only when your app needs the user's account."
   index={1}
 >
   <Steps />
 </Section>
 
-<Section title="Popular pages" index={1}>
+<Section title="Common tasks" index={1}>
   <Cards>
     <Cards.Card icon={<Signpost />} title="Choose your integration" href="/docs/choose" arrow>
       Hosted, standalone, or Login? A two-question decision tree.
     </Cards.Card>
-    <Cards.Card icon={<Rocket />} title="Verification quickstart" href="/verifications/quickstart" arrow>
-      Run a verification in your backend with just an API key — attach a user's login token only when the proof should save to their Valyd account.
-    </Cards.Card>
     <Cards.Card icon={<ShieldCheck />} title="Ship hosted KYC" href="/verify/ship-hosted-kyc" arrow>
       End-to-end recipe: session, redirect, webhook, decision.
     </Cards.Card>
+    <Cards.Card icon={<Braces />} title="API reference" href="/docs/endpoints" arrow>
+      Every endpoint, request, and response — the account and verification APIs.
+    </Cards.Card>
     <Cards.Card icon={<Users />} title="Organizations & teams" href="/docs/organizations" arrow>
       Invite teammates with roles, share apps, and bill one account.
-    </Cards.Card>
-    <Cards.Card icon={<Play />} title="Try the APIs" href="/sandbox" arrow>
-      Run the full OAuth flow against demo users with shared test credentials.
-    </Cards.Card>
-    <Cards.Card icon={<Bot />} title="For AI agents" href="/agents" arrow>
-      Machine-readable docs, OpenAPI specs, and the MCP server.
     </Cards.Card>
     <Cards.Card icon={<AlertTriangle />} title="Errors & troubleshooting" href="/docs/errors" arrow>
       Error envelope, common causes, and fixes.
     </Cards.Card>
   </Cards>
+</Section>
+
+<Section
+  title="Security & data"
+  sub="How Valyd protects the data an integration touches, and where to find the formal assurances your security review will ask for."
+  index={1}
+>
+  <Cards>
+    <Cards.Card icon={<ShieldCheck />} title="Security & data" href="/docs/data-and-trust" arrow>
+      What a verification asserts, what happens to the data a check touches, encryption, and biometrics.
+    </Cards.Card>
+    <Cards.Card icon={<FileCheck />} title="Trust Center" href="/docs/security-trust" arrow>
+      Controls and the compliance evidence your security review will ask for.
+    </Cards.Card>
+    <Cards.Card icon={<Server />} title="Data residency" href="/docs/data-residency" arrow>
+      Where data is processed and stored, and which subprocessors are involved.
+    </Cards.Card>
+  </Cards>
+</Section>
+
+<Section
+  title="For AI agents & MCP"
+  sub="Everything here is machine-readable — point your agent at the guide and the specs."
+  index={1}
+>
+  <a
+    href="/ai/agent-guide"
+    className="group flex items-center gap-3 rounded-(--vd-radius) border border-(--vd-primary-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent px-5 py-4 no-underline transition-colors"
+  >
+    <Bot className="h-5 w-5 shrink-0 text-(--vd-primary)" aria-hidden />
+    <span className="text-sm text-slate-600 dark:text-slate-300">
+      <b className="text-slate-800 dark:text-slate-100">Agent integration guide</b> — the decision flow your
+      agent follows to pick an integration and call the API. The full{' '}
+      <span className="font-mono text-(--vd-primary)">llms.txt</span> index is in the panel at the top.
+    </span>
+    <span className="ml-auto shrink-0 text-sm font-semibold text-(--vd-primary)">Open →</span>
+  </a>
 </Section>
 
 <Section

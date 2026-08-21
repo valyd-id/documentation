@@ -1,12 +1,15 @@
 import { SITE } from '@/lib/site'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import Image from 'next/image'
 import {
   ArrowRight,
   BookText,
   Braces,
+  Code2,
   Download,
   FileJson,
+  Globe,
+  KeyRound,
   ScanFace,
   Send,
   Terminal
@@ -151,6 +154,92 @@ export function Section({
       {sub ? <p className="mb-6 mt-2 max-w-2xl text-[0.95rem] text-slate-500 dark:text-slate-400">{sub}</p> : <div className="mb-6" />}
       {children}
     </section>
+  )
+}
+
+/* Two-axis picture of the verification model — REPLACES the code-carrying zig
+   rows on the homepage with the real mental model, no code. Two choices:
+   where the flow runs (delivery) × who ends up holding the data (ownership).
+   The COLUMN (ownership) decides which product page you land on; the ROW
+   (delivery) is just how you run it. Each cell links to its canonical page. */
+const OWNERSHIP = [
+  { key: 'reusable', label: 'Reusable on the Valyd ID', note: 'proofs stay with Valyd, saved to the user' },
+  { key: 'yours', label: 'Full data returns to you', note: 'you store, protect, and delete it' }
+] as const
+
+const DELIVERY = [
+  { key: 'hosted', label: 'Hosted page', note: 'we host the capture flow', Icon: Globe },
+  { key: 'direct', label: 'Direct API', note: 'you build the UI, call REST', Icon: Code2 }
+] as const
+
+const MATRIX: Record<string, Record<string, { href: string; title: string; blurb: string }>> = {
+  hosted: {
+    reusable: { href: '/verifications/managed', title: 'Verify the user', blurb: 'Send the signed-in user to one page; proofs save to their Valyd ID.' },
+    yours: { href: '/verifications/standalone', title: 'Hosted delivery', blurb: 'The same page, no login — the full result returns to your system.' }
+  },
+  direct: {
+    reusable: { href: '/verifications/managed', title: 'Checks with the user token', blurb: 'Call REST with the user token; the proof still lands on their Valyd ID.' },
+    yours: { href: '/verifications/standalone', title: 'Standalone checks', blurb: 'Call REST with just your API key; the data comes home to you.' }
+  }
+}
+
+export function Matrix() {
+  return (
+    <div>
+      <div className="grid gap-3 sm:grid-cols-[minmax(8rem,0.7fr)_1fr_1fr]">
+        {/* column headers (ownership) — sm+ only; on mobile each cell self-labels */}
+        <div className="max-sm:hidden" />
+        {OWNERSHIP.map(o => (
+          <div key={o.key} className="max-sm:hidden px-1 pb-1">
+            <p className="m-0 text-sm font-semibold">{o.label}</p>
+            <p className="m-0 mt-0.5 text-xs text-slate-500 dark:text-slate-400">{o.note}</p>
+          </div>
+        ))}
+        {/* body rows (delivery) */}
+        {DELIVERY.map(({ key: dk, label: dl, note: dn, Icon }) => (
+          <Fragment key={dk}>
+            <div className="max-sm:hidden flex flex-col justify-center px-1">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                <Icon className="h-4 w-4 text-(--vd-primary)" aria-hidden /> {dl}
+              </span>
+              <span className="mt-0.5 pl-6 text-xs text-slate-500 dark:text-slate-400">{dn}</span>
+            </div>
+            {OWNERSHIP.map(o => {
+              const cell = MATRIX[dk][o.key]
+              return (
+                <a
+                  key={o.key}
+                  href={cell.href}
+                  className="group flex h-full flex-col rounded-(--vd-radius) border border-(--vd-border) bg-white/60 p-4 no-underline transition-all hover:border-(--vd-primary-border) hover:bg-(--vd-primary-soft) motion-safe:hover:-translate-y-0.5 dark:bg-slate-900/40"
+                >
+                  <span className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-(--vd-primary) sm:hidden">
+                    {dl} · {o.label}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-sm font-semibold">
+                    {cell.title}
+                    <ArrowRight className="h-3.5 w-3.5 text-(--vd-primary) transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden />
+                  </span>
+                  <span className="mt-1 text-xs leading-snug text-slate-500 dark:text-slate-400">{cell.blurb}</span>
+                </a>
+              )
+            })}
+          </Fragment>
+        ))}
+      </div>
+      {/* the reuse path: no new check — just read what the account already holds */}
+      <a
+        href="/docs"
+        className="group mt-3 flex items-center gap-3 rounded-(--vd-radius) border border-(--vd-primary-border) bg-(--vd-primary-soft) px-4 py-3 no-underline transition-colors"
+      >
+        <KeyRound className="h-4 w-4 shrink-0 text-(--vd-primary)" aria-hidden />
+        <span className="text-sm text-slate-600 dark:text-slate-300">
+          <b className="text-slate-800 dark:text-slate-100">Already verified elsewhere?</b> Add{' '}
+          <span className="font-semibold text-(--vd-primary)">Login with Valyd</span> and read the proofs a
+          signed-in user already holds — no new check.
+        </span>
+        <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-(--vd-primary) transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden />
+      </a>
+    </div>
   )
 }
 

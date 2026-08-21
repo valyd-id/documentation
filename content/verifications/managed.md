@@ -65,6 +65,17 @@ already-verified KYC and licenses are skipped.
 6. Read the result via the signed webhook and/or `GET /api/v2/session/{id}/decision` — **proofs only**
    (`origin: "managed"`).
 
+The SDK form of step 4 — one call, the user's token ties the flow to their identity:
+
+```typescript
+const session = await verify.sessions.create({
+  workflowId,                      // the checks you picked in the portal
+  valydAccessToken: accessToken,   // ← ties the run to the signed-in user
+  redirectUrl: "https://yourapp.com/verified",
+});
+// → send them to session.url — proofs come back, PII doesn't
+```
+
 ## Direct API calls (same checks, your UI)
 
 - **License / credential**: matched against the account's real name, the verified badge is stored on the
