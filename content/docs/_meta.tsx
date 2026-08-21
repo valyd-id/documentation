@@ -16,6 +16,7 @@ import {
   Signpost,
   Tags,
   UserCog,
+  UserPlus,
   Users
 } from 'lucide-react'
 import { MetaTitle } from '@/components/meta-title'
@@ -27,6 +28,7 @@ import { MetaTitle } from '@/components/meta-title'
 export default {
   '--get-started': { type: 'separator', title: 'Get started' },
   introduction: { title: <MetaTitle icon={BookOpen}>Introduction</MetaTitle> },
+  'create-account': { title: <MetaTitle icon={UserPlus}>Create your account</MetaTitle> },
   'how-valyd-works': { title: <MetaTitle icon={Sparkles}>How Valyd works</MetaTitle> },
   choose: { title: <MetaTitle icon={Signpost}>Choose your integration</MetaTitle> },
   quickstarts: { title: <MetaTitle icon={Rocket}>Quickstarts</MetaTitle> },

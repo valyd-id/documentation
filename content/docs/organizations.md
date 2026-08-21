@@ -51,7 +51,7 @@ can sign in** — while a **public** app lets anyone log in.
   verify once, read everywhere.
 - **Track exactly who logs in** — the `valyd_org_member_id` claim (that member's `vmem_…` id) comes
   back on every login, so you always know which of your people authenticated.
-- **One bill** — a 14-day verification trial, then **$0.99 per active member / month**; usage and seats post to a single wallet ([pricing](#pricing)).
+- **One bill** — a 14-day verification trial, then **$0.99 per active member / month** for unlimited verifications; usage and seats post to a single wallet ([pricing](#pricing)).
 - **Private apps scoped to your people** — a private app only admits assigned members, enforced at
   the login gate.
 - **Onboard & offboard over the API** — add, invite, deactivate, and remove members server-to-server
@@ -60,9 +60,10 @@ can sign in** — while a **public** app lets anyone log in.
 ### Pricing
 
 - **14-day free trial** — run verifications for your organization free for the first 14 days.
-- **$0.99 per active member / month** after the trial. You're billed only for **active**
-  (face-activated) members — an invited person who hasn't activated yet doesn't count. Add or
-  remove people anytime; the bill follows your active roster.
+- **$0.99 per active member / month** after the trial — that covers **unlimited verifications**
+  for that member (KYC, license, liveness, location, face match; verify them as often as you need).
+  You're billed only for **active** (face-activated) members — an invited person who hasn't
+  activated yet doesn't count. Add or remove people anytime; the bill follows your active roster.
 - Verification checks and login stay on the same single wallet and ledger — one bill for
   everything.
 

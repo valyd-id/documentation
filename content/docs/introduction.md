@@ -24,6 +24,15 @@ Three ways to integrate. Pick the one that fits what you're building:
 Not sure which fits — or want the details on what each returns and who holds the data?
 → **[Choose your integration](/docs/choose)**
 
+## Onboarding a workforce? Use an organization
+
+If you're bringing a whole team or workforce onto Valyd — employees, staff, contractors — use an
+**Organization**. Your people sign in with **Login with Valyd** (standard OIDC), and each active
+member gets **unlimited verifications for $0.99 / month** (14-day free trial). Face login, no
+passwords, and you always know exactly who signed in.
+
+→ **[Organizations](/docs/organizations)** — how it works, roles, member onboarding, and pricing.
+
 ## Where everything lives
 
 | Host | What it is |
