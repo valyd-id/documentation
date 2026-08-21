@@ -109,7 +109,7 @@ Every billable check also accepts an optional `idempotencyKey` (*v1.10.2+*) — 
 `Idempotency-Key` header so a network retry can never double-charge or double-run
 ([how it behaves](/verifications/standalone#idempotency)).
 
-See the [Standalone checks](/verifications/standalone) reference for full field details.
+See the [Direct API checks](/verifications/standalone) reference for full field details.
 
 #### `verify.credentials`
 - `states(): Promise<CredentialState[]>` — List supported states.
@@ -212,7 +212,7 @@ const decision = await verify.sessions.decision(event.sessionId);
 
 **Expected output:** `verify.sessions.create(...)` resolves to a `Session` with `.url` (redirect the user here) and `.sessionId`. After the user finishes, your webhook fires; `constructEvent` returns the parsed `WebhookEvent`, and `verify.sessions.decision(...)` resolves to a `Decision` with `.status` and `.checks[]`.
 
-#### Standalone checks quickstart
+#### Direct API checks quickstart
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";

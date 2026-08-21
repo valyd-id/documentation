@@ -82,6 +82,6 @@ sequenceDiagram
 
 - Drop-in front end: the [Sign-in button flow](/docs/flows/button)
 - Full raw-HTTP walkthrough with SDK + Python/PHP/Java examples: [Authentication](/docs/authentication)
-- Complete Express example: [Complete example](/docs/quickstart/node)
+- Complete Express example: [Node.js quickstart](/docs/quickstart/node)
 - Bring your own library via discovery: [Use any OIDC library](/docs/oidc)
 - What's inside each token: [Tokens](/docs/tokens)

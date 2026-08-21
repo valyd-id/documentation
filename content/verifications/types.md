@@ -101,4 +101,4 @@ prove where a check happened.
 
 Next: bundle checks into a [workflow](/verifications/workflows) for the hosted flow, or call the
 endpoints directly — the request/response reference lives on
-[Standalone checks](/verifications/standalone).
+[Direct API checks](/verifications/standalone).

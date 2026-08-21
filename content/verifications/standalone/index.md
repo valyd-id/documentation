@@ -9,13 +9,13 @@ human_setup_required: true
 source_of_truth: openapi
 ---
 
-# Standalone checks
+# Direct API checks
 
 > 🔑 **Auth:** API key (`X-API-Key`) · 👤 **User login:** not required · 💾 **Result:** returned to your system — you supply and keep the data
 
-Standalone checks are the self-contained, API-key-only product: run a one-off license lookup, ID
-check, liveness check, face match, age check, or a combined KYC + license check on data **you**
-supply. No Valyd account is involved and nothing is saved to one — the result and any extracted
+Direct API checks (called the *standalone* API in the routes and API field names) are the
+self-contained, API-key-only product: run a one-off license lookup, ID check, liveness check, face
+match, age check, or a combined KYC + license check on data **you** supply. No Valyd account is involved and nothing is saved to one — the result and any extracted
 identity fields return straight to your system, and storing, protecting, and deleting that data
 is your responsibility. [Data sharing](/verifications/data-sharing) spells out exactly what you
 receive, what you must protect, and what Valyd retains.

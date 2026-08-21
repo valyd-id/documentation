@@ -106,7 +106,7 @@ app, their token simply rides along on the call and the passed proof lands on th
    **Expected output:** HTTP `200` with `{ "success": true, "data": { "url": "https://..." } }`. Redirect the user's browser to `data.url`. The verification result arrives later via your configured webhook (step 4).
 
 ### Verification
-- Standalone checks: the license curl in step 5 returns HTTP `200` and a body where `success` is `true`.
+- Direct API checks: the license curl in step 5 returns HTTP `200` and a body where `success` is `true`.
 
   ```bash
   curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/credential-verification \
@@ -131,3 +131,11 @@ app, their token simply rides along on the call and the passed proof lands on th
 3. **No webhook received after a Hosted session**
    - **Cause:** Webhook URL/signing secret not configured, or your endpoint is not publicly reachable.
    - **Fix:** Set the webhook URL and signing secret in Console → Webhooks (step 4), ensure the URL is publicly reachable, and verify the signature using the signing secret before trusting the event.
+
+### Next steps
+
+- **Full runnable example** — the complete Express integration (create → redirect → webhook →
+  decision) lives in [Hosted verification → Full implementation example](/verifications/hosted#full-implementation-example).
+- **Compose the checks** — [Workflows](/verifications/workflows).
+- **Track the run** — [Session lifecycle](/verifications/session-lifecycle).
+- **Read the result** — [Decisions & statuses](/verifications/statuses) and [Webhooks](/verifications/webhooks).

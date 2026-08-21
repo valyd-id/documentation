@@ -63,7 +63,7 @@ flowchart LR
   required ID, liveness, and face-match gates pass; token runs never release it — you get
   proofs and public data.
 - Webhooks are sent only to an active URL configured for your app and are signed.
-- Standalone checks return results to your system — see
+- Direct API checks return results to your system — see
   [Data sharing](/verifications/data-sharing) for what that means for you.
 
 Start with [Setup](/verifications/setup) and the

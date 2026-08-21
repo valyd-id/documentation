@@ -25,6 +25,20 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { STUBS } from '../docs-manifest.mjs'
+
+// Hidden legacy/stub pages (per the manifest) are EXCLUDED from the agent corpus + llms-full so a
+// thin "this moved" page never competes with the canonical page it points to. Returns the set of
+// source-relative filenames to skip for a given route prefix (e.g. '/docs/').
+function stubSkipSet(routePrefix) {
+  const set = new Set()
+  for (const s of STUBS) {
+    if (!s.route.startsWith(routePrefix)) continue
+    const rel = s.route.slice(routePrefix.length)
+    set.add(`${rel}.md`); set.add(`${rel}.mdx`); set.add(`${rel}/index.md`); set.add(`${rel}/index.mdx`)
+  }
+  return set
+}
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -99,8 +113,8 @@ async function listMd(dirAbs, prefix = '') {
 // (e.g. /verify/standalone.md) keeps working after a page splits into a folder.
 const folderAlias = f => (f.endsWith('/index.md') ? f.replace(/\/index\.md$/, '.md') : null)
 
-async function mdMirror(srcDir, destDir, indexAlias) {
-  const files = await listMd(path.join(ROOT, srcDir))         // sources, may be .md or .mdx
+async function mdMirror(srcDir, destDir, indexAlias, skip = new Set()) {
+  const files = (await listMd(path.join(ROOT, srcDir))).filter(f => !skip.has(f)) // sources, may be .md or .mdx
   const toMd = f => f.replace(/\.mdx$/, '.md')                // dest name is always .md
   const dests = files.map(toMd)
   const expected = new Set([
@@ -134,8 +148,8 @@ const hosts = HOSTS.map(h => `${h.canonical} → ${h.url}`).join(', ')
 console.log(`[gen-corpus] hosts: ${hosts}`)
 
 // 1) Rendered pages → agent-fetchable .md mirrors (regenerated from content/, so they never drift).
-const nDocs = await mdMirror('content/docs', 'public/docs', 'overview.md')
-const nVerify = await mdMirror('content/verifications', 'public/verify', 'intro.md')
+const nDocs = await mdMirror('content/docs', 'public/docs', 'overview.md', stubSkipSet('/docs/'))
+const nVerify = await mdMirror('content/verifications', 'public/verify', 'intro.md', stubSkipSet('/verifications/'))
 
 // 2) llms.txt (curated index) + robots.txt → env-substituted copies.
 for (const f of ['llms.txt', 'robots.txt']) {
@@ -153,8 +167,9 @@ const DOCS_URL = HOSTS[0].url
 const SEP = '='.repeat(80)
 
 // Read a content section in nav-ish order (index first, then alphabetical).
-async function section(srcDir, urlPrefix, indexAlias) {
+async function section(srcDir, urlPrefix, indexAlias, skip = new Set()) {
   const files = (await listMd(path.join(ROOT, srcDir)))
+    .filter(f => !skip.has(f))
     .sort((a, b) => (a === 'index.md' ? -1 : b === 'index.md' ? 1 : a.localeCompare(b)))
   const blocks = []
   for (const f of files) {
@@ -177,10 +192,45 @@ const header =
   `'=== FILE: <url> ===' marker. The index below (from llms.txt) lists all pages.\n\n` +
   `${SEP}\n=== INDEX (llms.txt) ===\n${SEP}\n\n${indexBody}\n`
 
-const docBlocks = await section('content/docs', 'docs', 'overview')
-const verifyBlocks = await section('content/verifications', 'verify', 'intro')
+const docBlocks = await section('content/docs', 'docs', 'overview', stubSkipSet('/docs/'))
+const verifyBlocks = await section('content/verifications', 'verify', 'intro', stubSkipSet('/verifications/'))
 const fullText = [header, ...docBlocks, ...verifyBlocks].join('\n')
 await fs.writeFile(path.join(ROOT, 'public', 'llms-full.txt'), fullText)
 
+// 4) Hosted agent bundle — public/verify/hosted.md is a single-file BUNDLE of the canonical Hosted
+//    modules (overview + quickstart + workflows + session-lifecycle + statuses + webhooks), so an AI
+//    agent fetching /verify/hosted.md gets the complete Hosted context in one file even though humans
+//    read the modular pages. The human pages and this bundle derive from the SAME source files — there
+//    is no hand-maintained mega-doc. This OVERWRITES the 1:1 hosted.md mirror written by mdMirror above.
+const HOSTED_BUNDLE = [
+  { file: 'hosted.mdx',           title: 'Hosted verification (overview)', slug: 'hosted' },
+  { file: 'quickstart.md',        title: 'Verification quickstart',        slug: 'quickstart' },
+  { file: 'workflows.md',         title: 'Workflows',                      slug: 'workflows' },
+  { file: 'session-lifecycle.md', title: 'Session lifecycle',              slug: 'session-lifecycle' },
+  { file: 'statuses.md',          title: 'Decisions & statuses',           slug: 'statuses' },
+  { file: 'webhooks.md',          title: 'Webhooks',                       slug: 'webhooks' }
+]
+
+// Drop a leading YAML frontmatter block so concatenated modules read as one clean document.
+const stripFrontmatter = raw => raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+
+const bundleBlocks = []
+for (const { file, title, slug } of HOSTED_BUNDLE) {
+  let raw = stripFrontmatter(await fs.readFile(path.join(ROOT, 'content', 'verifications', file), 'utf8'))
+  if (file.endsWith('.mdx')) raw = stripMdx(raw)          // strip imports/JSX like every other mirror
+  raw = substitute(raw).trim()                            // env-substitute hosts, same as the mirrors
+  const url = `${DOCS_URL}/verifications/${slug}`
+  bundleBlocks.push(`${SEP}\n=== MODULE: ${title} — ${url} ===\n${SEP}\n\n${raw}\n`)
+}
+const bundleHeader =
+  `<!-- Valyd Hosted Verification — bundled agent doc (generated by scripts/gen-corpus.mjs) -->\n\n` +
+  `# Hosted verification — complete bundle\n\n` +
+  `This single file bundles the canonical Hosted modules so an AI agent gets the full Hosted\n` +
+  `context in one fetch. Humans read these as separate pages:\n` +
+  HOSTED_BUNDLE.map(m => `- ${m.title}: ${DOCS_URL}/verifications/${m.slug}`).join('\n') +
+  `\n`
+await fs.writeFile(path.join(ROOT, 'public', 'verify', 'hosted.md'), [bundleHeader, ...bundleBlocks].join('\n'))
+
 console.log(`[gen-corpus] wrote ${nDocs} docs + ${nVerify} verify mirrors, llms.txt, robots.txt, OpenAPI specs`)
 console.log(`[gen-corpus] built llms-full.txt from ${docBlocks.length + verifyBlocks.length} pages`)
+console.log(`[gen-corpus] bundled public/verify/hosted.md from ${HOSTED_BUNDLE.length} Hosted modules: ${HOSTED_BUNDLE.map(m => m.file).join(', ')}`)

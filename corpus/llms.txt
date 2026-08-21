@@ -133,7 +133,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 ## Verification APIs — Guides
 
-- [Introduction](https://docs.valyd.work/verify/intro.md): Verification without login, optional account-connected verification, Hosted vs Standalone checks, and data handling.
+- [Introduction](https://docs.valyd.work/verify/intro.md): Verification without login, optional account-connected verification, Hosted vs Direct API checks, and data handling.
 - [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an App API key and run a license check or hosted session without OIDC login.
 - [Developer Portal](https://docs.valyd.work/verify/console.md): Apps, API keys, workflows, webhooks, SSO. (Human-only UI steps.)
 - [Choose an integration](https://docs.valyd.work/verify/modes.md): Decide whether the result belongs to your system or a Valyd account, then choose Hosted or Standalone.
@@ -146,12 +146,12 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 ## Verification APIs — API Reference
 
-- [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, Standalone checks, Decision, and Errors & rate limits. All calls use `X-API-Key`.
+- [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, Direct API checks, Decision, and Errors & rate limits. All calls use `X-API-Key`.
 
 ## API specs (OpenAPI 3.1)
 
 - [Valyd ID OpenAPI](https://docs.valyd.work/openapi/valyd-id.json): OIDC login and account-resource endpoints, schemas, auth, and errors.
-- [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, Standalone checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen and endpoint discovery.
+- [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, Direct API checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen and endpoint discovery.
 
 ## Downloads & tooling
 

@@ -28,6 +28,7 @@ import {
   Sparkles,
   Tags,
   Timer,
+  UserCog,
   UserPlus,
   Users
 } from 'lucide-react'
@@ -67,6 +68,7 @@ export default {
   '--verification': { type: 'separator', title: 'VERIFICATION' },
   'vf-overview': { title: <MetaTitle icon={ScanFace}>Overview</MetaTitle>, href: '/verifications' },
   'vf-setup': { title: <MetaTitle icon={Settings}>Setup</MetaTitle>, href: '/verifications/setup' },
+  'vf-types': { title: <MetaTitle icon={Tags}>Verification types</MetaTitle>, href: '/verifications/types' },
   '--v-hosted': { type: 'separator', title: 'Hosted' },
   'vf-hosted': { title: <MetaTitle icon={Globe}>Hosted verification</MetaTitle>, href: '/verifications/hosted' },
   'vf-quickstart': { title: <MetaTitle icon={Rocket}>Quickstart</MetaTitle>, href: '/verifications/quickstart' },
@@ -92,6 +94,7 @@ export default {
   // ============================ DEVELOP & OPERATE ============================
   '--develop': { type: 'separator', title: 'DEVELOP & OPERATE' },
   'create-project': { title: <MetaTitle icon={LayoutDashboard}>Developer Portal</MetaTitle> },
+  'developer-accounts': { title: <MetaTitle icon={UserCog}>Developer accounts</MetaTitle> },
   environments: { title: <MetaTitle icon={KeyRound}>Environments &amp; credentials</MetaTitle> },
   testing: { title: <MetaTitle icon={FlaskConical}>Testing</MetaTitle> },
   customize: { title: <MetaTitle icon={Settings}>Customization</MetaTitle> },
@@ -99,6 +102,7 @@ export default {
   'rate-limits': { title: <MetaTitle icon={Gauge}>Rate limits</MetaTitle> },
   idempotency: { title: <MetaTitle icon={Braces}>Idempotency</MetaTitle> },
   'go-live': { title: <MetaTitle icon={Rocket}>Go live</MetaTitle> },
+  'do-versioning': { title: <MetaTitle icon={History}>Versioning</MetaTitle>, href: '/verifications/versioning' },
   changelog: { title: <MetaTitle icon={History}>Changelog</MetaTitle> },
   deprecations: { title: <MetaTitle icon={History}>Deprecations</MetaTitle> },
   'data-and-trust': { title: <MetaTitle icon={ShieldCheck}>Security &amp; data</MetaTitle> },
@@ -119,6 +123,7 @@ export default {
   endpoints: { title: <MetaTitle icon={Code}>Login API</MetaTitle> },
   'ref-vapi': { title: <MetaTitle icon={Code}>Verification API</MetaTitle>, href: '/verifications/api-reference' },
   'ref-sdk': { title: <MetaTitle icon={Braces}>Node SDK</MetaTitle>, href: '/verifications/sdk' },
+  sdks: { title: <MetaTitle icon={Braces}>SDKs &amp; tools</MetaTitle> },
   'api-reference': { title: <MetaTitle icon={Braces}>Login OpenAPI</MetaTitle> },
   'ref-vopenapi': { title: <MetaTitle icon={Braces}>Verification OpenAPI</MetaTitle>, href: '/verifications/api' },
   'ref-http': { title: <MetaTitle icon={Code}>Raw HTTP</MetaTitle>, href: '/verifications/standalone/http' },
@@ -138,8 +143,6 @@ export default {
   sandbox: { title: <MetaTitle icon={Play}>API Playground</MetaTitle>, theme: { toc: false } },
 
   // ============================ Hidden (reachable by URL, out of nav) ============================
-  'developer-accounts': { display: 'hidden' },
-  sdks: { display: 'hidden' },
   sessions: { display: 'hidden' },
   flows: { display: 'hidden' },
   'quick-start': { display: 'hidden' },

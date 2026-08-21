@@ -2,7 +2,7 @@
 
 > 🔑 **Auth:** App API key (`X-API-Key`) · 👤 **User login:** not required — no Valyd account is involved
 
-[Standalone checks](/verifications/standalone) are the one place in Valyd where identity data flows **to you**. You supply the
+[Direct API checks](/verifications/standalone) are the one place in Valyd where identity data flows **to you**. You supply the
 inputs (images, names, license numbers, a DOB), Valyd processes them, and the result — including
 any extracted identity fields — is returned to your system. Nothing is written to a Valyd
 account, and there is no proof to reuse later; the data, and the duty of care that comes with it,

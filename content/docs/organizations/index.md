@@ -71,7 +71,7 @@ for exactly what each role can do.
   verify once, read everywhere.
 - **Track exactly who logs in** — the `valyd_org_member_id` claim (that member's `vmem_…` id) comes
   back on every login, so you always know which of your people authenticated.
-- **One bill** — a 14-day verification trial, then **$0.99 per active member / month** for unlimited verifications; usage and seats post to a single wallet ([pricing & billing](/docs/organizations/billing)).
+- **One bill** — a 14-day verification trial, then a per-active-member monthly plan for unlimited verifications; usage and seats post to a single wallet ([pricing & billing](/docs/organizations/billing) has the current price).
 - **Private apps scoped to your people** — a private app only admits assigned members, enforced at
   the login gate.
 - **Onboard & offboard over the API** — add, invite, deactivate, and remove members server-to-server

@@ -122,4 +122,4 @@ with a face scan as the user's consent.
 ---
 
 Verifying data you hold yourself, with no user in the loop? See
-[Standalone checks](/verifications/standalone).
+[Direct API checks](/verifications/standalone).

@@ -79,6 +79,39 @@
 
    **Expected output:** On a valid signature your handler returns HTTP 200. On a bad signature it returns HTTP 400 with body `bad signature`.
 
+   **Verify with the Node SDK (instead of hand-rolling HMAC).** `@valyd/sdk` does the raw-body
+   signature check, the staleness check, and the JSON parse for you — pass the raw body and headers
+   to `verify.webhooks.constructEvent`, which throws `ValydVerifyError` with
+   `code === "invalid_signature"` on a bad signature. Still use the raw body (`express.raw`):
+
+   ```javascript
+   import express from "express";
+   import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
+
+   const verify = new VerifyClient({
+     apiKey:        process.env.VALYD_API_KEY,
+     webhookSecret: process.env.VALYD_WEBHOOK_SECRET,
+   });
+
+   app.post(
+     "/api/valyd-webhook",
+     express.raw({ type: "application/json" }),
+     async (req, res) => {
+       try {
+         const event = verify.webhooks.constructEvent(req.body, req.headers);
+         // event.sessionId, event.type, event.status, event.decision, event.vendorData
+         await persistDecision(event);
+         res.json({ ok: true });
+       } catch (err) {
+         if (err instanceof ValydVerifyError && err.code === "invalid_signature") {
+           return res.status(400).send("bad signature");
+         }
+         throw err;
+       }
+     }
+   );
+   ```
+
 4. **Fetch the full decision after acknowledging the webhook.** The webhook body is a notification; the decision endpoint (session id from the event) returns the full per-check breakdown — complete extracted data on standalone (tokenless) sessions, proofs + public data on sessions created with the user's `valyd_access_token`.
 
    ```bash

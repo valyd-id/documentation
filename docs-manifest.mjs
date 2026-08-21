@@ -54,6 +54,7 @@ export const SECTIONS = [
     items: [
       { title: 'Overview', route: '/verifications', home: 'verifications', icon: 'ScanFace' },
       { title: 'Setup', route: '/verifications/setup', home: 'verifications', icon: 'Settings' },
+      { title: 'Verification types', route: '/verifications/types', home: 'verifications', icon: 'Tags' },
       { title: 'Hosted verification', route: '/verifications/hosted', home: 'verifications', icon: 'Globe', group: 'Hosted' },
       { title: 'Quickstart', route: '/verifications/quickstart', home: 'verifications', icon: 'Rocket', group: 'Hosted' },
       { title: 'Workflows', route: '/verifications/workflows', home: 'verifications', icon: 'Braces', group: 'Hosted' },
@@ -85,6 +86,7 @@ export const SECTIONS = [
     id: 'develop', label: 'DEVELOP & OPERATE',
     items: [
       { title: 'Developer Portal', route: '/docs/create-project', home: 'docs', icon: 'LayoutDashboard' },
+      { title: 'Developer accounts', route: '/docs/developer-accounts', home: 'docs', icon: 'UserCog' },
       { title: 'Environments & credentials', route: '/docs/environments', home: 'docs', icon: 'KeyRound' },
       { title: 'Testing', route: '/docs/testing', home: 'docs', icon: 'FlaskConical' },
       { title: 'Customization', route: '/docs/customize', home: 'docs', icon: 'Settings' },
@@ -102,6 +104,7 @@ export const SECTIONS = [
       { title: 'Status / reliability', route: '/docs/operations-sla', home: 'docs', icon: 'Timer' },
       { title: 'Disaster recovery', route: '/docs/disaster-recovery', home: 'docs', icon: 'DatabaseBackup', group: 'Status / reliability' },
       { title: 'Support & escalation', route: '/docs/support-escalation', home: 'docs', icon: 'LifeBuoy', group: 'Status / reliability' },
+      { title: 'Versioning', route: '/verifications/versioning', home: 'verifications', icon: 'History' },
       { title: 'Changelog', route: '/docs/changelog', home: 'docs', icon: 'History' },
       { title: 'Deprecations', route: '/docs/deprecations', home: 'docs', icon: 'History' },
     ],
@@ -112,6 +115,7 @@ export const SECTIONS = [
       { title: 'Login API', route: '/docs/endpoints', home: 'docs', icon: 'Code' },
       { title: 'Verification API', route: '/verifications/api-reference', home: 'verifications', icon: 'Code' },
       { title: 'Node SDK', route: '/verifications/sdk', home: 'verifications', icon: 'Braces' },
+      { title: 'SDKs & tools', route: '/docs/sdks', home: 'docs', icon: 'Braces' },
       { title: 'Login OpenAPI', route: '/docs/api-reference', home: 'docs', icon: 'Braces' },
       { title: 'Verification OpenAPI', route: '/verifications/api', home: 'verifications', icon: 'Braces' },
       { title: 'Raw HTTP', route: '/verifications/standalone/http', home: 'verifications', icon: 'Code' },
@@ -153,3 +157,55 @@ export const STUBS = [
 ]
 
 export const ALL_NAV_ROUTES = SECTIONS.flatMap((s) => s.items.map((i) => i.route))
+
+// ---- Page registry (rich metadata) -----------------------------------------------------------
+// The manifest is the canonical page registry, not just a sidebar. Every route carries enough
+// metadata for human nav AND machine indexing. Values are computed from SECTIONS + STUBS with a
+// small OVERRIDES map, so the 75 nav rows don't each need hand-authored flags.
+
+// Per-route overrides (only where the computed default is wrong).
+const OVERRIDES = {
+  // (reserved) e.g. a page that should be canonical + reachable but out of nav, or a draft page.
+}
+
+const _sectionOf = (route) => (SECTIONS.find((s) => s.items.some((i) => i.route === route)) || {}).id || null
+const _titleOf = (route) => {
+  for (const s of SECTIONS) { const it = s.items.find((i) => i.route === route); if (it) return it.title }
+  return null
+}
+const idFor = (route) => (route.replace(/^\//, '').replace(/\//g, '.') || 'home')
+
+/** Full metadata for a route (nav item OR stub). */
+export function pageMeta(route) {
+  const stub = STUBS.find((s) => s.route === route)
+  const inNav = ALL_NAV_ROUTES.includes(route)
+  const aliases = STUBS.filter((s) => s.canonical === route).map((s) => s.route)
+  const base = {
+    id: idFor(route),
+    route,
+    title: _titleOf(route),
+    section: _sectionOf(route),
+    canonical: !stub, // a stub is NOT canonical — it points at one
+    canonicalRoute: stub ? stub.canonical : route,
+    nav: inNav && !stub, // in a sidebar
+    llms: !stub, // in the llms.txt index
+    sitemap: !stub, // in the sitemap
+    agentIndex: !stub, // in the machine corpus (llms-full / agent bundle)
+    search: !stub, // in pagefind search
+    noindex: !!stub, // robots noindex
+    status: stub ? stub.status || 'stub' : 'active',
+    audience: ['human', 'agent'],
+    aliases,
+  }
+  return { ...base, ...(OVERRIDES[route] || {}) }
+}
+
+/** Every route the registry knows about (nav items + stubs). */
+export function allRoutes() {
+  return [...new Set([...ALL_NAV_ROUTES, ...STUBS.map((s) => s.route)])]
+}
+
+/** Canonical routes only (nav pages; stubs excluded). Used by capability→canonical checks. */
+export function canonicalRoutes() {
+  return ALL_NAV_ROUTES.filter((r) => pageMeta(r).canonical)
+}

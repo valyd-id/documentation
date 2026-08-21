@@ -74,6 +74,7 @@ export default {
   '--verification': { type: 'separator', title: 'VERIFICATION' },
   index: { title: <MetaTitle icon={ScanFace}>Overview</MetaTitle> },
   setup: { title: <MetaTitle icon={Settings}>Setup</MetaTitle> },
+  types: { title: <MetaTitle icon={Tags}>Verification types</MetaTitle> },
   '--v-hosted': { type: 'separator', title: 'Hosted' },
   hosted: { title: <MetaTitle icon={Globe}>Hosted verification</MetaTitle> },
   quickstart: { title: <MetaTitle icon={Rocket}>Quickstart</MetaTitle> },
@@ -95,6 +96,7 @@ export default {
   // ============================ DEVELOP & OPERATE ============================
   '--develop': { type: 'separator', title: 'DEVELOP & OPERATE' },
   'dev-portal': { title: <MetaTitle icon={LayoutDashboard}>Developer Portal</MetaTitle>, href: '/docs/create-project' },
+  'dev-accounts': { title: <MetaTitle icon={UserCog}>Developer accounts</MetaTitle>, href: '/docs/developer-accounts' },
   'dev-environments': { title: <MetaTitle icon={KeyRound}>Environments &amp; credentials</MetaTitle>, href: '/docs/environments' },
   'dev-testing': { title: <MetaTitle icon={FlaskConical}>Testing</MetaTitle>, href: '/docs/testing' },
   'dev-customize': { title: <MetaTitle icon={Settings}>Customization</MetaTitle>, href: '/docs/customize' },
@@ -102,6 +104,7 @@ export default {
   'dev-ratelimits': { title: <MetaTitle icon={Gauge}>Rate limits</MetaTitle>, href: '/docs/rate-limits' },
   'dev-idempotency': { title: <MetaTitle icon={Braces}>Idempotency</MetaTitle>, href: '/docs/idempotency' },
   'dev-golive': { title: <MetaTitle icon={Rocket}>Go live</MetaTitle>, href: '/docs/go-live' },
+  versioning: { title: <MetaTitle icon={History}>Versioning</MetaTitle> },
   'dev-changelog': { title: <MetaTitle icon={History}>Changelog</MetaTitle>, href: '/docs/changelog' },
   'dev-deprecations': { title: <MetaTitle icon={History}>Deprecations</MetaTitle>, href: '/docs/deprecations' },
   'dev-security': { title: <MetaTitle icon={ShieldCheck}>Security &amp; data</MetaTitle>, href: '/docs/data-and-trust' },
@@ -122,6 +125,7 @@ export default {
   'ref-loginapi': { title: <MetaTitle icon={Code}>Login API</MetaTitle>, href: '/docs/endpoints' },
   'api-reference': { title: <MetaTitle icon={Code}>Verification API</MetaTitle> },
   sdk: { title: <MetaTitle icon={Braces}>Node SDK</MetaTitle> },
+  'ref-sdks': { title: <MetaTitle icon={Braces}>SDKs &amp; tools</MetaTitle>, href: '/docs/sdks' },
   'ref-loginopenapi': { title: <MetaTitle icon={Braces}>Login OpenAPI</MetaTitle>, href: '/docs/api-reference' },
   api: { title: <MetaTitle icon={Braces}>Verification OpenAPI</MetaTitle> },
   'ref-http': { title: <MetaTitle icon={Code}>Raw HTTP</MetaTitle>, href: '/verifications/standalone/http' },
@@ -142,7 +146,5 @@ export default {
 
   // ============================ Hidden (reachable by URL, out of nav) ============================
   console: { display: 'hidden' },
-  types: { display: 'hidden' },
-  versioning: { display: 'hidden' },
   modes: { display: 'hidden' }
 } satisfies MetaRecord

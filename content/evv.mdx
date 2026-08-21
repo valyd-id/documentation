@@ -88,7 +88,7 @@ No bundler? There is no browser SDK to include — hosted verification works by 
 **Both modes start the same way — "Connect Valyd".** The clinician logs in with Valyd (OAuth), and your server gets their access token via `exchangeCode`. That token is what identifies the person, gates KYC, and unlocks license/identity reuse — in *both* Hosted and Core.
 </Callout>
 
-<Tabs items={['Hosted by Valyd', 'Standalone checks']}>
+<Tabs items={['Hosted by Valyd', 'Direct API checks']}>
 <Tabs.Tab>
 
 Valyd renders the UI in a modal. Already-verified clinicians skip KYC + license and do **only the face scan**.
@@ -332,7 +332,7 @@ Flow A — Hosted (Valyd renders the UI in a modal):
 5. Webhook POST /webhooks/valyd: const e = valyd.verify.webhooks.constructEvent(raw, headers);
      const decision = await valyd.verify.sessions.decision(e.sessionId)   // source of truth
 
-Flow B — Standalone checks (your own UI):
+Flow B — Direct API checks (your own UI):
 1. Same Connect-Valyd login/callback to get accessToken.
 2. KYC gate: if (valyd.verify.kyc.isRequired(await valyd.auth.getVerifications(accessToken))) redirect to kyc.redirectUrl.
 3. License: await valyd.verify.standalone.credentialVerification({ licenseState, licenseType:"MD", licenseNumber })

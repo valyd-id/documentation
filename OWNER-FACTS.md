@@ -1,213 +1,132 @@
-# OWNER-FACTS — enterprise facts to confirm
+# OWNER-FACTS — enterprise questionnaire (internal, not published)
 
-**Internal — not published.** This file lives at the repo root on purpose so it never becomes
-a site page. It preserves the owner's original `[owner: confirm — …]` questions that were
-removed from the 10 public enterprise pages. Each question was replaced on the live page with
-an honest "available on request / contact us" statement (noted below).
+**This file lives at the repo root so it never becomes a site page.** It is the owner's to-do list
+of enterprise/security facts that the public pages currently state as honest "available on request /
+under NDA" wording. When you confirm a value, **replace the wording on the named public page** with
+the real fact — do not just tick the box here.
 
-When you have a real answer, **replace the honest-placeholder text on the named page** with the
-confirmed fact (a real number, date, region, SLA, URL, etc.) — do not just delete this list.
+**Rules that already hold on the live site:** no `[owner: confirm]` text is public (a CI gate,
+`check-public-placeholders`, fails the build if any reappears). Contacts in use: **support@valyd.id**
+(operations/billing/data) and **security@valyd.id** (security/compliance/disclosure).
 
-Contacts already used on the pages: **support@valyd.id** (documented in the repo) and
-**security@valyd.id** (security/compliance intake).
+**Already answered from repo facts (no owner action):**
+- Support channel = `support@valyd.id` — on `operations-sla.md` / `support-escalation.md`.
+- Per-key scoping = all-or-nothing (an App API key is a full-authority credential) — on `api-key-lifecycle.md`.
 
-Two questions were already answerable from existing repo facts and are marked **[ANSWERED ON
-PAGE]** — no owner action needed:
-- `operations-sla.md` → Support channel/address = `support@valyd.id` (documented repo-wide).
-- `api-key-lifecycle.md` → Per-key scopes = all-or-nothing (the page's own "Access model"
-  section already states an App API key is a full-authority credential with no reviewer role).
+Each row: **Fact needed · Public page · Why an enterprise buyer needs it · Current safe public wording.**
 
 ---
 
-## security-trust.md
+## 1. Compliance
 
-Honest text used: compliance rows now say "available under NDA — contact **security@valyd.id**".
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| SOC 2 status, type, report date, how to request the report | security-trust | Vendor-risk review gate | "Report and current status available under NDA — contact security@valyd.id" |
+| ISO 27001 certification status + certificate scope (if any) | security-trust | ISMS assurance | "Current certification status available under NDA — contact security@valyd.id" |
+| GDPR posture; lawful basis; processor vs controller | security-trust | Determines the customer's own GDPR duties | "Posture and controller/processor terms available under NDA" |
+| Signable DPA exists + how to execute it | security-trust | Legally required to process EU data | "Available on request — contact your account team / security@valyd.id" |
 
-- [ ] SOC 2 status, type, report date, and how prospects request the report
-      → replaced with "Report and current status available under NDA — contact security@valyd.id"
-- [ ] ISO 27001 certification status and certificate scope, if any
-      → replaced with "Current certification status available under NDA — contact security@valyd.id"
-- [ ] GDPR posture, lawful basis, and whether Valyd acts as processor or controller
-      → replaced with "Posture and controller/processor terms available under NDA — contact security@valyd.id"
-- [ ] Whether a signable DPA exists and how customers execute it
-      → replaced with "Available on request — contact your Valyd account team or security@valyd.id to execute a DPA"
-- [ ] Pen-test cadence, most recent test date, and whether a summary letter is shareable
-      → replaced with "Summary results available under NDA — contact security@valyd.id"
-- [ ] Incident-response and breach-notification process and notification SLA
-      → replaced with "Handled through Security disclosure; incident-response details available under NDA — contact security@valyd.id"
+## 2. Security
 
-## data-retention.md
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Pen-test cadence, latest date, shareable summary letter | security-trust | Third-party assurance | "Summary results available under NDA — contact security@valyd.id" |
+| PGP key / secure intake for sensitive reports | security-disclosure | Safe vuln reporting | "Not currently offered — email security@valyd.id and we'll arrange a secure channel" |
+| Report acknowledgement time | security-disclosure | Researcher expectations | "We acknowledge valid reports and follow up (no fixed public SLA)" |
+| Coordinated-disclosure timeline + safe-harbor language | security-disclosure | Legal safe harbor for researchers | "Coordinated disclosure — reasonable time to remediate before public disclosure" |
+| Bug-bounty / reward program (exists? where) | security-disclosure | Researcher incentive | "No public program at this time — report to security@valyd.id" |
+| `security.txt` `Expires:` date + `Policy:` URL + hosting domains | security-disclosure | RFC 9116 discoverability | Sample uses `<…>` template placeholders; set real values when publishing the file |
+| API-key rotation overlap window (both keys valid?) + length | api-key-lifecycle | Zero-downtime key rotation | "Not documented here; for a coordinated cutover, contact support@valyd.id" |
+| Explicit revoke without minting a replacement? | api-key-lifecycle | Incident response (kill a leaked key) | "Not documented — contact support@valyd.id" |
+| Per-key last-used time / usage in Console? | api-key-lifecycle | Detect stale/compromised keys | "Not documented — contact support@valyd.id" |
+| Max simultaneously active API keys per app | api-key-lifecycle | Rotation planning | "Not documented — contact support@valyd.id" |
 
-Honest text used: retention rows now say "Available on request — contact **support@valyd.id**".
+## 3. Infrastructure / residency
 
-- [ ] How long verification decisions and account proofs are retained
-      → replaced with "Available on request — contact support@valyd.id for the current retention schedule"
-- [ ] Webhook delivery-log retention window
-      → replaced with "Available on request — contact support@valyd.id for the current retention schedule"
-- [ ] Application/request log retention period
-      → replaced with "Available on request — contact support@valyd.id for the current retention schedule"
-- [ ] Audit and billing record retention period, incl. any legal/tax minimums
-      → replaced with "Retained per applicable legal, tax, and accounting requirements — contact support@valyd.id for the current schedule"
-- [ ] How a customer or end-user requests deletion and the completion SLA
-      → replaced with documented deletion mechanism (account delete/unlink clears the biometric vector, `user_deleted` 410) + "For a formal erasure request or the completion timeline, contact support@valyd.id"
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Region(s) where account + verification data is processed/stored | data-residency | Data-sovereignty rules | "Available on request — current data-residency options" |
+| EU (or other) residency option + how to select it | data-residency | EU customers' localization needs | "Available on request — discuss regional options" |
+| Cross-border transfer mechanism (SCCs) + safeguards | data-residency | Lawful international transfer | "Available on request — contact support@valyd.id" |
+| Hosting/cloud provider(s) + their regions | data-residency | Concentration-risk assessment | "Available on request — contact support@valyd.id" |
+| Where the verification / face-matching engine runs | data-residency | Biometric-data locality | "Available on request — contact support@valyd.id" |
 
-## data-residency.md
+## 4. Subprocessors
 
-Honest text used: all rows now say "Available on request — contact **support@valyd.id**".
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Canonical subprocessor list URL/document | data-residency | Required in DPAs | "Available on request — current subprocessor list" |
+| Vendors for document authenticity + OCR | data-residency | Fourth-party risk | "Available on request — contact support@valyd.id" |
+| Registries/vendors for license/credential checks | data-residency | Data-flow mapping | "Available on request — contact support@valyd.id" |
+| Advance notice before a subprocessor is added/changed | data-residency | DPA objection rights | "Available on request — contact support@valyd.id" |
 
-- [ ] Region(s) where Valyd processes and stores account and verification data (e.g. US-only)
-      → replaced with "Available on request — contact support@valyd.id for current data-residency options"
-- [ ] Whether an EU (or other region) data-residency option is offered, and how a customer selects it
-      → replaced with "Available on request — contact support@valyd.id to discuss regional data-residency options"
-- [ ] Transfer mechanism for data leaving its region (e.g. SCCs) and applicable safeguards
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Hosting/cloud provider(s) and their regions
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Where the verification and face-matching engine runs
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Canonical subprocessor list URL or document
-      → replaced with "Available on request — contact support@valyd.id for the current subprocessor list"
-- [ ] Vendors used for document authenticity and OCR
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Registries and vendors used for license/credential checks
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] How customers are notified before a subprocessor is added or changed
-      → replaced with "Available on request — contact support@valyd.id"
+## 5. Availability / SLA
 
-## operations-sla.md
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Committed uptime target + which tiers | operations-sla | Reliability guarantee | "Committed availability is part of the enterprise SLA — contact your account team" |
+| Contractual SLA with service credits + where published | operations-sla | Financial remedy for downtime | "Available on enterprise plans — contact your account team" |
+| Public status page URL | operations-sla / support-escalation | Live incident visibility | "Available on request — contact support@valyd.id" |
+| Incident-update channel (status page/email) | operations-sla | Ops awareness | "Available on request — contact support@valyd.id" |
+| Maintenance-window policy + advance-notice period | operations-sla | Change-management planning | "Available on request — contact support@valyd.id" |
 
-Honest text used: SLA/uptime rows point to the enterprise SLA / account team; support address is a real fact.
+## 6. Disaster recovery
 
-- [ ] Committed uptime target (e.g. 99.9%) and the SLA tier(s) it applies to
-      → replaced with "Committed availability targets are part of the enterprise SLA — contact your Valyd account team"
-- [ ] Whether a contractual SLA with service credits exists, and where it is published
-      → replaced with "A contractual SLA with service credits is available on enterprise plans — contact your Valyd account team"
-- [ ] Public status page URL
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Channel used for incident updates (status page, email, etc.)
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Whether post-incident / RCA reports are shared and how to request them
-      → replaced with "Post-incident reviews are available to enterprise customers on request — contact your Valyd account team"
-- [ ] Maintenance window policy and advance-notice period
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Documented degraded-mode / failover behavior and any RTO/RPO targets
-      → replaced with pointer to Disaster recovery + enterprise SLA (contact your Valyd account team)
-- [ ] Support hours and first-response targets by severity
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Escalation path for production-impacting incidents
-      → replaced with pointer to Support & escalation + "contact your Valyd account team"
-- [x] Support contact address or portal — **[ANSWERED ON PAGE]** = `support@valyd.id` (documented repo-wide)
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Backup cadence + method (PITR vs snapshots) | disaster-recovery | BC/DR due diligence | "Available on request — contact your account team" |
+| Backup retention + region(s) | disaster-recovery | Recovery-scope assessment | "Available on request — contact your account team" |
+| Backups encrypted at rest + key management | disaster-recovery | Data-protection control | "Available on request — contact your account team" |
+| RPO (max data-loss window) | disaster-recovery / operations-sla | Recovery planning | "Available on enterprise plans — contact your account team" |
+| RTO (target time to restore) | disaster-recovery / operations-sla | Recovery planning | "Available on enterprise plans — contact your account team" |
+| Multi-region / multi-AZ redundancy | disaster-recovery | Resilience assessment | "Available on request — contact your account team" |
+| Failover automatic vs manual + who initiates | disaster-recovery | Outage expectations | "Available on request — contact your account team" |
+| Restore-test cadence + last successful test date | disaster-recovery | Proof DR actually works | "Available on request — contact your account team" |
+| BC/DR plan document + NDA-shareable summary | disaster-recovery | Formal DR evidence | "DR-plan summary available under NDA — account team / security@valyd.id" |
 
-## rate-limits.md
+## 7. Auditability
 
-Honest text used: unpublished limits now say "Not published — contact **support@valyd.id**".
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Recent-webhook-deliveries lookback + are older deliveries queryable | audit-logging | Reconciliation / dispute evidence | "Not documented — contact support@valyd.id" |
+| Export (CSV/API) or SIEM streaming of events/deliveries | audit-logging | SOC/SIEM integration | "Not documented — contact support@valyd.id" |
+| Append-only / tamper-evident activity records + attestable? | audit-logging | Non-repudiation | "Not documented — contact support@valyd.id" |
+| Account-level audit trail of config changes (key rotation, member add/remove, app settings, manual overrides) + where an admin reads it | audit-logging | Change accountability | "Not documented — contact support@valyd.id" |
+| Which roles can view the delivery log / event history (member-role excluded?) | audit-logging | Least-privilege review | "Not documented — contact support@valyd.id" |
 
-- [ ] Any concurrent-request cap on `/api/v2`, or state "none"
-      → replaced with "Not published — contact support@valyd.id"
-- [ ] Burst/leaky-bucket allowance above the steady rate on `/api/v2`, or state "none"
-      → replaced with "Not published — contact support@valyd.id"
-- [ ] Per-endpoint RPM for the OIDC token endpoints (authorize/token/refresh), or "none published"
-      → replaced with "Not published — contact support@valyd.id"
-- [ ] Per-endpoint RPM for Account API reads (`userinfo` / Account API)
-      → replaced with "Not published — contact support@valyd.id"
-- [ ] Burst and concurrency caps for the auth APIs (`/api/auth`)
-      → replaced with "Not published — contact support@valyd.id"
+## 8. Incident response
 
-## api-key-lifecycle.md
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Incident-response + breach-notification process + notification SLA | security-trust | Regulatory breach-notice duties | "Incident-response details available under NDA — contact security@valyd.id" |
+| Post-incident / RCA reports shared? how to request | operations-sla | Post-mortem accountability | "Available to enterprise customers on request — contact your account team" |
+| Escalation path for production-impacting incidents (incl. out-of-hours) | operations-sla / support-escalation | Fast outage resolution | "Contact your Valyd account team" |
 
-Honest text used: undocumented items now say "Not documented — contact **support@valyd.id**".
+## 9. Support
 
-- [ ] Whether rotation supports an overlap window where the old and new key are both valid, and its length
-      → replaced with "not documented here; for a coordinated cutover, contact support@valyd.id"
-- [ ] Whether a key can be revoked without minting a replacement (explicit revoke)
-      → replaced with "Not documented — contact support@valyd.id"
-- [ ] Whether the Console shows a per-key last-used time or usage
-      → replaced with "Not documented — contact support@valyd.id"
-- [x] Whether an App API key can be scoped to a subset of Verify capabilities, or is all-or-nothing
-      → **[ANSWERED ON PAGE]** = All-or-nothing (full-authority credential; no per-key scoping — per the page's Access model section)
-- [ ] Max simultaneously active API keys per app
-      → replaced with "Not documented — contact support@valyd.id"
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Support hours + time-zone coverage | support-escalation | Coverage vs the customer's ops | "Available on request — contact support@valyd.id" |
+| Support tiers/plans + what each includes | support-escalation | Procurement comparison | "Available on enterprise plans — contact your account team" |
+| First-response + resolution targets by severity | support-escalation | Operational SLAs | "Committed targets are part of enterprise plans — contact your account team" |
+| Non-technical contact (invoices, seats, plan changes) | support-escalation | Account admin | "support@valyd.id" |
 
-## security-disclosure.md
+## 10. Data lifecycle
 
-Honest text used: security contact = **security@valyd.id**; disclosure language kept honest (no invented timeline/bounty).
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Retention of verification decisions + account proofs | data-retention | Data-minimization / audits | "Available on request — current retention schedule" |
+| Webhook delivery-log retention window | data-retention | Reconciliation windows | "Available on request — current retention schedule" |
+| Application/request log retention | data-retention | Forensics vs minimization | "Available on request — current retention schedule" |
+| Audit + billing record retention (legal/tax minimums) | data-retention | Statutory retention | "Retained per applicable legal/tax/accounting requirements" |
+| Deletion request path + completion SLA | data-retention | GDPR/CCPA erasure rights | Documented delete/unlink mechanism (`user_deleted` 410) + "for a formal erasure request or timeline, contact support@valyd.id" |
 
-- [ ] Security contact email or intake form
-      → replaced with "security@valyd.id" (and used in the `security.txt` sample `Contact:` line)
-- [ ] PGP key or secure-intake option for sensitive reports, if offered
-      → replaced with "Not currently offered — email security@valyd.id and we will arrange a secure channel if needed"
-- [ ] How quickly a report is acknowledged
-      → replaced with "We acknowledge valid reports and follow up with the reporter (no fixed public SLA)"
-- [ ] Coordinated-disclosure timeline and safe-harbor language
-      → replaced with "Coordinated disclosure — we ask for reasonable time to remediate before public disclosure"
-- [ ] Whether a bug-bounty or reward program exists and where it is hosted
-      → replaced with "No public bug-bounty program at this time — report directly to security@valyd.id"
-- [ ] `security.txt` `Expires:` value (ISO 8601 expiry date)
-      → sample now shows a `<ISO 8601 expiry date>` template placeholder; set a real date when publishing the file
-- [ ] `security.txt` `Policy:` URL of the full disclosure policy
-      → sample now shows a `<URL of the published disclosure policy>` template placeholder
-- [ ] On which domains the `security.txt` will be hosted
-      → replaced with "Valyd serves it on its primary product domains; contact security@valyd.id if you cannot locate it"
+## 11. API rate limits (operational, not enterprise-security but still open)
 
-## audit-logging.md
-
-Honest text used: undocumented rows now say "Not documented — contact **support@valyd.id**".
-
-- [ ] How far back the Recent webhook deliveries list shows in the Portal, and whether older deliveries are queryable
-      → replaced with "Not documented — contact support@valyd.id"
-- [ ] Whether verification-event and webhook-delivery activity can be exported (CSV/API) or streamed to a SIEM, and how
-      → replaced with "Not documented — contact support@valyd.id"
-- [ ] Whether Valyd's activity records are append-only / tamper-evident, and whether that property is attestable
-      → replaced with "Not documented — contact support@valyd.id"
-- [ ] Whether an account-level audit trail records config changes (API-key rotation, member add/remove, app settings, manual decision overrides) and where an org admin reads it
-      → replaced with "Not documented — contact support@valyd.id"
-- [ ] Which roles can view the delivery log and event history, and whether member-role users are excluded
-      → replaced with "Not documented — contact support@valyd.id"
-
-Note: the section heading "Not yet documented (owner to confirm)" was renamed to "Not yet published"
-to remove the internal annotation from the public page.
-
-## support-escalation.md
-
-Honest text used: support channel/account-billing = **support@valyd.id**; tiers/targets point to enterprise plans.
-
-- [ ] The support contact channel(s): email address, portal URL, or in-app, and where to reach each
-      → replaced with "support@valyd.id"
-- [ ] Support hours and time-zone coverage
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] Whether support tiers or plans exist and what each includes
-      → replaced with "Available on enterprise plans — contact your Valyd account team"
-- [ ] First-response and resolution-time targets by severity
-      → replaced with "Committed response targets are part of enterprise plans — contact your Valyd account team"
-- [ ] The escalation path for a production-impacting incident, and how to reach it out of hours
-      → replaced with "For a production-impacting incident, contact your Valyd account team"
-- [ ] The public status page URL for live incident and maintenance updates
-      → replaced with "Available on request — contact support@valyd.id"
-- [ ] The contact for non-technical questions (invoices, seats, plan changes)
-      → replaced with "support@valyd.id"
-
-Note: the section heading "Channels & response targets (owner to confirm)" was renamed to
-"Channels & response targets" to remove the internal annotation from the public page.
-
-## disaster-recovery.md
-
-Honest text used: continuity rows point to the account team; DR-plan summary "under NDA".
-
-- [ ] Backup cadence and method for account, verification, and billing data (continuous/PITR vs periodic snapshots)
-      → replaced with "Available on request — contact your Valyd account team"
-- [ ] How long backups are retained and in which region(s) they are stored
-      → replaced with "Available on request — contact your Valyd account team"
-- [ ] Whether backups are encrypted at rest and with what key management
-      → replaced with "Available on request — contact your Valyd account team"
-- [ ] The maximum data-loss window a restore can incur (RPO)
-      → replaced with "Available on enterprise plans — contact your Valyd account team"
-- [ ] The target time to restore service after a major outage (RTO)
-      → replaced with "Available on enterprise plans — contact your Valyd account team"
-- [ ] Whether Valyd runs multi-region or multi-AZ redundancy for its data and verification engine
-      → replaced with "Available on request — contact your Valyd account team"
-- [ ] Whether failover to a standby is automatic or manual, and who initiates it
-      → replaced with "Available on request — contact your Valyd account team"
-- [ ] Whether backup restores are tested on a schedule, the cadence, and the date of the last successful restore test
-      → replaced with "Available on request — contact your Valyd account team"
-- [ ] Whether a business-continuity / DR plan document exists and whether a summary is shareable under NDA
-      → replaced with "A DR-plan summary is available under NDA — contact your Valyd account team or security@valyd.id"
+| Fact needed | Page | Why needed | Current public wording |
+|---|---|---|---|
+| Concurrent-request cap on `/api/v2` (or "none") | rate-limits | Client concurrency planning | "Not published — contact support@valyd.id" |
+| Burst allowance above steady rate on `/api/v2` (or "none") | rate-limits | Burst-traffic handling | "Not published — contact support@valyd.id" |
+| Per-endpoint RPM for OIDC token endpoints | rate-limits | Login-throughput planning | "Not published — contact support@valyd.id" |
+| Per-endpoint RPM for Account API reads | rate-limits | Read-throughput planning | "Not published — contact support@valyd.id" |
+| Burst + concurrency caps for `/api/auth` | rate-limits | Auth-traffic planning | "Not published — contact support@valyd.id" |

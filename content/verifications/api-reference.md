@@ -94,7 +94,7 @@ Available services that a workflow can bundle:
 
 There is no REST endpoint to create a workflow from this reference — workflows are defined in the Developer Portal, and you reference the resulting `workflow_id` in `POST /api/v2/session`.
 
-## Standalone checks
+## Direct API checks
 
 Run a single check directly without a hosted session.
 
