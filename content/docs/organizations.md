@@ -62,8 +62,10 @@ can sign in** — while a **public** app lets anyone log in.
 - **14-day free trial** — run verifications for your organization free for the first 14 days.
 - **$0.99 per active member / month** after the trial — that covers **unlimited verifications**
   for that member (KYC, license, liveness, location, face match; verify them as often as you need).
-  You're billed only for **active** (face-activated) members — an invited person who hasn't
-  activated yet doesn't count. Add or remove people anytime; the bill follows your active roster.
+  You're billed only for **active** members. A member becomes active the moment they **scan their
+  face** (activate the invite) — that's when the seat turns on and billing starts for them. An
+  invited person who hasn't scanned their face yet is **free** and doesn't count. Add or remove
+  people anytime; the bill follows your active roster.
 - Verification checks and login stay on the same single wallet and ledger — one bill for
   everything.
 
