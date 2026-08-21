@@ -14,18 +14,27 @@ read verification results, run web tasks on the user's behalf, and request perso
 the person approves (or declines) in their own Valyd app. The agent gets capabilities; the
 user keeps consent.
 
+<Callout type="info">
+  **Two different things share the word "agent" here — don't confuse them:**
+  **Valyd MCP** gives your agent verification and identity as **tools it can call** (a product
+  capability — it is *not* a documentation server). **Agent-readable docs** let any agent
+  **read and learn** these docs by plain fetch of [`llms.txt`](/llms.txt) — no MCP, no server to
+  run. Use either, both, or neither.
+</Callout>
+
 ## Live today
 
 <Cards>
-  <Cards.Card icon={<Plug />} title="Agent tools (MCP)" href="/ai/mcp-setup" arrow>
-    A hosted MCP server (Streamable HTTP, OAuth 2.1 + PKCE) that turns verification and the
-    Valyd web agent into tools for Claude Code, Claude Desktop, Cursor, VS Code, and any
-    OAuth-capable MCP client. No keys in config files — the user signs in with Valyd.
+  <Cards.Card icon={<Plug />} title="Valyd MCP — verification tools" href="/ai/mcp-setup" arrow>
+    A hosted MCP server (Streamable HTTP, OAuth 2.1 + PKCE) that turns **verification and the
+    Valyd web agent into callable tools** for Claude Code, Claude Desktop, Cursor, VS Code, and
+    any OAuth-capable MCP client. This is a product capability — **not** a docs server. No keys in
+    config files: the user signs in with Valyd.
   </Cards.Card>
-  <Cards.Card icon={<BookOpenCheck />} title="Agent-readable docs" href="/agents" arrow>
-    llms.txt, a full-corpus llms-full.txt, OpenAPI 3.1 specs for both APIs, and a Postman
-    collection — everything an agent needs to discover and call the Valyd APIs without
-    scraping this site.
+  <Cards.Card icon={<BookOpenCheck />} title="Agent-readable docs (llms.txt)" href="/llms.txt" arrow>
+    Point any agent at [`llms.txt`](/llms.txt) to **read and learn** the whole docs by plain
+    fetch — the lightweight alternative to a "docs MCP", with no server to run. Plus a full-corpus
+    llms-full.txt, per-page `.md` mirrors, OpenAPI 3.1 specs, and a Postman collection.
   </Cards.Card>
   <Cards.Card icon={<UserCheck />} title="Human-in-the-loop consent" href="/docs/request-data" arrow>
     An agent (or your backend) requests raw user data; the human approves the exact fields in
