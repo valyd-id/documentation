@@ -82,6 +82,65 @@ IF unsure which workflow_id to use:                              → open the De
 
 ---
 
+## Example: a ready-to-go workflow
+
+One hosted session can run **several checks back to back** — the person completes them all on one
+page, and you get **one combined decision**. A common shape is an **EVV / home-health** onboarding
+where a caregiver must, in a single sitting, prove **who they are, that they're licensed, and where
+they are**:
+
+- **ID / KYC** — scan a government ID (OCR + authenticity) with a **live** selfie and 1:1 face match.
+- **Professional license** — verify their nursing/clinical license against the name on the ID.
+- **Location verification** — confirm they're at the visit location.
+
+You don't wire these together in code. In the Developer Portal's **workflow builder** you pick the
+checks (and their order) once, and Valyd hands you a single `workflow_id`:
+
+![The workflow wizard: select checks and their order](/images/screenshots/portal-workflow-wizard.png)
+
+Then the **same one call** you already use runs the whole flow — the person selects nothing
+technical, they just complete each step in turn:
+
+<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
+<Tabs.Tab>
+
+```javascript
+// The workflow already bundles [id_verification, liveness, face_match, credential, location].
+const session = await verify.sessions.create({
+  workflowId:  process.env.VALYD_EVV_WORKFLOW_ID!, // the EVV workflow you built in the portal
+  redirectUrl: `${process.env.APP_URL}/visits/verified`,
+  callback:    `${process.env.APP_URL}/webhooks/valyd`,
+  vendorData:  visit.caregiverId,   // your internal ref — echoed back on the webhook
+});
+// → res.redirect(session.url)  — one page, ID → license → location, in order
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```bash
+curl -X POST https://idp.valyd.work/api/v2/session \
+  -H "X-API-Key: $VALYD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_id":  "wf_evv_…",
+    "redirect_url": "https://app.example.com/visits/verified",
+    "callback":     "https://api.example.com/webhooks/valyd",
+    "vendor_data":  "caregiver_123"
+  }'
+```
+
+</Tabs.Tab>
+</Tabs>
+
+When the caregiver finishes, one signed webhook fires with **one decision** covering every check,
+and the `d.checks` array carries the per-check breakdown (ID, liveness, face match, license,
+location) — read it exactly as in [Reading the decision](#reading-the-decision) below. Compose the
+checks in [Workflows](/verifications/workflows); read the combined result in
+[Decisions & statuses](/verifications/statuses).
+
+---
+
 ## Recipe: Integration steps
 
 The steps are identical for both products. Swap the `workflow_id` to switch between License Verification and KYC + License.

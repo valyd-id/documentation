@@ -47,7 +47,9 @@ for (const d of DIRS) { const abs = path.join(ROOT, d); if (fs.existsSync(abs)) 
 // Keep the product-boundary gate's required pins in step too.
 const gate = path.join(ROOT, 'scripts', 'check-product-boundaries.mjs')
 try {
-  const g = fs.readFileSync(gate, 'utf8').replace(/@valyd\/sdk@\^\d+\.\d+\.\d+/g, TARGET)
+  let g = fs.readFileSync(gate, 'utf8').replace(/@valyd\/sdk@\^\d+\.\d+\.\d+/g, TARGET)
+  // Keep the forbidden-install lookahead `(?!@\^X.Y.Z)` in step too.
+  g = g.replace(/\(\?!@\\\^\d+\\\.\d+\\\.\d+\)/g, `(?!@\\^${VERSION.replace(/\./g, '\\.')})`)
   fs.writeFileSync(gate, g)
 } catch { /* ignore */ }
 
