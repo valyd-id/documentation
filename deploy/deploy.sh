@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # On-box deploy for the Nextra docs. Called by CI (GitHub Actions) over SSH, or
 # by hand. Pulls the branch, installs, builds with the environment's hosts, and
 # restarts the pm2 app. Idempotent and safe to re-run.
@@ -54,6 +55,9 @@ echo "==> Building (prebuild regenerates the env-correct corpus)"
 # be reused. A clean build guarantees the pages match THIS env's hosts.
 rm -rf .next
 npm run build
+
+echo "==> Gates: contract + links (fail the deploy on drift)"
+npm run check-links
 
 echo "==> Restarting pm2 app '$PM2_APP'"
 if pm2 describe "$PM2_APP" >/dev/null 2>&1; then
