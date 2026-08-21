@@ -15,12 +15,12 @@ export default {
       copyPage: false
     }
   },
-  // The unified 9-section sidebar (rendered identically by every folder _meta) replaces the old
-  // per-tab navbars — these page-tabs stay reachable by URL but are hidden from the navbar so they
-  // no longer compete. The brand/logo still links Home ('/').
-  docs: { title: 'Docs', type: 'page', href: '/docs/introduction', display: 'hidden' },
-  verifications: { title: 'Verify', type: 'page', display: 'hidden' },
-  ai: { title: 'AI & Agents', type: 'page', display: 'hidden' },
+  // Top-nav tabs. Each renders the SAME unified 9-section sidebar (every folder _meta lists all
+  // nine sections), so the sidebar is consistent whichever tab you're in. These MUST stay visible:
+  // Nextra binds the desktop sidebar tree to a visible page-tab, so hiding them blanks the sidebar.
+  docs: { title: 'Docs', type: 'page', href: '/docs/introduction' },
+  verifications: { title: 'Verify', type: 'page' },
+  ai: { title: 'AI & Agents', type: 'page' },
   // Old single-page entries stay reachable by URL but out of the navbar —
   // superseded by the AI & Agents section.
   mcp: { display: 'hidden' },
