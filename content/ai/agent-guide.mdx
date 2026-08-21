@@ -1,6 +1,6 @@
 ---
 title: Agent Integration Guide
-description: How an AI agent integrates with Valyd without MCP — read llms.txt, pick a lane (API-key verification or account-connected), and call the APIs directly.
+description: How an AI agent integrates with Valyd without MCP — read llms.txt, ask the developer the right decision questions, pick a path (Login / Hosted / Standalone / account-connected), and call the APIs directly.
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,6 +9,114 @@ import { Callout } from 'nextra/components'
 
 No MCP client? An agent can integrate with Valyd the same way any backend does: read the
 machine-readable docs, pick the right lane, and call the APIs.
+
+## Integration decision flow (start here)
+
+<Callout type="info">
+  **If you're an agent scaffolding this in a tool like Lovable, Cursor, or Claude Code: ASK the
+  developer the questions below BEFORE writing code.** Each answer pins one path, one credential,
+  and one doc page to fetch and follow. Invent nothing — the credentials, endpoints, and page
+  names here all come from the docs those pages link to.
+</Callout>
+
+Ask, in order:
+
+### 1. Do you already have an app, or are you starting fresh?
+
+Context only — it tells you where the "Login with Valyd" button and the keys go. No branch; keep
+going.
+
+### 2. Do you have — or want — an organization (a team/workforce you onboard and control)?
+
+- **Yes, and you want to control members** — add people, decide who can log in, assign roles →
+  **Organizations path**. You onboard members by **face-activation**; they then sign in with
+  **Login with Valyd**. Roles are **owner / admin / developer / member**. Track exactly who logged
+  in via the **`valyd_org_member_id`** claim (its value is that member's `vmem_…` id) on the OIDC
+  userinfo response and ID token. Billing is **$0.99 per active member / month = unlimited
+  verifications** (a member is billable only once they scan their face; 14-day trial first).
+  → Credential: **`client_id` + `client_secret`** (Login with Valyd) **plus** the Members API
+  (headers `X-Client-Id` / `X-Client-Secret`, server-side only).
+  → Fetch [**Organizations**](/docs/organizations).
+- **No org / no member control** → continue.
+
+### 3. Do you just want to read — or verify — a user who signs in with Valyd?
+
+They log in, and you either read the proofs their account already holds, or add a check that saves
+to **their** Valyd account.
+→ **Account API — "With the user's token"**. Read proofs (`id_verified`, age bands, licenses) for
+free and instantly; run any check with the token attached and the passed proof saves to their
+Valyd ID for reuse. The PII stays with Valyd — you get proofs, not raw data.
+→ Credential: OIDC Bearer **`valyd_access_token`** (obtained via Login with Valyd).
+→ Fetch [**With the user's token**](/docs/user-token).
+
+### 4. Do you want to run verification checks (not necessarily tied to a Valyd login)?
+
+Then ask **two** sub-questions:
+
+**4a — Who manages the person's data?**
+
+- **"Valyd holds the PII; I only get proofs / verified status"** → **account-connected**: attach
+  the signed-in user's **`valyd_access_token`** to the check. The proof saves to their Valyd ID;
+  the PII stays with Valyd. → Fetch [**Verify the user**](/verifications/managed) (and
+  [With the user's token](/docs/user-token)).
+- **"I'll manage the data myself"** → **Standalone**: the full result — including any extracted
+  identity fields — returns to your system, and storing and protecting it is your responsibility.
+  → Credential: App **`X-API-Key`**. → Fetch [**Standalone checks**](/verifications/standalone).
+
+**4b — Whose UI collects the documents / selfie?**
+
+- **"Use Valyd's UI"** → **Hosted**: compose a workflow (KYC, license, liveness, location, face
+  match) in the portal, then one call — `sessions.create({ workflowId, redirectUrl })` — and the
+  combined decision arrives on your signed webhook. → Credential: App **`X-API-Key`** +
+  `workflow_id`. → Fetch [**Hosted verification**](/verifications/hosted).
+- **"I'll build my own UI / call the API directly"** → **Standalone API** calls (same
+  [Standalone checks](/verifications/standalone) page).
+
+### 5. Want it all in one flow?
+
+The user signs in **and** you run several checks on Valyd's hosted UI, with proofs saved to their
+account:
+→ Hosted workflow **with the token** —
+`sessions.create({ workflowId, valydAccessToken, redirectUrl })`. One flow = login-tied
+verification + Valyd's UI + proofs on the account. **Drop the `valydAccessToken`** and the same
+call returns full results to you instead (Standalone mode).
+→ Credential: App **`X-API-Key`** + `workflow_id` (+ the user's `valyd_access_token`). → Fetch
+[**Hosted verification**](/verifications/hosted) and [**Verify the user**](/verifications/managed).
+
+### Then clarify (as relevant)
+
+Once the path is set, ask whichever of these apply and fetch the named page:
+
+- **Which checks do you need?** ID / KYC, liveness, face match, age (returns age *bands* like
+  `is_18_plus` — never the DOB), professional license, location / EVV presence, anti-spoof, and
+  face uniqueness (one-person-one-account dedup). → [Verification types](/verifications/types)
+- **Reusable identity (KYC-reuse)?** Save a passed check as a proof so you never re-verify that
+  person again — **account-connected**, needs the user's `valyd_access_token` — or run it one-off
+  (**standalone**)? → [With the user's token](/docs/user-token)
+- **How should results be delivered?** Async signed **webhook** (hosted flow) or synchronously in
+  the **API response** (direct standalone checks). → [Webhooks](/verifications/webhooks)
+- **Do you need RAW identity data** (DOB, document number, address)? That requires the explicit
+  **consent flow** — the user approves on their own device; otherwise you only ever receive proofs
+  / verified-status. → [Request user data](/docs/request-data)
+- **Which login scopes?** `profile` (legal name, country, verified status), `verifications`
+  (proofs / badges), `email`, `doctor_license`. → [Scopes](/docs/scopes)
+- **Professional license check?** Discover states → license types first, then verify (the name
+  comes from the account, or you supply it). →
+  [Credential verification](/verifications/standalone/credential-verification)
+- **Drop-in button or your own OIDC library?** The "Sign in with Valyd" button
+  ([Login with Valyd](/docs)) or any OIDC library via discovery ([OIDC](/docs/oidc)).
+- **Where do the credentials come from? (important for agents)** A human must create the app and
+  keys in the Developer Portal (https://dev.valyd.work) — an agent **cannot** mint
+  `client_id` / `client_secret` / API key / `workflow_id`. **Pause and ask the developer for them;
+  never guess.** → [Dev portal setup](/docs/create-project)
+- **Billing model?** Organization = **$0.99 / active member / month = unlimited** verifications (a
+  member becomes active, and billing starts, the moment they face-scan); standalone / non-org =
+  pay per check. → [Organizations](/docs/organizations)
+
+**Agents scaffolding in a tool like Lovable/Cursor: ASK these questions before writing code; then
+fetch the named page's `.md` and follow it.** The exact `.md` fetch URL for each page is listed in
+[`llms.txt`](https://docs.valyd.work/llms.txt) (e.g. `.../docs/organizations.md`,
+`.../docs/user-token.md`, `.../verify/standalone.md`, `.../verify/hosted.md`) — see Step 1.
 
 ## Step 1 — Read `llms.txt` first
 

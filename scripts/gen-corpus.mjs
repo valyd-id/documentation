@@ -64,8 +64,22 @@ function substitute(text) {
   return out
 }
 
+// Strip MDX-only syntax so an .mdx page mirrors to clean, agent-readable Markdown:
+// drop `import ...` lines and {/* comments */}, remove Capitalized JSX component tags
+// (<Tabs>, </Tabs>, <Tabs.Tab>, <Callout ...>, self-closing <Foo />) while keeping the
+// prose, tables and code fences, then collapse the blank lines the tags leave behind.
+function stripMdx(raw) {
+  return raw
+    .replace(/^import\s.*$/gm, '')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/<\/?[A-Z][A-Za-z0-9.]*(?:\s[^>]*?)?\/?>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trimStart()
+}
+
 async function writeSub(srcAbs, destAbs) {
-  const raw = await fs.readFile(srcAbs, 'utf8')
+  let raw = await fs.readFile(srcAbs, 'utf8')
+  if (srcAbs.endsWith('.mdx')) raw = stripMdx(raw)
   await fs.mkdir(path.dirname(destAbs), { recursive: true })
   await fs.writeFile(destAbs, substitute(raw))
 }
@@ -76,7 +90,7 @@ async function listMd(dirAbs, prefix = '') {
   const out = []
   for (const e of await fs.readdir(dirAbs, { withFileTypes: true })) {
     if (e.isDirectory()) out.push(...(await listMd(path.join(dirAbs, e.name), `${prefix}${e.name}/`)))
-    else if (e.name.endsWith('.md')) out.push(prefix + e.name)
+    else if (e.name.endsWith('.md') || e.name.endsWith('.mdx')) out.push(prefix + e.name)
   }
   return out
 }
@@ -86,10 +100,12 @@ async function listMd(dirAbs, prefix = '') {
 const folderAlias = f => (f.endsWith('/index.md') ? f.replace(/\/index\.md$/, '.md') : null)
 
 async function mdMirror(srcDir, destDir, indexAlias) {
-  const files = await listMd(path.join(ROOT, srcDir))
+  const files = await listMd(path.join(ROOT, srcDir))         // sources, may be .md or .mdx
+  const toMd = f => f.replace(/\.mdx$/, '.md')                // dest name is always .md
+  const dests = files.map(toMd)
   const expected = new Set([
-    ...files,
-    ...files.map(folderAlias).filter(Boolean),
+    ...dests,
+    ...dests.map(folderAlias).filter(Boolean),
     ...(indexAlias ? [indexAlias] : [])
   ])
   try {
@@ -102,12 +118,13 @@ async function mdMirror(srcDir, destDir, indexAlias) {
     // Destination is created by writeSub below on a clean checkout.
   }
   for (const f of files) {
-    await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, f))
+    const dest = toMd(f)
+    await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, dest))
     // Preserve the historical .md URL for the index page (overview.md / intro.md)
-    if (f === 'index.md' && indexAlias) {
+    if (dest === 'index.md' && indexAlias) {
       await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, indexAlias))
     }
-    const alias = folderAlias(f)
+    const alias = folderAlias(dest)
     if (alias) await writeSub(path.join(ROOT, srcDir, f), path.join(ROOT, destDir, alias))
   }
   return files.length

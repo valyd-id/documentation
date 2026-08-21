@@ -177,6 +177,32 @@ const session = await verify.sessions.create({
 </Section>
 
 <Section
+  title="Point your AI agent at the docs"
+  sub="One machine-readable index — hand it over and your agent knows the product, the integration paths, and the questions to ask you first."
+  index={1}
+>
+  <div className="rounded-2xl border border-(--vd-primary-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent p-6 sm:p-8">
+    <div className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-(--vd-primary)">
+      <Bot className="h-4 w-4" /> For Claude, Cursor, Lovable & other coding agents
+    </div>
+    <p className="mb-4 max-w-2xl text-[15px] leading-relaxed text-gray-600 dark:text-gray-400">
+      Give your agent this one URL and it can study the entire docs — every page, machine-readable:
+    </p>
+    <a
+      href="/llms.txt"
+      className="inline-flex items-center rounded-xl border border-(--vd-border) bg-white/70 px-4 py-2.5 font-mono text-sm text-(--vd-primary) shadow-sm transition hover:border-(--vd-primary-border) dark:bg-slate-950/60"
+    >
+      https://docs.valyd.work/llms.txt
+    </a>
+    <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+      Prefer everything inline? <a href="/llms-full.txt" className="font-medium text-(--vd-primary) underline">llms-full.txt</a>{' '}
+      has every page in one file. New to Valyd as an agent? Start with the{' '}
+      <a href="/ai/agent-guide" className="font-medium text-(--vd-primary) underline">agent integration guide</a>.
+    </p>
+  </div>
+</Section>
+
+<Section
   title="Developer resources"
   sub="Everything machine-readable, ready to download or point your tooling at."
   index={1}

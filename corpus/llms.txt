@@ -9,6 +9,77 @@
 > Every page below is available as clean Markdown at the linked `.md` URL — fetch those directly;
 > do not try to scrape the HTML site (it is a client-rendered SPA and returns no static content).
 
+## How to integrate (decision flow)
+
+Ask the developer these questions, in order; each answer pins one path + credential + one `.md`
+page to fetch and follow. Credentials must be supplied by a human (see "Human-only steps") — never
+guess them.
+
+- Q0 (context only): Existing app or starting fresh? Tells you where the login button and keys go.
+- Q1 — Team/workforce you onboard AND control (add members, gate who can log in, assign roles)?
+  - YES → **Organizations**. Members join by face-activation, then sign in with Login with Valyd;
+    roles owner/admin/developer/member; the `valyd_org_member_id` claim (a `vmem_…` id) tells you
+    who logged in; $0.99/active member/mo = unlimited verifications (14-day trial).
+    Credential: `client_id` + `client_secret` (login) + Members API (`X-Client-Id`/`X-Client-Secret`).
+    Fetch: https://docs.valyd.work/docs/organizations.md
+  - NO → continue.
+- Q2 — Just read or verify a user who signs in with Valyd (read their existing proofs, or add a
+  check that saves to THEIR account)?
+  → **Account API / "With the user's token"**. Read proofs free; run a check with the token and the
+    passed proof saves to their Valyd ID; PII stays with Valyd.
+    Credential: OIDC Bearer `valyd_access_token` (from Login with Valyd).
+    Fetch: https://docs.valyd.work/docs/user-token.md
+- Q3 — Run verification checks (not necessarily tied to a Valyd login)? Ask TWO sub-questions:
+  - Q3a — Who holds the person's data?
+    - "Valyd holds the PII, I get only proofs/verified status" → **account-connected**: attach the
+      user's `valyd_access_token` to the check; PII stays with Valyd.
+      Fetch: https://docs.valyd.work/verify/managed.md
+    - "I manage the data myself" → **Standalone**: full results incl. identity fields return to you;
+      you store/protect them. Credential: App `X-API-Key`.
+      Fetch: https://docs.valyd.work/verify/standalone.md
+  - Q3b — Whose UI collects the documents/selfie?
+    - "Valyd's UI" → **Hosted**: compose a workflow (KYC/license/liveness/location/face-match), one
+      `sessions.create({ workflowId, redirectUrl })` call, combined decision on the webhook.
+      Credential: App `X-API-Key` + `workflow_id`. Fetch: https://docs.valyd.work/verify/hosted.md
+    - "My own UI / call the API directly" → **Standalone API** (same standalone page above).
+- Q4 — Login only (sign the user in, run no check)?
+  → **Login with Valyd** (OAuth2/OIDC). Credential: `client_id` + `client_secret`.
+    Fetch: https://docs.valyd.work/docs/overview.md
+- Q5 — Want it all in one flow (user signs in AND you run several checks on Valyd's hosted UI, with
+  proofs saved to their account)?
+  → **Hosted workflow WITH the token**: `sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
+    Drop the `valydAccessToken` and the same call returns full results to you instead (Standalone).
+    Credential: App `X-API-Key` + `workflow_id` (+ the user's `valyd_access_token`).
+    Fetch: https://docs.valyd.work/verify/hosted.md
+
+Then clarify (as relevant), fetching the named `.md`:
+- Which checks? ID/KYC, liveness, face match, age (age *bands* like `is_18_plus`, never the DOB),
+  professional license, location/EVV presence, anti-spoof, face uniqueness (one-person-one-account
+  dedup). → https://docs.valyd.work/verify/types.md
+- Reusable identity (KYC-reuse)? Save the passed check as a proof (account-connected, needs the
+  user's `valyd_access_token`) vs one-off (standalone). → https://docs.valyd.work/docs/user-token.md
+- Result delivery? Async signed webhook (hosted) vs synchronous API response (standalone).
+  → https://docs.valyd.work/verify/webhooks.md
+- Need RAW identity data (DOB, document number, address)? Requires the consent flow (the user
+  approves on their device); otherwise you get proofs / verified-status only.
+  → https://docs.valyd.work/docs/request-data.md
+- Login scopes? profile (legal name, country, verified status), verifications (proofs/badges),
+  email, doctor_license. → https://docs.valyd.work/docs/scopes.md
+- Professional license check? Discover states → license types first, then verify (name comes from
+  the account or you supply it). → https://docs.valyd.work/verify/standalone/credential-verification.md
+- Drop-in button or your own OIDC library? "Sign in with Valyd" button
+  (https://docs.valyd.work/docs/overview.md) vs any OIDC library via discovery
+  (https://docs.valyd.work/docs/oidc.md).
+- Credentials source (IMPORTANT): a human creates the app + keys in the Developer Portal
+  (dev.valyd.work); an agent CANNOT mint `client_id`/`client_secret`/API key/`workflow_id` — pause
+  and ask, never guess. → https://docs.valyd.work/docs/create-project.md
+- Billing? Organization = $0.99/active member/mo = unlimited verifications (billing starts the
+  moment a member face-scans); standalone/non-org = pay per check.
+  → https://docs.valyd.work/docs/organizations.md
+
+Full narrative version of this tree (with example calls and the two golden rules) is the Agent
+Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
+
 ## Instructions for AI agents
 
 - Fetch pages with `curl -sL <url>`; each `.md` is self-contained (prerequisites, steps,
