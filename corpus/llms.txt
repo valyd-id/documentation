@@ -25,8 +25,8 @@ guess them.
   - NO → continue.
 - Q2 — Just read or verify a user who signs in with Valyd (read their existing proofs, or add a
   check that saves to THEIR account)?
-  → **Account API / "With the user's token"**. Read proofs free; run a check with the token and the
-    passed proof saves to their Valyd ID; PII stays with Valyd.
+  → **Reusable Identity (with the user's token)**. Read proofs free; run a check with the token and
+    the passed proof saves to their Valyd ID; PII stays with Valyd.
     Credential: OIDC Bearer `valyd_access_token` (from Login with Valyd).
     Fetch: https://docs.valyd.work/docs/user-token.md
 - Q3 — Run verification checks (not necessarily tied to a Valyd login)? Ask TWO sub-questions:
@@ -34,14 +34,14 @@ guess them.
     - "Valyd holds the PII, I get only proofs/verified status" → **account-connected**: attach the
       user's `valyd_access_token` to the check; PII stays with Valyd.
       Fetch: https://docs.valyd.work/verify/managed.md
-    - "I manage the data myself" → **Standalone**: full results incl. identity fields return to you;
-      you store/protect them. Credential: App `X-API-Key`.
+    - "I manage the data myself" → **Direct API Checks** (standalone): full results incl. identity
+      fields return to you; you store/protect them. Credential: App `X-API-Key`.
       Fetch: https://docs.valyd.work/verify/standalone.md
   - Q3b — Whose UI collects the documents/selfie?
     - "Valyd's UI" → **Hosted**: compose a workflow (KYC/license/liveness/location/face-match), one
       `sessions.create({ workflowId, redirectUrl })` call, combined decision on the webhook.
       Credential: App `X-API-Key` + `workflow_id`. Fetch: https://docs.valyd.work/verify/hosted.md
-    - "My own UI / call the API directly" → **Standalone API** (same standalone page above).
+    - "My own UI / call the API directly" → **Direct API Checks** (same standalone page above).
 - Q4 — Login only (sign the user in, run no check)?
   → **Login with Valyd** (OAuth2/OIDC). Credential: `client_id` + `client_secret`.
     Fetch: https://docs.valyd.work/docs/overview.md
@@ -57,7 +57,7 @@ Then clarify (as relevant), fetching the named `.md`:
   professional license, location/EVV presence, anti-spoof, face uniqueness (one-person-one-account
   dedup). → https://docs.valyd.work/verify/types.md
 - Reusable identity (KYC-reuse)? Save the passed check as a proof (account-connected, needs the
-  user's `valyd_access_token`) vs one-off (standalone). → https://docs.valyd.work/docs/user-token.md
+  user's `valyd_access_token`) vs one-off (Direct API Checks). → https://docs.valyd.work/docs/user-token.md
 - Result delivery? Async signed webhook (hosted) vs synchronous API response (standalone).
   → https://docs.valyd.work/verify/webhooks.md
 - Need RAW identity data (DOB, document number, address)? Requires the consent flow (the user
@@ -112,7 +112,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 - [Overview](https://docs.valyd.work/docs/overview.md): When to use OIDC login, what it reads from an account, and when to use Verification API instead.
 - [Create a Project & Get Credentials](https://docs.valyd.work/docs/create-project.md): Dev-portal setup — sign up, create a project, set redirect/scopes, copy client_id + client_secret. (Human-only.)
-- [Quick start — Login with Valyd](https://docs.valyd.work/docs/quick-start.md): Install @valyd/sdk (^1.10.2) and wire the standard OIDC login flow end to end — state comparison, code exchange, userinfo.
+- [Quickstarts — Login with Valyd](https://docs.valyd.work/docs/quickstarts.md): Stack-by-stack complete logins — Node.js, Next.js, Python, PHP (Laravel), cURL, or any OIDC library — each a full working OIDC flow (state comparison, code exchange, userinfo). (The old /docs/quick-start.md is a compatibility redirect to this page.)
 - [OIDC session security](https://docs.valyd.work/docs/login-sessions.md): Store and validate state, nonce, PKCE, and redirect URI as one server-side transaction.
 
 ## Valyd ID — Authentication & integration
@@ -138,7 +138,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 - [Choose an integration](https://docs.valyd.work/verify/modes.md): Decide whether the result belongs to your system or a Valyd account, then choose Hosted or Standalone.
 - [Account-connected verification](https://docs.valyd.work/verify/managed.md): OIDC first, then Verification API; successful proofs are saved to the user's account.
 - [Hosted Verification](https://docs.valyd.work/verify/hosted.md): No-login capture page, signed webhooks, decision API, statuses, and optional account linking.
-- [Standalone checks](https://docs.valyd.work/verify/standalone.md): No-login server-to-server checks — overview, idempotency, and SDK quick start. Per-endpoint pages: [ID verification](https://docs.valyd.work/verify/standalone/id-verification.md), [Liveness](https://docs.valyd.work/verify/standalone/liveness.md), [Anti-spoof](https://docs.valyd.work/verify/standalone/antispoof.md), [Face uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), [Location](https://docs.valyd.work/verify/standalone/location.md), [Face match](https://docs.valyd.work/verify/standalone/face-match.md), [Age verification](https://docs.valyd.work/verify/standalone/age-verification.md), [Credential verification](https://docs.valyd.work/verify/standalone/credential-verification.md), [KYC + credential](https://docs.valyd.work/verify/standalone/kyc-credential.md), [Raw HTTP (cURL)](https://docs.valyd.work/verify/standalone/http.md), [Common errors](https://docs.valyd.work/verify/standalone/errors.md).
+- [Direct API Checks (standalone)](https://docs.valyd.work/verify/standalone.md): No-login server-to-server checks — overview, idempotency, and SDK quick start. Per-endpoint pages: [ID verification](https://docs.valyd.work/verify/standalone/id-verification.md), [Liveness](https://docs.valyd.work/verify/standalone/liveness.md), [Anti-spoof](https://docs.valyd.work/verify/standalone/antispoof.md), [Face uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), [Location](https://docs.valyd.work/verify/standalone/location.md), [Face match](https://docs.valyd.work/verify/standalone/face-match.md), [Age verification](https://docs.valyd.work/verify/standalone/age-verification.md), [Credential verification](https://docs.valyd.work/verify/standalone/credential-verification.md), [KYC + credential](https://docs.valyd.work/verify/standalone/kyc-credential.md), [Raw HTTP (cURL)](https://docs.valyd.work/verify/standalone/http.md), [Common errors](https://docs.valyd.work/verify/standalone/errors.md).
 - [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.
 - [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it.
