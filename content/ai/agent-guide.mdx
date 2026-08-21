@@ -33,8 +33,9 @@ going.
   **Organizations path**. You onboard members by **face-activation**; they then sign in with
   **Login with Valyd**. Roles are **owner / admin / developer / member**. Track exactly who logged
   in via the **`valyd_org_member_id`** claim (its value is that member's `vmem_…` id) on the OIDC
-  userinfo response and ID token. Billing is **$0.99 per active member / month = unlimited
-  verifications** (a member is billable only once they scan their face; 14-day trial first).
+  userinfo response and ID token. Billing is **unlimited verifications on a per-active-member
+  monthly plan** (a member is billable only once they scan their face; 14-day trial first; current
+  price at [/docs/organizations/billing](/docs/organizations/billing)).
   → Credential: **`client_id` + `client_secret`** (Login with Valyd) **plus** the Members API
   (headers `X-Client-Id` / `X-Client-Secret`, server-side only).
   → Fetch [**Organizations**](/docs/organizations).
@@ -110,8 +111,9 @@ Once the path is set, ask whichever of these apply and fetch the named page:
   keys in the Developer Portal (https://dev.valyd.work) — an agent **cannot** mint
   `client_id` / `client_secret` / API key / `workflow_id`. **Pause and ask the developer for them;
   never guess.** → [Dev portal setup](/docs/create-project)
-- **Billing model?** Organization = **$0.99 / active member / month = unlimited** verifications (a
-  member becomes active, and billing starts, the moment they face-scan); standalone / non-org =
+- **Billing model?** Organization = **unlimited verifications on a per-active-member monthly plan** (a
+  member becomes active, and billing starts, the moment they face-scan; current price at
+  [/docs/organizations/billing](/docs/organizations/billing)); standalone / non-org =
   pay per check. → [Organizations](/docs/organizations)
 
 **Agents scaffolding in a tool like Lovable/Cursor: ASK these questions before writing code; then

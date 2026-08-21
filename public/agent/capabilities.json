@@ -1,9 +1,10 @@
 {
-  "$comment": "Machine-readable Valyd capability matrix for AI agents. Each entry maps a real integration goal to its path, product, auth header, required credentials, whether it is billable, how PII is handled, whether a proof is saved to the user's Valyd account, and the agent-fetchable .md doc (root-relative; resolve against the docs host you fetched this file from). Every field is derived from the Agent Integration Guide (/ai/agent-guide) and llms.txt — nothing here is invented. Credentials cannot be minted by an agent; a human creates apps/keys in the Developer Portal.",
+  "$comment": "Machine-readable Valyd capability matrix for AI agents. Each entry maps a real integration goal to a stable id, its path, product, auth header, required credentials, whether it is billable, how PII is handled, whether a proof is saved to the user's Valyd account, and the agent-fetchable .md doc (root-relative; resolve against the docs host you fetched this file from). Hosted verification has TWO distinct modes with different data outcomes, so they are two entries (one_off vs account_connected). Every field is derived from the Agent Integration Guide (/ai/agent-guide) and llms.txt — nothing here is invented. Credentials cannot be minted by an agent; a human creates apps/keys in the Developer Portal.",
   "version": "1",
   "source_of_truth": "openapi",
   "capabilities": [
     {
+      "id": "login",
       "goal": "Sign a user in and read their verified Valyd account (profile, licenses, verification proofs)",
       "path": "Login with Valyd (OIDC)",
       "product": "valyd-id",
@@ -15,8 +16,9 @@
       "doc": "/docs/overview.md"
     },
     {
+      "id": "reusable.read",
       "goal": "Read the proofs a signed-in user's account already holds (id_verified, age bands, licenses) — free, no check runs",
-      "path": "With the user's token (Account API)",
+      "path": "Reusable Identity (Account API)",
       "product": "valyd-id",
       "auth": "oidc-bearer",
       "credential": "the user's Bearer valyd_access_token (from Login with Valyd)",
@@ -26,7 +28,8 @@
       "doc": "/docs/user-token.md"
     },
     {
-      "goal": "Run a verification for a signed-in user and save the passed proof to their Valyd ID; PII stays with Valyd",
+      "id": "verification.account_connected",
+      "goal": "Run a verification for a signed-in user and save the passed proof to their Valyd ID; PII stays with Valyd. (ID/KYC in account mode is hosted-only — redirect via verify.kyc.redirectUrl.)",
       "path": "Account-connected verification",
       "product": "valyd-verify",
       "auth": "x-api-key",
@@ -37,8 +40,9 @@
       "doc": "/verify/managed.md"
     },
     {
-      "goal": "Run a one-off verification check on data you supply; the full result including extracted identity fields returns to your system for you to store and protect",
-      "path": "Standalone checks",
+      "id": "verification.direct",
+      "goal": "Run a one-off Direct API check on data you supply (incl. id-verification / kyc-credential); the full result including extracted identity fields returns to your system for you to store and protect",
+      "path": "Direct API checks",
       "product": "valyd-verify",
       "auth": "x-api-key",
       "credential": "App X-API-Key",
@@ -48,17 +52,35 @@
       "doc": "/verify/standalone.md"
     },
     {
-      "goal": "Send the user to Valyd's hosted capture page for a composed workflow; the combined decision arrives on a signed webhook",
-      "path": "Hosted verification",
+      "id": "verification.hosted.one_off",
+      "goal": "Send the user to Valyd's hosted capture page for a composed workflow WITHOUT a user token; the full combined result returns to your system on a signed webhook",
+      "path": "Hosted verification (one-off)",
       "product": "valyd-verify",
       "auth": "x-api-key",
-      "credential": "App X-API-Key + workflow_id (add the user's valyd_access_token to the session to save proofs to their account instead of returning results to you)",
+      "credential": "App X-API-Key + workflow_id",
+      "user_token": false,
+      "result": "raw",
       "billable": true,
       "pii_mode": "standalone",
       "saves_proof": false,
       "doc": "/verify/hosted.md"
     },
     {
+      "id": "verification.hosted.account_connected",
+      "goal": "Send a signed-in user to Valyd's hosted capture page WITH their valyd_access_token; passed proofs save to their Valyd ID and PII stays with Valyd (you receive the decision + proofs, not raw identity)",
+      "path": "Hosted verification (account-connected)",
+      "product": "valyd-verify",
+      "auth": "x-api-key",
+      "credential": "App X-API-Key + workflow_id + the user's valyd_access_token on the session",
+      "user_token": true,
+      "result": "proof",
+      "billable": true,
+      "pii_mode": "proofs",
+      "saves_proof": true,
+      "doc": "/verify/hosted.md"
+    },
+    {
+      "id": "organizations",
       "goal": "Onboard and control a workforce as organization members (face-activation, owner/admin/developer/member roles, per-seat billing); track who logged in via the valyd_org_member_id claim",
       "path": "Organizations",
       "product": "valyd-id",

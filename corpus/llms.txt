@@ -19,7 +19,8 @@ guess them.
 - Q1 — Team/workforce you onboard AND control (add members, gate who can log in, assign roles)?
   - YES → **Organizations**. Members join by face-activation, then sign in with Login with Valyd;
     roles owner/admin/developer/member; the `valyd_org_member_id` claim (a `vmem_…` id) tells you
-    who logged in; $0.99/active member/mo = unlimited verifications (14-day trial).
+    who logged in; unlimited verifications on a per-active-member monthly plan (14-day trial;
+    current price → https://docs.valyd.work/docs/organizations/billing.md).
     Credential: `client_id` + `client_secret` (login) + Members API (`X-Client-Id`/`X-Client-Secret`).
     Fetch: https://docs.valyd.work/docs/organizations.md
   - NO → continue.
@@ -73,9 +74,9 @@ Then clarify (as relevant), fetching the named `.md`:
 - Credentials source (IMPORTANT): a human creates the app + keys in the Developer Portal
   (dev.valyd.work); an agent CANNOT mint `client_id`/`client_secret`/API key/`workflow_id` — pause
   and ask, never guess. → https://docs.valyd.work/docs/create-project.md
-- Billing? Organization = $0.99/active member/mo = unlimited verifications (billing starts the
-  moment a member face-scans); standalone/non-org = pay per check.
-  → https://docs.valyd.work/docs/organizations.md
+- Billing? Organization = unlimited verifications on a per-active-member monthly plan (billing
+  starts the moment a member face-scans); standalone/non-org = pay per check. Current price + trial
+  → https://docs.valyd.work/docs/organizations/billing.md
 
 Full narrative version of this tree (with example calls and the two golden rules) is the Agent
 Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
