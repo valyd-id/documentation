@@ -824,3 +824,13 @@ article td code {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* API Playground: it's an interactive app, not prose — let it fill the whole content area
+   (the page already hides the TOC via _meta theme.toc:false). Scoped to the sandbox page only:
+   the rule fires only when the DOM contains .vd-fullbleed. */
+:root:has(.vd-fullbleed) {
+  --nextra-content-width: 100rem;
+}
+.vd-fullbleed {
+  max-width: 100%;
+}
