@@ -2,6 +2,12 @@
 
 `POST /api/v2/id-verification` — OCR + authenticity from a government ID.
 
+> **Direct API vs account KYC.** This is the **Direct API**: you supply the images, the result
+> returns to **you**, and nothing is stored. To instead establish `id_verified` on a **signed-in
+> user's Valyd account**, that path is hosted-only — redirect them with
+> [`verify.kyc.redirectUrl()`](/docs/user-token/kyc). (Called in account mode, this endpoint only
+> **reads back** the account's existing status; it can't write the vault.)
+
 **Method:** POST
 **Full URL:** `https://idp.valyd.work/api/v2/id-verification`
 **Auth header:** `X-API-Key: <App API key>`

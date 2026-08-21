@@ -12,7 +12,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const FALLBACK = '1.10.3'
+const FALLBACK = '1.10.4'
 
 function resolveVersion() {
   if (process.env.SDK_VERSION && /^\d+\.\d+\.\d+$/.test(process.env.SDK_VERSION)) return process.env.SDK_VERSION
@@ -37,8 +37,24 @@ function walk(dir) {
     if (e.isDirectory()) { walk(p); continue }
     if (!EXT.has(path.extname(e.name))) continue
     const src = fs.readFileSync(p, 'utf8')
-    if (!RE.test(src)) continue
-    const out = src.replace(RE, TARGET)
+    // The caret-install form is the primary token; also heal the other "current version"
+    // shapes the reviewer flagged (npm-ls output, a `(@valyd/sdk X.Y.Z)` heading, and bare
+    // backtick caret pins). changelog.md is HISTORY — never rewrite its version numbers.
+    // Feature-since markers (`v1.10.2+`, `1.10.1+`, `sdk_min_version:`) don't match any of
+    // these patterns, so they're left untouched.
+    const isChangelog = path.basename(p) === 'changelog.md'
+    let out = src.replace(RE, TARGET)
+    if (!isChangelog) {
+      out = out
+        .replace(/`@valyd\/sdk@\d+\.\d+\.\d+`/g, `\`@valyd/sdk@${VERSION}\``)
+        .replace(/@valyd\/sdk (\d+\.\d+\.\d+)\)/g, `@valyd/sdk ${VERSION})`)
+      // bare backtick caret pins, only on lines that already name the SDK (so a `^X.Y.Z`
+      // for some other dependency is never touched)
+      out = out
+        .split('\n')
+        .map((line) => (line.includes('@valyd/sdk') ? line.replace(/`\^\d+\.\d+\.\d+`/g, `\`^${VERSION}\``) : line))
+        .join('\n')
+    }
     if (out !== src) { fs.writeFileSync(p, out); changed++ }
   }
 }

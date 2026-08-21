@@ -42,6 +42,11 @@ Direct, synchronous, server-to-server checks. You build your own UI and call the
 your backend. Every request uses `X-API-Key: <App API key>`—not an OIDC access token. Keep the key
 server-side and never ship it to the browser.
 
+> **ID / KYC note.** The `id-verification` and `kyc-credential` checks here run on data **you**
+> supply and return the result to **you** (nothing stored). Establishing `id_verified` on a
+> **signed-in user's Valyd account** is a different, hosted-only path — see
+> [account KYC](/docs/user-token/kyc).
+
 Base URL for every endpoint below: `https://idp.valyd.work`
 
 Every response uses the standard envelope and includes a `check` object:

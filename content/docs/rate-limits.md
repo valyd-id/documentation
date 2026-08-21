@@ -7,9 +7,8 @@ the owner to supply.
 
 ## Verification API (`/api/v2/…`)
 
-All `/api/v2` routes are rate limited **per client IP** at **~150 requests / minute**
-(configurable via the `VERIFY_RATE_LIMIT_PER_MINUTE` environment variable; the documented
-default is 150). This covers both standalone check endpoints and hosted-session calls.
+All `/api/v2` routes are rate limited **per client IP** at **~150 requests / minute**. This
+covers both standalone check endpoints and hosted-session calls.
 
 A throttled request returns `429` with this body — and, importantly, **no `Retry-After`
 header**:
@@ -25,7 +24,7 @@ header**:
 | Limit | Value |
 | --- | --- |
 | Scope | Per client IP |
-| Rate | ~150 requests / minute (`VERIFY_RATE_LIMIT_PER_MINUTE`, default 150) |
+| Rate | ~150 requests / minute |
 | `Retry-After` on 429 | Not sent |
 | Budget headers | `X-RateLimit-Limit` / `X-RateLimit-Remaining` on successful responses |
 | Concurrency cap | [owner: confirm — any concurrent-request cap on `/api/v2`, or state "none"] |

@@ -24,7 +24,10 @@ ID, liveness, and face-match checks pass; otherwise they remain encrypted.
 
 ## Overview
 
-Hosted Verification lets you create a session, redirect the user to a Valyd-hosted page that captures everything, and receive the result via a signed webhook plus the decision API. No UI to build, no PII handled by you.
+Hosted Verification lets you create a session, redirect the user to a Valyd-hosted page that captures everything, and receive the result via a signed webhook plus the decision API. There's no capture UI to build — and **who holds the identity data depends on the mode you use:**
+
+- **Account-connected** (session created **with** the user's `valyd_access_token`): the personal data stays encrypted with Valyd, and your app receives the passed/failed decision plus reusable proofs — see [Verify the user](/verifications/managed).
+- **One-off** (session created **without** a token, the [standalone](/verifications/standalone) product): the full verification result — including extracted identity fields — is returned to **your** system, so you become responsible for storing, protecting, and deleting it.
 
 The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). It wraps sessions, workflows, webhooks, and the decision API.
 
