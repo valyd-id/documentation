@@ -459,24 +459,17 @@ APPROVED for KYC + License means ALL of:
 
 ---
 
-## Other session & workflow helpers
+## Other session helpers
 
 ```javascript
-// Sessions
 const session = await verify.sessions.retrieve(sessionId);
 const page    = await verify.sessions.list({ status: "APPROVED", vendorData: "user_123", limit: 50 });
 await verify.sessions.updateStatus(sessionId, "APPROVED"); // or "DECLINED" — manual review decision (IN_REVIEW sessions only)
-
-// Workflows  (↔ /api/v2/workflows)
-const wf = await verify.workflows.create({
-  name: "KYC + License",
-  features: ["id_verification", "liveness", "face_match", "credential"],
-});
-await verify.workflows.list();
-await verify.workflows.retrieve(wf.id);
-await verify.workflows.update(wf.id, { name: "KYC + License (v2)" });
-await verify.workflows.remove(wf.id);
 ```
+
+> **Workflows** are composed in the [Developer Portal](https://dev.valyd.work) — the Node SDK does
+> not expose workflow CRUD. Pick your checks there, then pass the resulting `workflowId` to
+> `verify.sessions.create({ workflowId, ... })`.
 
 ---
 

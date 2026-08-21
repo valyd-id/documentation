@@ -40,6 +40,10 @@
     {
       "name": "Location",
       "description": "Verify where the user actually is. What you send decides what you get back — send an expected point AND a radius to get a yes/no verdict; send neither to just capture the location."
+    },
+    {
+      "name": "Identity",
+      "description": "Read back a previously-verified (\"verify once, reuse\") identity for a returning user, scoped to your project, without starting a new session."
     }
   ],
   "security": [
@@ -384,6 +388,92 @@
         }
       }
     },
+    "/api/v2/identity": {
+      "get": {
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Read a reusable verified identity",
+        "description": "On-demand read of a previously-verified (\"verify once, reuse\") identity, scoped to the calling project, without starting a new session. Look the record up by `valyd_id` (alias `pollus_id` — same value) OR by your own `vendor_data` — one of the two is REQUIRED; supplying neither returns 400 `missing_parameter`. Only an active record (not revoked, not expired) is returned; otherwise 404 `not_found`. The `identity` object carries a shareable `pseudonym`, `age_bands`, verified `licenses`, a `verified_at` timestamp and a `stale` flag — raw legal name and date of birth are never returned.",
+        "operationId": "getIdentity",
+        "parameters": [
+          {
+            "name": "valyd_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The user's public Valyd id. Provide this OR vendor_data. Alias: pollus_id (same value)."
+          },
+          {
+            "name": "pollus_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Back-compat alias of valyd_id (same value)."
+          },
+          {
+            "name": "vendor_data",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Your own correlation ref stored at verification time. Used when valyd_id is not supplied."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The reusable verified identity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "identity": {
+                      "valyd_id": "valyd_9f2c8a1b4d5e4a1e9c2f7d8e0a1b2c3d",
+                      "pseudonym": "swift-harbor-2417",
+                      "age_bands": {
+                        "is_18_plus": true,
+                        "is_21_plus": true
+                      },
+                      "licenses": [
+                        {
+                          "license_type": "Medical Doctor",
+                          "status": "verified",
+                          "registry_status": "Active",
+                          "license_number": "A12345",
+                          "state": "CA",
+                          "issuing_authority": "Medical Board of California",
+                          "expires_on": "2027-01-01"
+                        }
+                      ],
+                      "verified_at": "2026-06-11T12:05:00+00:00",
+                      "stale": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/MissingParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api/v2/id-verification": {
       "post": {
         "tags": [
@@ -544,6 +634,239 @@
         }
       }
     },
+    "/api/v2/antispoof/challenge": {
+      "post": {
+        "tags": [
+          "Standalone"
+        ],
+        "summary": "Issue a liveness challenge",
+        "description": "Issues a single-use, ~60-second liveness challenge for the anti-spoof and face-uniqueness burst flows. The server picks a random gesture; the client performs it while capturing the burst, then echoes the returned `challenge_id` back on the run. The challenge is consumed on first use and expires after `expires_in` seconds. No request body is required.",
+        "operationId": "antispoofChallenge",
+        "responses": {
+          "200": {
+            "description": "A fresh single-use challenge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessChallengeEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "challenge_id": "3f1c9e2a-6b4d-4a1e-9c2f-7d8e0a1b2c3d",
+                    "challenge": "turn_left",
+                    "expires_in": 60
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          }
+        }
+      }
+    },
+    "/api/v2/antispoof": {
+      "post": {
+        "tags": [
+          "Standalone"
+        ],
+        "summary": "Anti-spoof (is this a live human capture?)",
+        "description": "Answers *is the submitted media a live human capture?* — not who it is. Send EITHER a single `image`/`selfie` (assurance \"upload\": single-frame passive analysis) OR `frames[]`, 3-8 chronological stills from a short camera burst (assurance \"burst\": per-frame voting + temporal sanity + same-face consistency). Files or base64/data-URL strings are both accepted. Returns a vendor-neutral `human_score` (0-100) in `check.data`; the check `score` carries the same value, and a single frame is capped at a lower confidence to steer integrators toward burst mode. Passing an optional `challenge_id` (from POST /antispoof/challenge) additionally requires the burst to show the commanded gesture. No image at all returns 400 `invalid_image`; more than 8 frames returns 400 `too_many_frames`. Requires the `antispoof` feature.",
+        "operationId": "antispoof",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Single selfie — file or base64. Alias: selfie. Use frames[] instead for burst mode."
+                  },
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Alias for image."
+                  },
+                  "frames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "3-8 chronological burst stills (files or base64). Enables burst-assurance analysis. At most 8."
+                  },
+                  "challenge_id": {
+                    "type": "string",
+                    "description": "Optional. An id from POST /antispoof/challenge; the burst must then show the commanded gesture."
+                  },
+                  "capture_env": {
+                    "$ref": "#/components/schemas/CaptureEnv"
+                  },
+                  "vendor_data": {
+                    "type": "string",
+                    "description": "Optional. Your correlation ref, recorded on the audit session."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Anti-spoof result. `status` is `passed` for a live capture, `failed` otherwise; `check.data.human_score` is 0-100.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AntispoofEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "session_id": "ses_abc",
+                    "status": "passed",
+                    "check": {
+                      "type": "antispoof",
+                      "status": "passed",
+                      "score": 92.5,
+                      "data": {
+                        "assurance": "burst",
+                        "human_score": 92.5,
+                        "frames_received": 5,
+                        "frames_analyzed": 5,
+                        "frames_genuine": 5,
+                        "frames_spoof": 0,
+                        "frames_no_face": 0,
+                        "duplicate_frames": 0
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/LivenessBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "403": {
+            "$ref": "#/components/responses/FeatureNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v2/antispoof/identity": {
+      "post": {
+        "tags": [
+          "Standalone"
+        ],
+        "summary": "Anti-spoof + identity resolution",
+        "description": "Runs the full anti-spoof pipeline and, ONLY if liveness passes, resolves the proven-live face against the global Valyd face gallery — returning the person's stable `valyd_` uuid and whether they were already known. If liveness fails, no identity lookup runs (and none is billed): the response is the anti-spoof result with no `identity`. On success, `check.data.identity` is `{ valyd_uuid, registered: \"new\"|\"existing\" }`; if the gallery lookup itself failed it is `{ error }`. Same media input as /antispoof (single `image`/`selfie` or 3-8 `frames[]`); strict-liveness projects must send a 3-8 frame burst (fewer returns 400 `frames_required`) and a satisfied `challenge_id`. Requires BOTH the `antispoof` and `face_uniqueness` features. Billed as anti-spoof + face_uniqueness.",
+        "operationId": "antispoofIdentity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Single selfie — file or base64. Alias: selfie. Use frames[] for burst mode."
+                  },
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Alias for image."
+                  },
+                  "frames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "3-8 chronological burst stills (files or base64). Required (min 3) for strict-liveness projects. At most 8."
+                  },
+                  "challenge_id": {
+                    "type": "string",
+                    "description": "Optional (required for strict-liveness projects). An id from POST /antispoof/challenge."
+                  },
+                  "capture_env": {
+                    "$ref": "#/components/schemas/CaptureEnv"
+                  },
+                  "vendor_data": {
+                    "type": "string",
+                    "description": "Optional. Your correlation ref; also used as the enrollment's external reference."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Anti-spoof result; on a live capture `check.data.identity` carries the resolved gallery uuid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AntispoofEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "session_id": "ses_abc",
+                    "status": "passed",
+                    "check": {
+                      "type": "antispoof",
+                      "status": "passed",
+                      "score": 93.1,
+                      "data": {
+                        "assurance": "burst",
+                        "human_score": 93.1,
+                        "frames_received": 5,
+                        "frames_analyzed": 5,
+                        "frames_genuine": 5,
+                        "frames_spoof": 0,
+                        "frames_no_face": 0,
+                        "duplicate_frames": 0,
+                        "identity": {
+                          "valyd_uuid": "valyd_9f2c8a1b4d5e4a1e9c2f7d8e0a1b2c3d",
+                          "registered": "existing"
+                        }
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/LivenessBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "403": {
+            "$ref": "#/components/responses/FeatureNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
     "/api/v2/face-match": {
       "post": {
         "tags": [
@@ -614,6 +937,153 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v2/face-uniqueness": {
+      "post": {
+        "tags": [
+          "Standalone"
+        ],
+        "summary": "Face uniqueness (one face = one user)",
+        "description": "Enroll-or-match a face against the global Valyd face gallery: one face maps to one stable `valyd_uuid` across every integrator. Send a single `selfie`/`image` (single-click mode, single-frame liveness gate) OR `frames[]`, 3-8 chronological burst stills (live mode, the full anti-spoof pipeline gates enrollment). Files or base64/data-URL. The check passes whether the face is new or already known — read `check.data.registered` (\"new\" | \"existing\") and `check.data.valyd_uuid`; no similarity scores or liveness internals are exposed (`check.score` is null). Exactly 2 frames returns 400 `invalid_frames` (send 1 selfie, or 3-8 frames); more than 8 returns 400 `too_many_frames`; strict-liveness projects require a 3-8 frame burst (fewer returns 400 `frames_required`) and a satisfied `challenge_id`. Requires the `face_uniqueness` feature.",
+        "operationId": "faceUniqueness",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selfie": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Single selfie — file or base64. Alias: image. Single-click mode."
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Alias for selfie."
+                  },
+                  "frames": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "3-8 chronological burst stills for live verification (files or base64). Exactly 2 is rejected. At most 8."
+                  },
+                  "external_ref": {
+                    "type": "string",
+                    "description": "Optional. Your own reference to associate with this face's enrollment."
+                  },
+                  "challenge_id": {
+                    "type": "string",
+                    "description": "Optional (required for strict-liveness projects). An id from POST /antispoof/challenge."
+                  },
+                  "capture_env": {
+                    "$ref": "#/components/schemas/CaptureEnv"
+                  },
+                  "vendor_data": {
+                    "type": "string",
+                    "description": "Optional. Your correlation ref, recorded on the audit session."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Uniqueness result. `check.data` carries `valyd_uuid` + `registered`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FaceUniquenessEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "session_id": "ses_abc",
+                    "status": "passed",
+                    "check": {
+                      "type": "face_uniqueness",
+                      "status": "passed",
+                      "score": null,
+                      "data": {
+                        "valyd_uuid": "valyd_9f2c8a1b4d5e4a1e9c2f7d8e0a1b2c3d",
+                        "registered": "new",
+                        "binding": "binding"
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/LivenessBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "403": {
+            "$ref": "#/components/responses/FeatureNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v2/face-uniqueness/{valyd_uuid}": {
+      "parameters": [
+        {
+          "name": "valyd_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "The gallery face id to forget."
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Standalone"
+        ],
+        "summary": "Forget a face (GDPR unlink)",
+        "description": "Removes THIS project's link to a gallery face id. The project's active enrollment is marked unlinked; if the id is a shadow identity with no remaining active enrollments, its template and vector are hard-deleted. Returns `{ valyd_uuid, unlinked: true, deleted }`, where `deleted` is true only when the underlying identity was fully removed. 404 `not_found` when the id is unknown or this project has no active enrollment for it. Requires the `face_uniqueness` feature.",
+        "operationId": "faceUniquenessUnlink",
+        "responses": {
+          "200": {
+            "description": "The project's link to the face id was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FaceUnlinkEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "valyd_uuid": "valyd_9f2c8a1b4d5e4a1e9c2f7d8e0a1b2c3d",
+                    "unlinked": true,
+                    "deleted": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidApiKey"
+          },
+          "403": {
+            "$ref": "#/components/responses/FeatureNotAllowed"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -1539,6 +2009,404 @@
       }
     },
     "schemas": {
+      "LicenseBadge": {
+        "type": "object",
+        "description": "A normalised verified-licence badge. Empty fields are dropped, so any field may be absent.",
+        "properties": {
+          "license_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "Our verification outcome (e.g. \"verified\")."
+          },
+          "registry_status": {
+            "type": "string",
+            "description": "The board's own status text (e.g. \"Active\")."
+          },
+          "license_number": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "middle_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "npi": {
+            "type": "string"
+          },
+          "issuing_authority": {
+            "type": "string"
+          },
+          "issued_on": {
+            "type": "string"
+          },
+          "expires_on": {
+            "type": "string"
+          },
+          "provider_url": {
+            "type": "string"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IdentityRecord": {
+        "type": "object",
+        "description": "A reusable verified identity as returned to integrators — pseudonym + proofs only, never raw legal name or date of birth.",
+        "properties": {
+          "valyd_id": {
+            "type": "string",
+            "description": "The user's public Valyd id (the user's uuid)."
+          },
+          "pseudonym": {
+            "type": "string",
+            "nullable": true,
+            "description": "Stable, shareable pseudonymous handle resolved from the identity core; null if the user has none."
+          },
+          "age_bands": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "description": "Stored age-band proofs (e.g. { \"is_18_plus\": true, \"is_21_plus\": true })."
+          },
+          "licenses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LicenseBadge"
+            },
+            "description": "Verified professional-licence badges."
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the identity was verified / last refreshed (ISO 8601)."
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "true when the cached identity-core source changed and the integrator should re-verify."
+          }
+        }
+      },
+      "IdentityEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "identity": {
+                "$ref": "#/components/schemas/IdentityRecord"
+              }
+            }
+          }
+        }
+      },
+      "CaptureEnv": {
+        "type": "object",
+        "description": "Optional client-declared capture environment. When `virtual_suspect` is true a virtual camera (OBS / ManyCam / etc.) is assumed and the check fails closed with signal `virtual_camera`. Client-declared: a tampered client can omit or falsify it, so it only catches the honest virtual-camera case.",
+        "properties": {
+          "virtual_suspect": {
+            "type": "boolean",
+            "description": "The client's judgement that the camera stream came from a virtual / injected device."
+          },
+          "camera_label": {
+            "type": "string",
+            "description": "The device label the client observed (truncated to 120 chars in the failure record)."
+          }
+        }
+      },
+      "AntispoofCheck": {
+        "type": "object",
+        "description": "The anti-spoof check result. `score` carries the same 0-100 human_score as `data.human_score`.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "antispoof"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          },
+          "score": {
+            "type": "number",
+            "nullable": true,
+            "description": "The 0-100 human_score."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "human_score": {
+                "type": "number",
+                "description": "Vendor-neutral liveness confidence, 0-100."
+              },
+              "assurance": {
+                "type": "string",
+                "enum": [
+                  "upload",
+                  "burst"
+                ],
+                "description": "\"upload\" for a single image, \"burst\" for a 3-8 frame sequence."
+              },
+              "frames_received": {
+                "type": "integer"
+              },
+              "frames_analyzed": {
+                "type": "integer"
+              },
+              "frames_genuine": {
+                "type": "integer"
+              },
+              "frames_spoof": {
+                "type": "integer"
+              },
+              "frames_no_face": {
+                "type": "integer"
+              },
+              "duplicate_frames": {
+                "type": "integer"
+              },
+              "challenge": {
+                "type": "string",
+                "description": "The commanded gesture, present when a challenge_id was supplied."
+              },
+              "challenge_performed": {
+                "type": "boolean",
+                "description": "Whether the burst showed the commanded gesture (present only when a challenge was required)."
+              },
+              "signal": {
+                "type": "string",
+                "description": "Machine-readable failure reason on a failed check (e.g. spoof_detected, no_face, virtual_camera)."
+              },
+              "identity": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Present ONLY on POST /antispoof/identity, and only when liveness passed: the resolved gallery identity — { valyd_uuid, registered } on success, or { error } if the gallery lookup failed.",
+                "properties": {
+                  "valyd_uuid": {
+                    "type": "string",
+                    "description": "Stable global face id."
+                  },
+                  "registered": {
+                    "type": "string",
+                    "enum": [
+                      "new",
+                      "existing"
+                    ],
+                    "description": "Whether the face was newly enrolled or already known."
+                  },
+                  "error": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Human-readable failure reason, or null on pass."
+          }
+        }
+      },
+      "AntispoofEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "description": "Synchronous anti-spoof response. `data.check` carries the anti-spoof result.",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "session_id": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/CheckStatus"
+              },
+              "check": {
+                "$ref": "#/components/schemas/AntispoofCheck"
+              }
+            }
+          }
+        }
+      },
+      "LivenessChallengeEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "challenge_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Opaque single-use id to echo back on the run as challenge_id."
+              },
+              "challenge": {
+                "type": "string",
+                "enum": [
+                  "turn_left",
+                  "turn_right",
+                  "open_mouth",
+                  "nod",
+                  "come_closer"
+                ],
+                "description": "The gesture the burst must show."
+              },
+              "expires_in": {
+                "type": "integer",
+                "description": "Seconds until the challenge expires (60)."
+              }
+            }
+          }
+        }
+      },
+      "FaceUniquenessCheck": {
+        "type": "object",
+        "description": "The face-uniqueness check result. `score` is always null — no similarity score is exposed.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "face_uniqueness"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          },
+          "score": {
+            "type": "number",
+            "nullable": true,
+            "description": "Always null."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "valyd_uuid": {
+                "type": "string",
+                "description": "Stable global face id — the same value for this face across every integrator."
+              },
+              "registered": {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "existing"
+                ],
+                "description": "\"new\" if the face was just enrolled, \"existing\" if already in the gallery."
+              },
+              "binding": {
+                "type": "string",
+                "enum": [
+                  "binding"
+                ],
+                "description": "\"binding\" — the enrollment was written to the live gallery."
+              },
+              "code": {
+                "type": "string",
+                "description": "Machine-readable failure code on a failed check (e.g. no_face, uniqueness_failed)."
+              }
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Human-readable failure reason, or null on pass."
+          }
+        }
+      },
+      "FaceUniquenessEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "description": "Synchronous face-uniqueness response. `data.check` carries the result.",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "session_id": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/CheckStatus"
+              },
+              "check": {
+                "$ref": "#/components/schemas/FaceUniquenessCheck"
+              }
+            }
+          }
+        }
+      },
+      "FaceUnlinkEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "valyd_uuid": {
+                "type": "string"
+              },
+              "unlinked": {
+                "type": "boolean"
+              },
+              "deleted": {
+                "type": "boolean",
+                "description": "true only when the underlying (shadow) identity had no other active links and was hard-deleted."
+              }
+            }
+          }
+        }
+      },
       "SessionStatus": {
         "type": "string",
         "enum": [
@@ -1615,6 +2483,13 @@
                   "review_not_pending",
                   "required_face_checks_incomplete",
                   "invalid_image",
+                  "missing_parameter",
+                  "feature_not_allowed",
+                  "too_many_frames",
+                  "invalid_frames",
+                  "frames_required",
+                  "challenge_required",
+                  "challenge_expired",
                   "account_dob_unavailable",
                   "rate_limited",
                   "internal_error"
@@ -2057,6 +2932,60 @@
       }
     },
     "responses": {
+      "MissingParameter": {
+        "description": "A required query parameter was not supplied.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
+              "error": {
+                "code": "missing_parameter",
+                "message": "Provide valyd_id or vendor_data."
+              }
+            }
+          }
+        }
+      },
+      "FeatureNotAllowed": {
+        "description": "The feature this endpoint needs is not enabled for the project.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
+              "error": {
+                "code": "feature_not_allowed",
+                "message": "Feature 'antispoof' is not enabled for this project."
+              }
+            }
+          }
+        }
+      },
+      "LivenessBadRequest": {
+        "description": "The submitted capture was rejected before scoring. Codes: `invalid_image` (no image/frames), `too_many_frames` (more than 8 frames), `invalid_frames` (exactly 2 frames on face-uniqueness), `frames_required` (a strict-liveness project needs a 3-8 frame burst), `challenge_required` / `challenge_expired` (the challenge_id was missing, already used, or expired).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "data": [],
+              "error": {
+                "code": "invalid_image",
+                "message": "Provide `image` (file or base64) or `frames[]` (3-8 burst stills)."
+              }
+            }
+          }
+        }
+      },
       "ValidationError": {
         "description": "Malformed body or missing required field.",
         "content": {

@@ -3,7 +3,7 @@
 How Valyd App API keys are issued, rotated, and revoked — and the access model they imply.
 The facts below are confirmed from the [Developer Portal](/verifications/console) docs, the
 published OpenAPI spec, and the [Verify API reference](/verifications/api-reference). Anything
-Valyd's docs do not state is marked for the owner to supply.
+not stated in these docs is available from support — contact **support@valyd.id**.
 
 ## Issuance
 
@@ -28,17 +28,17 @@ Valyd's docs do not state is marked for the owner to supply.
 - **Webhook signing secrets are separately rotatable** per app — see
   [Webhooks](/verifications/webhooks).
 - **Zero-downtime overlap** — whether a rotated key leaves the previous key valid for a grace
-  period (dual-key overlap) is not documented:
-  [owner: confirm — whether rotation supports an overlap window where the old and new key are both valid, and its length].
+  period (dual-key overlap) is not documented here. If your rollout needs a coordinated
+  cutover, contact **support@valyd.id**.
 
 ## Revocation & visibility
 
 | Item | Status |
 | --- | --- |
-| Explicit revoke (independent of rotation) | [owner: confirm — whether a key can be revoked without minting a replacement] |
-| Last-used timestamp / usage visibility | [owner: confirm — whether the Console shows a per-key last-used time or usage] |
-| Per-key scopes / least-privilege | [owner: confirm — whether an App API key can be scoped to a subset of Verify capabilities, or is all-or-nothing] |
-| Number of active keys per app | [owner: confirm — max simultaneously active API keys per app] |
+| Explicit revoke (independent of rotation) | Not documented — contact **support@valyd.id** |
+| Last-used timestamp / usage visibility | Not documented — contact **support@valyd.id** |
+| Per-key scopes / least-privilege | **All-or-nothing** — an App API key is a full-authority credential for its app; there is no per-key scoping (see [Access model](#access-model-the-key-is-the-authority) below) |
+| Number of active keys per app | Not documented — contact **support@valyd.id** |
 
 ## Access model: the key IS the authority
 

@@ -4,9 +4,9 @@ How to get help with Valyd and what to include so it can be triaged fast. Two th
 here: security vulnerabilities route through the [Security disclosure](/docs/security-disclosure)
 page, not normal support; and for an API or integration problem the details to send (and the
 things to *never* send) are the exact diagnostic contract from
-[Errors & troubleshooting](/docs/errors#contacting-support). Every support channel, tier,
-response-time target, and status-page URL below is a placeholder until the owner supplies it —
-nothing here invents a contact address, hours, or an SLA.
+[Errors & troubleshooting](/docs/errors#contacting-support). For general help, contact
+**support@valyd.id**; support tiers, response-time targets, and a status page are available
+to enterprise customers — contact your Valyd account team.
 
 ## Security issues go through disclosure
 
@@ -34,19 +34,20 @@ make yourself (see the [error catalog](/docs/errors#3-complete-code-catalog)), w
 Valyd-side — [retry with backoff](/docs/operations-sla#degraded-dependency-behavior) before
 escalating.
 
-## Channels & response targets (owner to confirm)
+## Channels & response targets
 
-Each row below is a placeholder — Valyd does not commit to any of these until confirmed.
+General support runs through **support@valyd.id**; response-time commitments are part of
+enterprise plans.
 
 | Item | Value |
 | --- | --- |
-| Support channel | [owner: confirm — the support contact channel(s): email address, portal URL, or in-app, and where to reach each] |
-| Support hours | [owner: confirm — support hours and time-zone coverage] |
-| Support tiers / plans | [owner: confirm — whether support tiers or plans exist and what each includes] |
-| First-response targets | [owner: confirm — first-response and resolution-time targets by severity] |
-| Escalation path | [owner: confirm — the escalation path for a production-impacting incident, and how to reach it out of hours] |
-| Status page | [owner: confirm — the public status page URL for live incident and maintenance updates] |
-| Account / billing contact | [owner: confirm — the contact for non-technical questions (invoices, seats, plan changes)] |
+| Support channel | **support@valyd.id** |
+| Support hours | Available on request — contact **support@valyd.id** |
+| Support tiers / plans | Available on enterprise plans — contact your Valyd account team |
+| First-response targets | Committed response targets are part of enterprise plans — contact your Valyd account team |
+| Escalation path | For a production-impacting incident, contact your Valyd account team |
+| Status page | Available on request — contact **support@valyd.id** |
+| Account / billing contact | **support@valyd.id** |
 
 The committed availability and SLA figures, once confirmed, live on
 [Operations & SLA](/docs/operations-sla) — this page is only the *how to reach us* home.

@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check-links": "node scripts/check-links.mjs && node scripts/check-product-boundaries.mjs && node scripts/check-openapi.mjs && node scripts/check-deprecations.mjs"
+    "check-links": "node scripts/check-links.mjs && node scripts/check-product-boundaries.mjs && node scripts/check-openapi.mjs && node scripts/check-deprecations.mjs && node scripts/check-sdk-version.mjs && node scripts/check-public-placeholders.mjs && node scripts/check-contract.mjs"
   },
   "dependencies": {
     "@radix-ui/react-tabs": "^1.1.21",

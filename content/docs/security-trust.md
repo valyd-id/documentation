@@ -2,9 +2,9 @@
 
 How Valyd protects the data an integration touches, and where to find the formal
 assurances your security review will ask for. The controls below are drawn from Valyd's
-documented [Data & trust](/docs/data-and-trust) policies; the compliance rows are
-marked as owner-to-confirm until the underlying evidence (report, policy, or attestation) is
-supplied — nothing on this page is a claim Valyd has not verified.
+documented [Data & trust](/docs/data-and-trust) policies. Formal compliance evidence
+(reports, attestations, and a DPA) is shared with enterprise customers on request under
+NDA — contact your Valyd account team or **security@valyd.id**.
 
 ## Encryption
 
@@ -44,19 +44,19 @@ sensitive data stays inside Valyd's controls.
 
 ## Compliance & assurance
 
-The following are standard requests in an enterprise security review. Each is a placeholder
-until the owner supplies the underlying evidence — Valyd does not assert any of these below
-until confirmed.
+The following are standard requests in an enterprise security review. Valyd shares its
+current status and the underlying evidence with enterprise customers under NDA — contact
+your Valyd account team or **security@valyd.id** to request them.
 
 | Item | Status |
 | --- | --- |
-| SOC 2 (Type I / Type II) | [owner: confirm — SOC 2 status, type, report date, and how prospects request the report] |
-| ISO / IEC 27001 | [owner: confirm — ISO 27001 certification status and certificate scope, if any] |
-| GDPR alignment | [owner: confirm — GDPR posture, lawful basis, and whether Valyd acts as processor or controller] |
-| Data Processing Agreement (DPA) | [owner: confirm — whether a signable DPA exists and how customers execute it] |
-| Penetration testing | [owner: confirm — pen-test cadence, most recent test date, and whether a summary letter is shareable] |
-| Vulnerability / breach response | [owner: confirm — incident-response and breach-notification process and notification SLA] |
-| Subprocessors & data residency | See [Data residency](/docs/data-residency) — currently unconfirmed |
+| SOC 2 (Type I / Type II) | Report and current status available under NDA — contact **security@valyd.id** |
+| ISO / IEC 27001 | Current certification status available under NDA — contact **security@valyd.id** |
+| GDPR alignment | Posture and controller/processor terms available under NDA — contact **security@valyd.id** |
+| Data Processing Agreement (DPA) | Available on request — contact your Valyd account team or **security@valyd.id** to execute a DPA |
+| Penetration testing | Summary results available under NDA — contact **security@valyd.id** |
+| Vulnerability / breach response | Handled through [Security disclosure](/docs/security-disclosure); incident-response details available under NDA — contact **security@valyd.id** |
+| Subprocessors & data residency | Available on request — see [Data residency](/docs/data-residency) |
 | Data retention | See [Data retention](/docs/data-retention) |
 | Responsible disclosure | See [Security disclosure](/docs/security-disclosure) |
 

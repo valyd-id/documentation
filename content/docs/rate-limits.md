@@ -2,8 +2,8 @@
 
 How Valyd throttles requests, what a `429` looks like, and how to back off. The Verification
 API limit below is confirmed from the published OpenAPI spec (`public/openapi/valyd-verify.json`);
-per-endpoint limits for the login / OIDC / Account APIs are not published and are marked for
-the owner to supply.
+per-endpoint limits for the login / OIDC / Account APIs are not published in these docs —
+contact **support@valyd.id** if you need them for capacity planning.
 
 ## Verification API (`/api/v2/…`)
 
@@ -27,8 +27,8 @@ header**:
 | Rate | ~150 requests / minute |
 | `Retry-After` on 429 | Not sent |
 | Budget headers | `X-RateLimit-Limit` / `X-RateLimit-Remaining` on successful responses |
-| Concurrency cap | [owner: confirm — any concurrent-request cap on `/api/v2`, or state "none"] |
-| Burst allowance | [owner: confirm — burst/leaky-bucket allowance above the steady rate, or state "none"] |
+| Concurrency cap | Not published — contact **support@valyd.id** |
+| Burst allowance | Not published — contact **support@valyd.id** |
 
 ## Login / OIDC / Account APIs (`/api/auth/…`)
 
@@ -41,9 +41,9 @@ throttled and return `429`:
 
 | Endpoint group | Limit |
 | --- | --- |
-| OAuth authorize / token / refresh | [owner: confirm — per-endpoint RPM for the OIDC token endpoints, or state "none published"] |
-| `userinfo` / Account API reads | [owner: confirm — per-endpoint RPM for Account API reads] |
-| Overall burst / concurrency for `/api/auth` | [owner: confirm — burst and concurrency caps for the auth APIs] |
+| OAuth authorize / token / refresh | Not published — contact **support@valyd.id** |
+| `userinfo` / Account API reads | Not published — contact **support@valyd.id** |
+| Overall burst / concurrency for `/api/auth` | Not published — contact **support@valyd.id** |
 
 ## Handling 429 — back off
 

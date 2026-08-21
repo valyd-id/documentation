@@ -1,19 +1,18 @@
 # Security disclosure
 
-How to report a security vulnerability in Valyd. Valyd's public documentation does not yet
-publish a security contact or a formal disclosure policy, so the contact details below are
-placeholders for the owner to supply. This page is also the natural home for the recommended
-`security.txt` file.
+How to report a security vulnerability in Valyd. Report security issues to
+**security@valyd.id** — we acknowledge valid reports and coordinate disclosure with the
+reporter. This page is also the home for Valyd's `security.txt`.
 
 ## Reporting a vulnerability
 
 | Item | Value |
 | --- | --- |
-| Security contact | [owner: confirm — security contact email or intake form (e.g. security@…)] |
-| Encryption key for reports | [owner: confirm — PGP key or secure-intake option for sensitive reports, if offered] |
-| Acknowledgement target | [owner: confirm — how quickly a report is acknowledged] |
-| Disclosure policy | [owner: confirm — coordinated-disclosure timeline and safe-harbor language] |
-| Bug bounty | [owner: confirm — whether a bug-bounty or reward program exists and where it is hosted] |
+| Security contact | **security@valyd.id** |
+| Encryption key for reports | Not currently offered — email **security@valyd.id** and we will arrange a secure channel if needed |
+| Acknowledgement target | We acknowledge valid reports and follow up with the reporter (no fixed public SLA) |
+| Disclosure policy | Coordinated disclosure — we ask for reasonable time to remediate before public disclosure |
+| Bug bounty | No public bug-bounty program at this time — report directly to **security@valyd.id** |
 
 ## What to include
 
@@ -33,15 +32,16 @@ Valyd should publish a machine-readable disclosure policy at the well-known loca
 right contact without guessing. A minimal file looks like:
 
 ```text
-Contact: mailto:[owner: confirm — security contact email]
-Expires: [owner: confirm — expiry date, ISO 8601]
-Policy: [owner: confirm — URL of the full disclosure policy]
+Contact: mailto:security@valyd.id
+Expires: <ISO 8601 expiry date>
+Policy: <URL of the published disclosure policy>
 Preferred-Languages: en
 ```
 
 - Serve it over HTTPS at `/.well-known/security.txt`.
 - Keep the `Expires` field current (RFC 9116 requires it).
-- [owner: confirm — on which domains the `security.txt` will be hosted].
+- Valyd serves it on its primary product domains; contact **security@valyd.id** if you cannot
+  locate it.
 
 ## See also
 

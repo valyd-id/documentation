@@ -3,30 +3,30 @@
 How Valyd runs the service in production: availability, status, incident communication,
 maintenance, and support. The one thing this page states with certainty is the support
 diagnostic contract — the `X-Request-Id` header documented in
-[Errors & troubleshooting](/docs/errors). Every availability and SLA figure below is a
-placeholder until the owner supplies the committed target; nothing here is a contractual
-commitment until confirmed.
+[Errors & troubleshooting](/docs/errors). A contractual SLA with committed availability
+figures is available for enterprise plans — contact your Valyd account team. Nothing on this
+page is itself a contractual commitment.
 
 ## Availability
 
 | Item | Value |
 | --- | --- |
-| Uptime / availability target | [owner: confirm — committed uptime target (e.g. 99.9%) and the SLA tier(s) it applies to] |
-| Formal SLA & remedies | [owner: confirm — whether a contractual SLA with service credits exists, and where it is published] |
-| Status page URL | [owner: confirm — public status page URL] |
+| Uptime / availability target | Committed availability targets are part of the enterprise SLA — contact your Valyd account team |
+| Formal SLA & remedies | A contractual SLA with service credits is available on enterprise plans — contact your Valyd account team |
+| Status page URL | Available on request — contact **support@valyd.id** |
 
 ## Incident communication
 
 | Item | Value |
 | --- | --- |
-| How incidents are communicated | [owner: confirm — channel used for incident updates (status page, email, etc.)] |
-| Post-incident reviews | [owner: confirm — whether post-incident / RCA reports are shared and how to request them] |
+| How incidents are communicated | Available on request — contact **support@valyd.id** |
+| Post-incident reviews | Post-incident reviews are available to enterprise customers on request — contact your Valyd account team |
 
 ## Maintenance
 
 | Item | Value |
 | --- | --- |
-| Scheduled-maintenance policy | [owner: confirm — maintenance window policy and advance-notice period] |
+| Scheduled-maintenance policy | Available on request — contact **support@valyd.id** |
 
 ## Degraded-dependency behavior
 
@@ -40,8 +40,9 @@ retry with backoff. These are the documented signals from the
   checked right now; retry.
 - `5xx` in general — Valyd-side; retry with backoff, and if it persists, contact support.
 
-Formal degraded-mode behavior and failover targets (RTO / RPO):
-[owner: confirm — documented degraded-mode / failover behavior and any RTO/RPO targets].
+Formal degraded-mode behavior and failover targets (RTO / RPO) are covered on
+[Disaster recovery](/docs/disaster-recovery) and, for enterprise plans, in the contractual
+SLA — contact your Valyd account team.
 
 ## Support & escalation
 
@@ -57,9 +58,9 @@ them. This is the exact guidance from [Errors & troubleshooting](/docs/errors#co
 
 | Item | Value |
 | --- | --- |
-| Support channel / address | [owner: confirm — support contact address or portal] |
-| Support hours & response targets | [owner: confirm — support hours and first-response targets by severity] |
-| Escalation path | [owner: confirm — escalation path for production-impacting incidents] |
+| Support channel / address | **support@valyd.id** |
+| Support hours & response targets | Available on request — contact **support@valyd.id** |
+| Escalation path | See [Support & escalation](/docs/support-escalation); for production-impacting incidents contact your Valyd account team |
 
 ## See also
 

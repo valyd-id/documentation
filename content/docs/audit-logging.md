@@ -5,8 +5,8 @@ Four things are verifiable today from Valyd's own docs — the `X-Request-Id` on
 response, the verification event records, the webhook delivery log in the Developer Portal,
 and org login attribution via the `valyd_org_member_id` claim. Everything beyond those
 observable signals (log retention, export/SIEM, tamper-evidence, an account-level admin audit
-trail) is a placeholder until the owner supplies it; nothing here asserts an audit capability
-Valyd has not documented.
+trail) is not documented in these docs; contact **support@valyd.id** for the current details.
+Nothing here asserts an audit capability Valyd has not documented.
 
 ## Request correlation: `X-Request-Id`
 
@@ -52,19 +52,19 @@ ID token (scoped to your org's client). Its value is that member's `vmem_…` id
 between your own roster and the login — so you can attribute and track logins against your own
 records. See [Organizations & teams](/docs/organizations#how-organizations-work).
 
-## Not yet documented (owner to confirm)
+## Not yet published
 
-These are standard audit questions an enterprise review asks. Each is a placeholder — Valyd does
-not assert any of these until confirmed. Retention windows for the delivery log and request logs
-are tracked separately on [Data retention](/docs/data-retention).
+These are standard audit questions an enterprise review asks. They are not documented in these
+docs today — contact **support@valyd.id** for the current answers. Retention windows for the
+delivery log and request logs are tracked separately on [Data retention](/docs/data-retention).
 
 | Question | Answer |
 | --- | --- |
-| History depth in the Portal | [owner: confirm — how far back the Recent webhook deliveries list shows in the Portal, and whether older deliveries are queryable] |
-| Export / SIEM | [owner: confirm — whether verification-event and webhook-delivery activity can be exported (CSV/API) or streamed to an external SIEM, and how] |
-| Tamper-evidence | [owner: confirm — whether Valyd's activity records are append-only / tamper-evident, and whether that property is attestable] |
-| Admin audit trail | [owner: confirm — whether an account-level audit trail records config changes (API-key rotation, member add/remove, app settings, manual decision overrides) and where an org admin reads it] |
-| Who can read the logs | [owner: confirm — which roles can view the delivery log and event history, and whether member-role users are excluded] |
+| History depth in the Portal | Not documented — contact **support@valyd.id** |
+| Export / SIEM | Not documented — contact **support@valyd.id** |
+| Tamper-evidence | Not documented — contact **support@valyd.id** |
+| Admin audit trail | Not documented — contact **support@valyd.id** |
+| Who can read the logs | Not documented — contact **support@valyd.id** |
 
 ## See also
 
