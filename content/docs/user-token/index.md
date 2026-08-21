@@ -56,7 +56,7 @@ need a raw attribute, the user approves it explicitly: [consent flow](/docs/requ
 ## Working as an organization?
 
 Apps, workflows, and billing can live in a shared [Organization](/docs/organizations) — and we
-onboard the workforce for you: add members over the [SDK](/docs/organizations#manage-members-via-the-api-server-to-server),
+onboard the workforce for you: add members over the [SDK](/docs/organizations/api),
 each is notified with a face-activation link, and signs into your apps by face from then on.
 Fetch member details, assign roles, deactivate/reactivate — all documented there. Member account
 **recovery** is coming soon.
