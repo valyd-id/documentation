@@ -18,6 +18,17 @@ saved to one. It runs only the **liveness**, **anti-spoof**, and **face-uniquene
 checks on images your app captures, and the result returns straight to your system. It runs on
 Valyd's hosted capture page **or** as direct API calls from your backend.
 
+```mermaid
+flowchart LR
+    B["Your backend"] -->|X-API-Key| C{"Check"}
+    C --> L["Liveness"]
+    C --> U["Face uniqueness"]
+    C --> A["Anti-spoof"]
+    L --> R["Result returns to you · nothing stored"]
+    U --> R
+    A --> R
+```
+
 > **Need ID/KYC, face match, age, professional license, or location?** Those are no longer
 > self-serve direct checks — they now run through **[Managed by Valyd](/verifications/managed)**, on
 > a signed-in user's hosted session, so the raw identity data stays encrypted with Valyd and your

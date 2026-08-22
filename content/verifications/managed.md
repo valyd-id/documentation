@@ -32,8 +32,17 @@ your App API key and the check pre-fills from their account, skips what's alread
 saves the passed proof back to their Valyd ID:
 
 ```mermaid
-flowchart LR
-    L["Login (OIDC sign-in)"] --> V["Verify (check runs with the user token)"] --> P["Proof (saved to the user's Valyd ID)"] --> R["Reuse (next login: read it — no re-run while still fresh for your policy)"]
+sequenceDiagram
+    participant U as User
+    participant You as Your backend
+    participant V as Valyd
+    U->>You: Sign in with Valyd (OIDC)
+    You->>V: POST /session (workflow_id + valyd_access_token)
+    V-->>You: hosted session url
+    You->>U: Redirect to hosted capture
+    U->>V: Complete the checks
+    V->>V: Proof saved to the user's Valyd ID
+    V-->>You: Webhook + decision (proofs only)
 ```
 
 **What is a proof?** The durable outcome of a passed check saved on the user's Valyd account — a

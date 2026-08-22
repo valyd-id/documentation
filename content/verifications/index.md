@@ -1,28 +1,29 @@
 # Verification API
 
-We verify people for you — KYC, liveness, face match, age, and professional licenses.
+We verify people for you — KYC, liveness, face match, age, and professional licenses. **Two lanes,
+both hosted** — the split is simply *is a user signed in?*
 
-**The story is the user's.** They sign in with Valyd, your app reads what their identity already
-holds — KYC done? verified licenses? badges and proofs? — and when something is missing you run
-the check *for them* through **[Managed by Valyd](/verifications/managed)**: a hosted verification
-session that runs every check. Your backend authenticates with the App API key (`X-API-Key`);
-the signed-in user rides along as their `valyd_access_token`, so the passed proof lands on their
-Valyd ID. From then on you **read verified status instead of handling identity data** — documents,
-selfies, and personal fields stay with Valyd, [encrypted under Valyd's data policies](/docs/data-and-trust#security-properties),
-not in your database. While a proof is still fresh enough for your policy, there's no re-run and
-no new per-check cost.
+```mermaid
+flowchart TD
+    Q{"User signed in?"}
+    Q -->|Yes| M["Managed by Valyd"]
+    Q -->|No| F["Verify Fresh"]
+    M --> MC["Every check · X-API-Key + valyd_access_token"]
+    MC --> MP["Proof saved to their Valyd ID · PII stays with Valyd"]
+    F --> FC["Liveness · uniqueness · anti-spoof only · X-API-Key"]
+    FC --> FR["Result returns to your system · nothing stored"]
+```
 
-**Two lanes, both hosted.** With [Managed by Valyd](/verifications/managed) you attach a signed-in
-user's `valyd_access_token` to a [hosted](/verifications/hosted) session, compose a workflow of
-checks, and send the user to us — capture UI, camera handling, retries, and security are ours; you
-get one combined decision (webhook + decision endpoint) and proofs save to the user's Valyd ID.
-**Every check — ID/KYC, face match, age, professional license, location, liveness, and uniqueness
-— runs this way.**
-
-No user in the loop? [**Verify Fresh**](/verifications/standalone) is the non-account lane: no login,
-and only **liveness, anti-spoof, and face uniqueness**. It runs on Valyd's hosted page or as direct
-API calls, the result returns to your system, and nothing is saved to a Valyd account — see its own
-[data-sharing model](/verifications/data-sharing).
+- **[Managed by Valyd](/verifications/managed)** — the signed-in user rides along as their
+  `valyd_access_token` (your backend authenticates with the App API key, `X-API-Key`). **Every
+  check** runs in one [hosted](/verifications/hosted) session, and passed proofs save to their
+  Valyd ID. Documents, selfies, and personal fields stay
+  [encrypted with Valyd](/docs/data-and-trust#security-properties), not in your database — so you
+  **read verified status instead of handling identity data**.
+- **[Verify Fresh](/verifications/standalone)** — the non-account lane: **no login**, only
+  **liveness, anti-spoof, and face uniqueness**. Hosted page or direct API calls; the result
+  returns to your system and nothing is saved to an account
+  ([data-sharing model](/verifications/data-sharing)).
 
 > **Biometrics are irreversible vectors, never images.** Valyd does not store or return face
 > images. Enrollment converts a selfie into a one-way biometric vector (template); every later

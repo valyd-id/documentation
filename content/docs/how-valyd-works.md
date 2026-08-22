@@ -1,6 +1,16 @@
 # How Valyd works
 
-You've never used Valyd or OIDC before? This page is the whole mental model, in three pictures.
+New to Valyd or OIDC? Here's the whole mental model in one picture: **a person verifies once, the
+proof lives on their Valyd ID, and every app that adds Login with Valyd just reads it.**
+
+```mermaid
+flowchart LR
+    P["Person"] --> V["Verifies once<br/>(KYC · liveness · face · license)"]
+    V --> ID[("Proof on their Valyd ID")]
+    ID --> R["Reused at every app that<br/>adds Login with Valyd"]
+```
+
+The three pictures below unpack that loop.
 
 ## 1. A person verifies once
 

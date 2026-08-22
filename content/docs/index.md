@@ -31,6 +31,22 @@ That's the whole front end.
 > The button and SDK point at it for you; using your own library? See
 > [Use your own OIDC library](/docs/oidc).
 
+Standard OpenID Connect, end to end — the button and SDK handle every step below:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant App as Your app
+    participant V as Valyd (idp.valyd.work)
+    U->>App: Click "Sign in with Valyd"
+    App->>V: authorize
+    V->>U: Face login + consent
+    V-->>App: Callback with code
+    App->>V: Exchange code → tokens
+    App->>V: GET userinfo (Bearer)
+    V-->>App: Profile + proofs
+```
+
 ## 1. Get your credentials
 
 In the [Developer Portal](https://dev.valyd.work) create an app, enable the [scopes](/docs/scopes) you need

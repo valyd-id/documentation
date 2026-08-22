@@ -33,6 +33,14 @@ roles and permissions in **your** system. Valyd doesn't replace any of that. It 
 face-identity and verification layer** on top, so the same people sign into your apps by face and
 carry reusable proofs of who they are.
 
+```mermaid
+flowchart LR
+    I["Invite member<br/>(gets a vmem_… id)"] --> F["Face activation<br/>(scan face once)"]
+    F --> S["Signs in with Login with Valyd<br/>(face, no passwords)"]
+    S --> T["Tracked by valyd_org_member_id"]
+    T --> V["Layer verification on top<br/>(KYC · license · liveness)"]
+```
+
 Here's the flow — it's how real integrations work (e.g. how Cisive onboarded their workforce):
 
 1. **Create an organization** and add your people as **members** — one at a time, by CSV upload, or

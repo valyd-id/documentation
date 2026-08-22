@@ -4,18 +4,25 @@ Valyd is a verified-identity platform. You can **verify your users**, or let peo
 with an identity they've already verified** — so you read proofs instead of re-collecting
 documents.
 
-Three ways to integrate. Pick the one that fits what you're building:
+**Three ways to integrate** — pick the one that fits what you're building:
 
-- **Managed by Valyd** — the user **signs in with Valyd**, and you run a hosted verification
-  session with their `valyd_access_token`. **Every check** is available (ID / KYC, liveness, face
-  match, age, professional license, face uniqueness, location); passed proofs save to their Valyd
-  ID, the raw identity data stays encrypted with Valyd, and you receive the decision plus reusable
-  proofs.
-- **Verify Fresh** — **no login, no Valyd account**. Runs the **liveness + face-uniqueness +
-  anti-spoof** family only, on Valyd's hosted page **or** as direct API calls. The result returns
-  to your system; nothing is saved to a Valyd account.
-- **Login with Valyd** — let users sign in and reuse the identity proofs they already hold. You
-  read their verified status instead of collecting it again.
+```mermaid
+flowchart TD
+    V(["Valyd"]) --> L["Login with Valyd"]
+    V --> M["Managed by Valyd"]
+    V --> F["Verify Fresh"]
+    L --> LO["User signs in → you read existing proofs · no PII handled"]
+    M --> MO["User signs in → run any check → proof saved to their Valyd ID"]
+    F --> FO["No login → liveness + uniqueness + anti-spoof → result returns to you"]
+```
+
+- **Login with Valyd** — users sign in and **reuse the proofs they already hold**; you read
+  verified status instead of collecting it again.
+- **Managed by Valyd** — the signed-in user runs a hosted session where **every check** is
+  available (ID/KYC, liveness, face match, age, license, uniqueness, location); passed proofs save
+  to their Valyd ID and the raw identity data stays encrypted with Valyd.
+- **Verify Fresh** — **no login, no account**; **liveness + face-uniqueness + anti-spoof** only,
+  hosted or direct API, and the result returns to your system — nothing saved to an account.
 
 ## Choose your integration
 
