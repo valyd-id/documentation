@@ -243,7 +243,7 @@ export const TryApisContent = () => {
     <TooltipProvider>
       {/* Hero header — `vd-rise` is the global, reduced-motion-gated entrance animation */}
       <header
-        className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-gradient-to-b from-(--vd-primary-soft) to-transparent px-6 py-12 sm:px-10"
+        className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-white px-6 py-12 sm:px-10 dark:bg-slate-950"
         style={{ '--i': 0 } as React.CSSProperties}
       >
         <div className="max-w-3xl">
@@ -347,7 +347,7 @@ export const TryApisContent = () => {
             "no OIDC needed" is the whole point. */}
         {lane !== 'verify' && (
         <section
-          className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-gradient-to-br from-(--vd-primary-soft) via-white to-white p-6 sm:p-8 dark:from-(--vd-primary-soft) dark:via-slate-950 dark:to-slate-950"
+          className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-white p-6 sm:p-8 dark:bg-slate-950"
           style={{ '--i': 4 } as React.CSSProperties}
         >
           <div className="grid items-center gap-6 lg:grid-cols-[1fr_auto]">
@@ -484,7 +484,7 @@ npm run dev`}
           <div key="oauth2" className="vd-rise space-y-6">
             {/* TOP: Credentials banner */}
             <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
-              <div className="flex items-center gap-2 border-b border-(--vd-border) bg-gradient-to-r from-(--vd-primary-soft) to-transparent px-5 py-3">
+              <div className="flex items-center gap-2 border-b border-(--vd-border) bg-slate-50 px-5 py-3 dark:bg-slate-900">
                 <KeyRound className="h-3.5 w-3.5 text-(--vd-primary)" />
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Sandbox Credentials
@@ -557,7 +557,7 @@ npm run dev`}
               <section className="min-w-0 space-y-5">
                 {/* Header card */}
                 <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
-                  <div className="border-b border-(--vd-border) bg-gradient-to-br from-white to-slate-50/50 px-6 py-5 dark:from-slate-900 dark:to-slate-950/50">
+                  <div className="border-b border-(--vd-border) bg-white px-6 py-5 dark:bg-slate-900">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
@@ -648,7 +648,7 @@ npm run dev`}
 
                 {/* Response card */}
                 <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
-                  <div className="flex items-center justify-between border-b border-(--vd-border) bg-gradient-to-r from-slate-50/80 to-white px-6 py-3 dark:from-slate-950/80 dark:to-slate-900">
+                  <div className="flex items-center justify-between border-b border-(--vd-border) bg-slate-50 px-6 py-3 dark:bg-slate-900">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">

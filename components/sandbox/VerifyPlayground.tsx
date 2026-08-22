@@ -184,7 +184,7 @@ export const VerifyPlayground = () => {
         </button>
       </section>
 
-      <section className="rounded-xl border border-(--vd-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent p-5 sm:p-6">
+      <section className="rounded-xl border border-(--vd-border) bg-white p-5 sm:p-6 dark:bg-slate-950">
         <div className="mb-1 flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-(--vd-primary)" />
           <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
