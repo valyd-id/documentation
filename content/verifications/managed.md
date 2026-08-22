@@ -13,6 +13,17 @@ source_of_truth: openapi
 
 > 🔑 **Auth:** App API key + the user's `valyd_access_token` · 💾 **Result:** the proof saves to the user's Valyd ID
 
+**Managed by Valyd** is the signed-in lane: a signed-in user's `valyd_access_token` rides on a
+hosted verification session, so **every check is available** here — ID/KYC, liveness, face match,
+age, professional license, face uniqueness, and location. Passed proofs save to the user's Valyd
+ID; the raw identity data (documents, DOB, …) stays encrypted with Valyd, and your app receives
+the decision plus reusable proofs — never raw PII.
+
+> **This is the only way to run ID/KYC, face match, age, professional license, and location.**
+> Those checks are no longer self-serve direct calls — they run only here, on a signed-in user's
+> hosted session. (The tokenless [Verify Fresh](/verifications/standalone) lane runs
+> liveness, anti-spoof, and face uniqueness only.)
+
 Everything the user's token unlocks — reads and checks — lives on
 [one page](/docs/user-token); this page is the check reference.
 
@@ -36,7 +47,7 @@ Check first, run second:
 
 1. **Read the account** — [Account API](/docs/endpoints#resource-api--user-data): is KYC done?
    Which licenses are already verified? If the proof is there and fresh, stop here.
-2. **Run what's missing with the user's token** — hosted session or direct call; the passed
+2. **Run what's missing with the user's token** — create a hosted session; the passed
    proof saves to their Valyd ID.
 
 Because the verified identity lives on the user's Valyd ID, it is **reused** everywhere: a
@@ -76,18 +87,23 @@ const session = await verify.sessions.create({
 // → send them to session.url — proofs come back, PII doesn't
 ```
 
-## Direct API calls (same checks, your UI)
+## Checks a managed session can run
 
+All of these run inside the hosted session created with the user's token — the workflow you pick
+decides which ones fire, and every passed check saves a proof to the account:
+
+- **ID / KYC**: the user completes it on Valyd's hosted page; raw KYC stays encrypted under the
+  per-user key and `id_verified` is returned as a proof.
 - **License / credential**: matched against the account's real name, the verified badge is stored on the
   account, and a proof is returned.
-- **Face match**: a selfie is matched against the account's stored face vector (only the selfie leaves
-  your server).
-- **Liveness**: confirms the selfie is a live person, not a photo or replay — runs with the token,
-  the assurance rides on the same account.
+- **Face match**: a selfie is matched against the account's stored face vector — the raw image never
+  reaches your server.
+- **Liveness / anti-spoof**: confirms the selfie is a live person, not a photo or replay; the
+  assurance rides on the same account.
+- **Age**: bands are computed from the account's KYC-verified DOB and returned as a proof.
+- **Location**: a geolocation fix captured on the hosted page (EVV-style presence).
 - **Reuse read / revoke**: `GET /api/v2/identity?valyd_id=…` (proofs only) and
   `DELETE /api/v2/identity/{valyd_id}`.
-- **KYC**: redirect the user to Valyd (raw KYC needs the per-user encryption key to store —
-  hosted-only).
 
 ## Consent API — request raw KYC (user approves)
 
@@ -121,5 +137,5 @@ with a face scan as the user's consent.
 
 ---
 
-Verifying data you hold yourself, with no user in the loop? See
-[Direct API checks](/verifications/standalone).
+Need a liveness, anti-spoof, or face-uniqueness check with no user in the loop and nothing saved to
+an account? That's the tokenless [Verify Fresh](/verifications/standalone) lane.

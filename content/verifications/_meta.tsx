@@ -82,8 +82,8 @@ export default {
   'session-lifecycle': { title: <MetaTitle icon={History}>Session lifecycle</MetaTitle> },
   statuses: { title: <MetaTitle icon={ShieldCheck}>Results &amp; decisions</MetaTitle> },
   webhooks: { title: <MetaTitle icon={Braces}>Webhooks</MetaTitle> },
-  '--v-direct': { type: 'separator', title: 'Direct API' },
-  standalone: { title: <MetaTitle icon={Server}>Direct API Checks</MetaTitle> },
+  '--v-direct': { type: 'separator', title: 'Verify Fresh · direct checks' },
+  standalone: { title: <MetaTitle icon={Server}>Liveness &amp; uniqueness</MetaTitle> },
 
   // ============================ ORGANIZATIONS ============================
   '--organizations': { type: 'separator', title: 'ORGANIZATIONS' },

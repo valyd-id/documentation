@@ -61,15 +61,11 @@ export const SECTIONS = [
       { title: 'Session lifecycle', route: '/verifications/session-lifecycle', home: 'verifications', icon: 'History', group: 'Hosted' },
       { title: 'Results & decisions', route: '/verifications/statuses', home: 'verifications', icon: 'ShieldCheck', group: 'Hosted' },
       { title: 'Webhooks', route: '/verifications/webhooks', home: 'verifications', icon: 'Braces', group: 'Hosted' },
-      { title: 'ID / KYC', route: '/verifications/standalone/id-verification', home: 'verifications', icon: 'Fingerprint', group: 'Direct API' },
-      { title: 'Liveness', route: '/verifications/standalone/liveness', home: 'verifications', icon: 'ScanFace', group: 'Direct API' },
-      { title: 'Anti-spoof', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ShieldAlert', group: 'Direct API' },
-      { title: 'Face match', route: '/verifications/standalone/face-match', home: 'verifications', icon: 'ScanFace', group: 'Direct API' },
-      { title: 'Face uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'ScanFace', group: 'Direct API' },
-      { title: 'Age', route: '/verifications/standalone/age-verification', home: 'verifications', icon: 'Tags', group: 'Direct API' },
-      { title: 'Location', route: '/verifications/standalone/location', home: 'verifications', icon: 'Globe', group: 'Direct API' },
-      { title: 'Credentials', route: '/verifications/standalone/credential-verification', home: 'verifications', icon: 'ShieldCheck', group: 'Direct API' },
-      { title: 'KYC + credential', route: '/verifications/standalone/kyc-credential', home: 'verifications', icon: 'Fingerprint', group: 'Direct API' },
+      // Verify Fresh — the only non-account direct checks (liveness & uniqueness family). Every
+      // other check runs through Managed by Valyd (hosted, all checks) — see STUBS below.
+      { title: 'Liveness', route: '/verifications/standalone/liveness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh · direct checks' },
+      { title: 'Anti-spoof', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ShieldAlert', group: 'Verify Fresh · direct checks' },
+      { title: 'Face uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh · direct checks' },
     ],
   },
   {
@@ -154,6 +150,14 @@ export const STUBS = [
   { route: '/docs/user-token/license', canonical: '/verifications/standalone/credential-verification', status: 'stub' },
   { route: '/docs/user-token/age', canonical: '/verifications/standalone/age-verification', status: 'stub' },
   { route: '/docs/sessions', canonical: '/docs/tokens', status: 'stub' },
+  // Core/Direct APIs removed from self-serve — these checks now run only through Managed by Valyd
+  // (hosted, all checks). Pages kept as thin redirects so old URLs + the OpenAPI contract still work.
+  { route: '/verifications/standalone/id-verification', canonical: '/verifications/managed', status: 'stub' },
+  { route: '/verifications/standalone/face-match', canonical: '/verifications/managed', status: 'stub' },
+  { route: '/verifications/standalone/age-verification', canonical: '/verifications/managed', status: 'stub' },
+  { route: '/verifications/standalone/location', canonical: '/verifications/managed', status: 'stub' },
+  { route: '/verifications/standalone/credential-verification', canonical: '/verifications/managed', status: 'stub' },
+  { route: '/verifications/standalone/kyc-credential', canonical: '/verifications/managed', status: 'stub' },
 ]
 
 export const ALL_NAV_ROUTES = SECTIONS.flatMap((s) => s.items.map((i) => i.route))

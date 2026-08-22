@@ -17,4 +17,4 @@ as a one-off standalone check.
 - Save results to the user's account instead: [Verify & save a new proof](/verifications/managed)
 - Pick the checks a session runs: [Workflows](/verifications/workflows)
 - What each status means: [Decisions & statuses](/verifications/statuses)
-- Call the API directly with your own UI: [Direct API Checks](/verifications/standalone)
+- Run liveness / uniqueness without a login (hosted or direct API): [Verify Fresh](/verifications/standalone)

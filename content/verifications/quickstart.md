@@ -65,19 +65,14 @@ app, their token simply rides along on the call and the passed proof lands on th
 
    **Expected output:** Valyd will POST signed events to your URL when a session reaches a terminal state.
 
-5. Run a one-off professional-license verification with just the API key.
+5. Run a one-off **Verify Fresh** liveness check with just the API key (Verify Fresh covers
+   liveness, anti-spoof, and face uniqueness — ID/KYC, face match, age, license, and location run
+   through [Managed by Valyd](/verifications/managed) instead).
 
    ```bash
-   curl -X POST https://idp.valyd.work/api/v2/credential-verification \
+   curl -X POST https://idp.valyd.work/api/v2/liveness \
      -H "X-API-Key: $VALYD_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "first_name": "Jane",
-       "last_name": "Doe",
-       "license_type": "MD",
-       "license_state": "CA",
-       "license_number": "A12345"
-     }'
+     -F "image=@./selfie.jpg"
    ```
 
    **Expected output:** HTTP `200` with the standard envelope, e.g. `{ "success": true, "data": { ... } }`. On a bad/missing key expect a `4xx` with `{ "success": false, "error": { "code": "...", "message": "..." } }`.
@@ -106,13 +101,12 @@ app, their token simply rides along on the call and the passed proof lands on th
    **Expected output:** HTTP `200` with `{ "success": true, "data": { "url": "https://..." } }`. Redirect the user's browser to `data.url`. The verification result arrives later via your configured webhook (step 4).
 
 ### Verification
-- Direct API checks: the license curl in step 5 returns HTTP `200` and a body where `success` is `true`.
+- Verify Fresh checks: the liveness curl in step 5 returns HTTP `200` and a body where `success` is `true`.
 
   ```bash
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/credential-verification \
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/liveness \
     -H "X-API-Key: $VALYD_API_KEY" \
-    -H "Content-Type: application/json" \
-    -d '{ "first_name":"Jane", "last_name":"Doe", "license_type":"MD", "license_state":"CA", "license_number":"A12345" }'
+    -F "image=@./selfie.jpg"
   ```
 
   Expect `200` printed.

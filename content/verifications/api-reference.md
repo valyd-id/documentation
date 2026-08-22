@@ -98,6 +98,12 @@ There is no REST endpoint to create a workflow from this reference — workflows
 
 Run a single check directly without a hosted session.
 
+> **Most of these are internal to Managed by Valyd now.** In the product, only **liveness**,
+> **face-uniqueness**, and **anti-spoof** are self-serve direct calls (**Verify Fresh**). ID/KYC,
+> face match, age, professional license, and location run through a signed-in user's hosted session
+> ([Managed by Valyd](/verifications/managed)); their endpoints stay listed below as the technical
+> contract for existing integrations.
+
 | Method | Path                                      | Description                              |
 |--------|-------------------------------------------|------------------------------------------|
 | POST   | `/api/v2/id-verification`                 | OCR + authenticity from a government ID  |

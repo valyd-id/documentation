@@ -90,26 +90,29 @@ After initialising `verify`, use these resource namespaces.
 > not expose workflow CRUD. You pass the resulting `workflowId` to `sessions.create(...)`.
 
 #### `verify.standalone`
-- `idVerification({ frontImage, backImage? }): Promise<CheckEnvelope>` — OCR + authenticity from a government ID.
+
+These are the **Verify Fresh** checks — the non-account liveness / anti-spoof / face-uniqueness
+family you can call directly with just the API key:
+
 - `liveness({ image }): Promise<CheckEnvelope>` — Passive liveness on a selfie.
 - `antispoof({ image? | frames?, challengeId? }): Promise<CheckEnvelope>` — "Is this a live human capture?" — `human_score` 0–100 in `check.data`. Single `image` (score capped at 85) or 3–8 burst `frames`. *v1.10.2+*
 - `antispoofIdentity({ image? | frames?, challengeId? }): Promise<CheckEnvelope>` — Anti-spoof, then resolves the proven-live face to a stable `valyd_` uuid (`check.data.identity`). *v1.10.2+*
 - `antispoofChallenge(): Promise<LivenessChallengeResult>` — Single-use 60s gesture challenge; echo `challengeId` back on antispoof / face-uniqueness runs. *v1.10.2+*
-- `faceMatch({ idImage, selfie }): Promise<CheckEnvelope>` — 1:1 face match.
 - `faceUniqueness({ selfie? | frames?, externalRef?, challengeId? }): Promise<CheckEnvelope>` — One face = one uuid: enroll-or-match against the global gallery (`check.data.valyd_uuid`, `registered`).
 - `faceUniquenessUnlink(valydUuid): Promise<{ valyd_uuid, unlinked, deleted }>` — GDPR forget: unlink a face from your project.
-- `locationMatch({ latitude, longitude, accuracy?, expectedLatitude?, expectedLongitude?, radiusM? }): Promise<CheckEnvelope>` — Record or verdict a geolocation fix.
-- `ageVerification({ dob, bands? }): Promise<CheckEnvelope>` — Age + bands (e.g. `["is_18_plus"]`).
-- `credentialVerification({ licenseState, licenseNumber, ...name, ...license, npi? }): Promise<CheckEnvelope>` — Professional license lookup. Give the holder's **name** as `firstName` + `lastName` **or** `fullName`; identify the **license** with `licenseType` (Valyd resolves the provider board for you — no `providerCode` needed) **or** pass `providerCode` directly. `npi?` is optional.
-- `kycCredential({ frontImage, selfie, backImage?, providerCode, licenseState, licenseNumber, npi? }): Promise<KycCredentialResult>` — ID + liveness + face match + license, matched against the OCR'd name.
 
-There is no combined EVV bundle endpoint. To pair a face match with a location check, run the two real checks separately: `faceMatch({ idImage, selfie })` + `locationMatch({ latitude, longitude, expectedLatitude, expectedLongitude, radiusM })`.
+> **ID/KYC, face match, age, professional license, and location now run through
+> [Managed by Valyd](/verifications/managed)** (a signed-in user's hosted session) — they are no
+> longer self-serve direct calls. The raw `standalone.*` methods for them (`idVerification`,
+> `faceMatch`, `ageVerification`, `locationMatch`, `credentialVerification`, `kycCredential`) remain
+> in the SDK types for existing integrations, but new code should route those checks through a
+> hosted session.
 
 Every billable check also accepts an optional `idempotencyKey` (*v1.10.2+*) — sent as the
 `Idempotency-Key` header so a network retry can never double-charge or double-run
 ([how it behaves](/verifications/standalone#idempotency)).
 
-See the [Direct API checks](/verifications/standalone) reference for full field details.
+See the [Verify Fresh](/verifications/standalone) reference for full field details.
 
 #### `verify.credentials`
 - `states(): Promise<CredentialState[]>` — List supported states.
@@ -162,14 +165,13 @@ Every failure throws `ValydVerifyError` with `{ code, status?, data? }`. The `co
 - `config_error` — missing `apiKey` / `webhookSecret`.
 
 ```javascript
-import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
+import { VerifyClient, ValydVerifyError, readImage } from "@valyd/sdk";
 
-const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY!, timeoutMs: 90_000 });
+const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
 try {
-  const { check } = await verify.standalone.credentialVerification({
-    firstName: "Jane", lastName: "Doe",
-    providerCode: "MD", licenseState: "CA", licenseNumber: "A12345",
+  const { check } = await verify.standalone.liveness({
+    image: readImage("./selfie.jpg"),
   });
 } catch (err) {
   if (err instanceof ValydVerifyError) {
@@ -212,29 +214,31 @@ const decision = await verify.sessions.decision(event.sessionId);
 
 **Expected output:** `verify.sessions.create(...)` resolves to a `Session` with `.url` (redirect the user here) and `.sessionId`. After the user finishes, your webhook fires; `constructEvent` returns the parsed `WebhookEvent`, and `verify.sessions.decision(...)` resolves to a `Decision` with `.status` and `.checks[]`.
 
-#### Direct API checks quickstart
+#### Verify Fresh quickstart
+
+Verify Fresh is the non-account lane — liveness, anti-spoof, and face uniqueness, called directly
+with just the API key. (ID/KYC, face match, age, license, and location run through
+[Managed by Valyd](/verifications/managed) instead.)
 
 ```javascript
 import { VerifyClient, readImage } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
-// 1) Build a state/license picker
-const { states }    = await verify.credentials.states();
-const { providers } = await verify.credentials.providers("CA");
-
-// 2) Run KYC + License in one call
-const result = await verify.standalone.kycCredential({
-  frontImage:    readImage("./id_front.jpg"),
-  selfie:        readImage("./selfie.jpg"),
-  providerCode:  "MD",
-  licenseState:  "CA",
-  licenseNumber: "A12345",
+// Liveness — passive check on a single selfie
+const { check } = await verify.standalone.liveness({
+  image: readImage("./selfie.jpg"),
 });
-// result.status === "passed" only when ALL checks pass
+// check.status === "passed" when the selfie is a live capture
+
+// One face = one uuid — duplicate-account / sybil detection
+const uniq = await verify.standalone.faceUniqueness({
+  selfie: readImage("./selfie.jpg"),
+});
+// uniq.check.data.valyd_uuid, uniq.check.data.registered
 ```
 
-**Expected output:** `verify.credentials.states()` resolves to `{ states }`, `verify.credentials.providers("CA")` resolves to `{ providers }`, and `verify.standalone.kycCredential(...)` resolves to a `KycCredentialResult` whose `.status` is `"passed"` only when ALL checks pass.
+**Expected output:** `verify.standalone.liveness(...)` resolves to a `CheckEnvelope` whose `.check.status` is `"passed"` on a live selfie, and `verify.standalone.faceUniqueness(...)` resolves to a `CheckEnvelope` carrying the stable `valyd_uuid` and whether the face was newly registered.
 
 ### Express webhook
 

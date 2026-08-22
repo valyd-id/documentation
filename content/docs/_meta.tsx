@@ -76,16 +76,10 @@ export default {
   'vf-lifecycle': { title: <MetaTitle icon={History}>Session lifecycle</MetaTitle>, href: '/verifications/session-lifecycle' },
   'vf-statuses': { title: <MetaTitle icon={ShieldCheck}>Results &amp; decisions</MetaTitle>, href: '/verifications/statuses' },
   'vf-webhooks': { title: <MetaTitle icon={Braces}>Webhooks</MetaTitle>, href: '/verifications/webhooks' },
-  '--v-direct': { type: 'separator', title: 'Direct API' },
-  'vf-id': { title: <MetaTitle icon={Fingerprint}>ID / KYC</MetaTitle>, href: '/verifications/standalone/id-verification' },
+  '--v-direct': { type: 'separator', title: 'Verify Fresh · direct checks' },
   'vf-liveness': { title: <MetaTitle icon={ScanFace}>Liveness</MetaTitle>, href: '/verifications/standalone/liveness' },
   'vf-antispoof': { title: <MetaTitle icon={ShieldAlert}>Anti-spoof</MetaTitle>, href: '/verifications/standalone/antispoof' },
-  'vf-facematch': { title: <MetaTitle icon={ScanFace}>Face match</MetaTitle>, href: '/verifications/standalone/face-match' },
   'vf-faceuniqueness': { title: <MetaTitle icon={ScanFace}>Face uniqueness</MetaTitle>, href: '/verifications/standalone/face-uniqueness' },
-  'vf-age': { title: <MetaTitle icon={Tags}>Age</MetaTitle>, href: '/verifications/standalone/age-verification' },
-  'vf-location': { title: <MetaTitle icon={Globe}>Location</MetaTitle>, href: '/verifications/standalone/location' },
-  'vf-credentials': { title: <MetaTitle icon={ShieldCheck}>Credentials</MetaTitle>, href: '/verifications/standalone/credential-verification' },
-  'vf-kyccred': { title: <MetaTitle icon={Fingerprint}>KYC + credential</MetaTitle>, href: '/verifications/standalone/kyc-credential' },
 
   // ============================ ORGANIZATIONS ============================
   '--organizations': { type: 'separator', title: 'ORGANIZATIONS' },

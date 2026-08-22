@@ -1,9 +1,14 @@
 # Raw HTTP (cURL)
 
-Every standalone check is a plain HTTPS endpoint — this page collects the raw requests in one
+Every **Verify Fresh** check is a plain HTTPS endpoint — this page collects the raw requests in one
 place for integrations that don't use the [Node SDK](/verifications/sdk) (other languages, testing
 from the terminal, codegen). The endpoint pages themselves show only the SDK call; each links back
 to its section here.
+
+> ID/KYC, face match, age, professional license, and location are no longer self-serve direct
+> calls — they run through [Managed by Valyd](/verifications/managed) (a signed-in user's hosted
+> session). The endpoints below are the Verify Fresh checks: liveness, anti-spoof, and face
+> uniqueness.
 
 Applies to every request below:
 
@@ -22,17 +27,6 @@ curl -X POST https://idp.valyd.work/api/v2/liveness \
   -H "X-API-Key: $VALYD_API_KEY" \
   -H "Idempotency-Key: 5f2c…-your-unique-id" \
   -F "image=@./selfie.jpg"
-```
-
-## ID verification
-
-[Endpoint page →](/verifications/standalone/id-verification)
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/id-verification \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "front_image=@./id_front.jpg" \
-  -F "back_image=@./id_back.jpg"
 ```
 
 ## Liveness
@@ -106,86 +100,8 @@ curl -X DELETE https://idp.valyd.work/api/v2/face-uniqueness/valyd_8f2… \
   -H "X-API-Key: $VALYD_API_KEY"
 ```
 
-## Location
+---
 
-[Endpoint page →](/verifications/standalone/location)
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/location \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "latitude": 34.0522, "longitude": -118.2437, "accuracy": 12,
-        "expected_latitude": 34.0511, "expected_longitude": -118.244, "radius_m": 250 }'
-```
-
-## Face match
-
-[Endpoint page →](/verifications/standalone/face-match)
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/face-match \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "image1=@./id_portrait.jpg" \
-  -F "image2=@./selfie.jpg"
-```
-
-## Age verification
-
-[Endpoint page →](/verifications/standalone/age-verification)
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/age-verification \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "dob": "1995-06-01", "bands": ["is_18_plus","is_21_plus"] }'
-```
-
-## Credential verification
-
-[Endpoint page →](/verifications/standalone/credential-verification)
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/credential-verification \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "first_name": "Jane",
-    "last_name":  "Doe",
-    "license_type":   "MD",
-    "license_state":  "CA",
-    "license_number": "A12345",
-    "npi": "1234567890"
-  }'
-```
-
-Registry lookups can take 10–60s — add `--max-time 90`.
-
-## Credential discovery
-
-[Endpoint page →](/verifications/standalone/credential-verification#credential-discovery)
-
-```bash
-curl https://idp.valyd.work/api/v2/credential/states \
-  -H "X-API-Key: $VALYD_API_KEY"
-```
-
-```bash
-curl https://idp.valyd.work/api/v2/credential/states/CA/providers \
-  -H "X-API-Key: $VALYD_API_KEY"
-```
-
-## KYC + credential
-
-[Endpoint page →](/verifications/standalone/kyc-credential)
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/kyc-credential \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "front_image=@./id_front.jpg" \
-  -F "selfie=@./selfie.jpg" \
-  -F "license_type=MD" \
-  -F "license_state=CA" \
-  -F "license_number=A12345"
-```
-
-Registry lookups can take 10–60s — add `--max-time 90`.
+**Need ID/KYC, face match, age, professional license, or location?** Those run through
+[Managed by Valyd](/verifications/managed) on a signed-in user's hosted session, not as direct
+cURL calls.

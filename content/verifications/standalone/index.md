@@ -9,43 +9,37 @@ human_setup_required: true
 source_of_truth: openapi
 ---
 
-# Direct API checks
+# Verify Fresh — liveness & uniqueness
 
-> 🔑 **Auth:** API key (`X-API-Key`) · 👤 **User login:** not required · 💾 **Result:** returned to your system — you supply and keep the data
+> 🔑 **Auth:** API key (`X-API-Key`) · 👤 **User login:** none — non-account · 💾 **Result:** returned to your system
 
-Direct API checks (called the *standalone* API in the routes and API field names) are the
-self-contained, API-key-only product: run a one-off license lookup, ID check, liveness check, face
-match, age check, or a combined KYC + license check on data **you** supply. No Valyd account is involved and nothing is saved to one — the result and any extracted
-identity fields return straight to your system, and storing, protecting, and deleting that data
-is your responsibility. [Data sharing](/verifications/data-sharing) spells out exactly what you
-receive, what you must protect, and what Valyd retains.
+**Verify Fresh** is the non-account, API-key-only lane: **no login, no Valyd account**, nothing
+saved to one. It runs only the **liveness**, **anti-spoof**, and **face-uniqueness** family of
+checks on images your app captures, and the result returns straight to your system. It runs on
+Valyd's hosted capture page **or** as direct API calls from your backend.
+
+> **Need ID/KYC, face match, age, professional license, or location?** Those are no longer
+> self-serve direct checks — they now run through **[Managed by Valyd](/verifications/managed)**, on
+> a signed-in user's hosted session, so the raw identity data stays encrypted with Valyd and your
+> app receives the decision plus reusable proofs.
 
 **Setup is one dialog:** on the [dashboard](https://dev.valyd.work) create a
 **verification-only project** — no login setup, just a key — and copy its API key (the same
 `X-API-Key` credential every endpoint below uses; an app's Verification-tab key works too).
 Portal sign-in works with an **email magic link** as well as a Valyd ID — no Valyd account is
-needed to use this product:
+needed to use this lane:
 
 ![Creating a verification-only project on the dashboard](/images/screenshots/portal-create-verification-project.png)
 
-**Rather not build the UI?** The same checks run as a hosted workflow — select them in the
-project, get a `workflow_id`, one `sessions.create({ workflowId, redirectUrl })` call, and the
-full results still return to you: [Hosted delivery](/verifications/hosted).
-
-> Building for signed-in users instead? The same endpoints accept a user's `valyd_access_token`
-> so proofs save to their Valyd ID — that flow is documented in
-> [Verify the user](/verifications/managed).
+**Rather not build the UI?** The same Verify Fresh checks run as a hosted workflow — select them in
+the project, get a `workflow_id`, one `sessions.create({ workflowId, redirectUrl })` call, and the
+results still return to you: [Hosted delivery](/verifications/hosted).
 
 ## Overview
 
 Direct, synchronous, server-to-server checks. You build your own UI and call these endpoints from
 your backend. Every request uses `X-API-Key: <App API key>`—not an OIDC access token. Keep the key
 server-side and never ship it to the browser.
-
-> **ID / KYC note.** The `id-verification` and `kyc-credential` checks here run on data **you**
-> supply and return the result to **you** (nothing stored). Establishing `id_verified` on a
-> **signed-in user's Valyd account** is a different, hosted-only path — see
-> [account KYC](/docs/user-token/kyc).
 
 Base URL for every endpoint below: `https://idp.valyd.work`
 
@@ -58,7 +52,7 @@ Every response uses the standard envelope and includes a `check` object:
     "session_id": "ses_…",
     "status": "passed",   // passed | failed | review
     "check": {
-      "type": "id_verification" | "liveness" | "face_match" | "age" | "credential",
+      "type": "liveness" | "antispoof" | "face_uniqueness",
       "status": "passed" | "failed" | "review",
       "score": 0.97,
       "data": { /* per-check details */ },
@@ -125,14 +119,8 @@ live together on one page: [Raw HTTP (cURL)](/verifications/standalone/http).
 
 | Endpoint | Purpose |
 | --- | --- |
-| [ID verification](/verifications/standalone/id-verification) · `POST /api/v2/id-verification` | OCR + authenticity from a government ID. |
 | [Liveness](/verifications/standalone/liveness) · `POST /api/v2/liveness` | Passive liveness check on a single selfie. |
 | [Anti-spoof](/verifications/standalone/antispoof) · `POST /api/v2/antispoof` + `/antispoof/identity` | "Is this a live human capture?" — single image or burst; `/identity` adds the stable `valyd_` uuid. |
 | [Face uniqueness](/verifications/standalone/face-uniqueness) · `POST /api/v2/face-uniqueness` | One face = one Valyd uuid — duplicate-account / sybil detection. |
-| [Location](/verifications/standalone/location) · `POST /api/v2/location` | Record or validate a geolocation fix (EVV-style presence). |
-| [Face match](/verifications/standalone/face-match) · `POST /api/v2/face-match` | Compare two face images (ID portrait vs selfie). |
-| [Age verification](/verifications/standalone/age-verification) · `POST /api/v2/age-verification` | Age bands from a DOB you supply (or the account's verified DOB). |
-| [Credential verification](/verifications/standalone/credential-verification) · `POST /api/v2/credential-verification` | Professional-license registry lookup, plus the state/provider discovery endpoints. |
-| [KYC + credential](/verifications/standalone/kyc-credential) · `POST /api/v2/kyc-credential` | ID + liveness + face match + license lookup in one call. |
 | [Raw HTTP (cURL)](/verifications/standalone/http) | Every endpoint's raw request, collected in one place. |
 | [Common errors](/verifications/standalone/errors) | Error envelope, status codes, and fixes for the frequent failures. |

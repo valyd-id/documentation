@@ -1,46 +1,10 @@
 # Face Match
 
-`POST /api/v2/face-match` — compare two images. Passes when similarity ≥ threshold (default ~0.95).
+This check now runs through **Managed by Valyd** — [Verify & save a proof](/verifications/managed).
 
-**Method:** POST
-**Full URL:** `https://idp.valyd.work/api/v2/face-match`
-**Auth header:** `X-API-Key: <App API key>`
+Face match is no longer a self-serve direct call. Run it on a signed-in user's hosted
+verification session, where the selfie is matched against their stored face vector and your app
+receives the decision — never the raw images.
 
-**Fields:**
-- `image1` (image) **required** — Reference image (typically the ID portrait).
-- `image2` (image) **required** — Selfie to compare against the reference.
-
-**Request:**
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
-
-```javascript
-import { VerifyClient, readImage } from "@valyd/sdk";
-const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
-
-const { check } = await verify.standalone.faceMatch({
-  idImage: readImage("./id_portrait.jpg"),
-  selfie:  readImage("./selfie.jpg"),
-});
-// check.data.similarity, check.data.threshold
-```
-
-</Tabs.Tab>
-<Tabs.Tab>
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/face-match \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "image1=@./id_portrait.jpg" \
-  -F "image2=@./selfie.jpg"
-```
-
-</Tabs.Tab>
-</Tabs>
-
-**Expected output:** HTTP 200 with the standard envelope (`success: true`); `check.type` is `"face_match"`. `check.data` is:
-
-```json
-{ "similarity": 0.973, "threshold": 0.95 }
-```
+The `POST /api/v2/face-match` endpoint still exists in the
+[Verification OpenAPI](/verifications/api) for existing integrations.

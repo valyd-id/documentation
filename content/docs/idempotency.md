@@ -24,8 +24,10 @@ curl -X POST https://idp.valyd.work/api/v2/liveness \
   -F "image=@./selfie.jpg"
 ```
 
-Applies to every billable `POST /api/v2/*` check — liveness, ID verification, face match, age,
-credential lookups, and the rest listed under [Raw HTTP](/verifications/standalone/http).
+Applies to every billable `POST /api/v2/*` request — the Verify Fresh checks (liveness, face
+uniqueness, anti-spoof) listed under [Raw HTTP](/verifications/standalone/http), and hosted-session
+creation. (ID/KYC, face match, age, and professional license run inside a
+[Managed by Valyd](/verifications/managed) session, not as direct calls.)
 
 ## With the Node SDK
 

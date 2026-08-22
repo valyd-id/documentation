@@ -8,17 +8,19 @@ to grab before your first call. Don't have an account yet?
 
 ## Where verification lives in the portal
 
-There are two homes, matching the two products:
+There are two homes, matching the two lanes:
 
-- **Verification for your users lives inside your app.** If you're pairing verification with
-  [Sign in with Valyd](/docs) — the main story — open the app itself → its **Verification** tab.
-  The app's OAuth side signs users in; this tab is its verification side:
+- **[Managed by Valyd](/verifications/managed) lives inside your app.** If you're pairing
+  verification with [Sign in with Valyd](/docs) — the main story — open the app itself → its
+  **Verification** tab. The app's OAuth side signs users in; this tab is its verification side,
+  where a signed-in user's token unlocks every check:
 
   ![The Verification tab inside an app in the Developer Portal](/images/screenshots/portal-app-verification.png)
 
-- **[Standalone](/verifications/standalone) projects live on the dashboard.** The plain API-key
-  product for checks on your own data: your project, your key, results returned to you. Create
-  and manage these directly from the dashboard's Verifications area:
+- **[Verify Fresh](/verifications/standalone) projects live on the dashboard.** The non-account,
+  API-key-only lane — liveness, anti-spoof, and face uniqueness on data you capture: your project,
+  your key, results returned to you. Create and manage these directly from the dashboard's
+  Verifications area:
 
   ![Standalone verification projects on the Developer Portal dashboard](/images/screenshots/portal-dashboard-verifications.png)
 
@@ -46,7 +48,7 @@ wizard in the portal (or [via the API](/verifications/workflows)) and copy its `
 
 ![The workflow creation wizard in the Developer Portal](/images/screenshots/portal-workflow-wizard.png)
 
-Direct API calls don't need a workflow — just the key.
+Verify Fresh direct calls don't need a workflow — just the key.
 
 ## Configure webhooks (hosted runs)
 

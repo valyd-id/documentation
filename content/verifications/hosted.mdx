@@ -28,10 +28,10 @@ linked below.
 
 ## Overview
 
-Hosted Verification lets you create a session, redirect the user to a Valyd-hosted page that captures everything, and receive the result via a signed webhook plus the decision API. There's no capture UI to build — and **who holds the identity data depends on the mode you use:**
+Hosted Verification lets you create a session, redirect the user to a Valyd-hosted page that captures everything, and receive the result via a signed webhook plus the decision API. There's no capture UI to build — and **which checks run and who holds the identity data depend on the mode you use:**
 
-- **Account-connected** (session created **with** the user's `valyd_access_token`): the personal data stays encrypted with Valyd, and your app receives the passed/failed decision plus reusable proofs — see [Verify the user](/verifications/managed).
-- **One-off** (session created **without** a token, the [standalone](/verifications/standalone) product): the full verification result — including extracted identity fields — is returned to **your** system, so you become responsible for storing, protecting, and deleting it.
+- **Managed by Valyd** (session created **with** the user's `valyd_access_token`): **all checks** are available — ID/KYC, liveness, face match, age, professional license, face uniqueness, and location. The personal data stays encrypted with Valyd, and your app receives the passed/failed decision plus reusable proofs saved to the user's Valyd ID — see [Verify & save a proof](/verifications/managed).
+- **Verify Fresh** (session created **without** a token, the [non-account lane](/verifications/standalone)): **no login**, and only **liveness, anti-spoof, and face uniqueness** run — a tokenless session can't run ID/KYC, face match, age, license, or location. The result returns to **your** system and nothing is saved to a Valyd account.
 
 The official Node SDK is `@valyd/sdk` (https://www.npmjs.com/package/@valyd/sdk). It wraps sessions, workflows, webhooks, and the decision API.
 

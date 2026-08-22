@@ -1,11 +1,14 @@
 # Valyd — Identity & Verify API Documentation
 
 > Valyd has two separate integration paths in one SDK. **Login with Valyd** uses OIDC and reads a
-> signed-in user's account through `valyd.auth`. **Verification API** runs KYC, liveness, face,
-> age, and license checks through `valyd.verify`; it needs an App API key and does not require OIDC
-> or an end-user Valyd login. Combine the paths only when a new verification should be saved to the
-> signed-in user's account. Everything runs through the Valyd IdP host. This file is the
-> machine-readable index of the docs.
+> signed-in user's account through `valyd.auth`. **Verification** (Hosted Verification, through
+> `valyd.verify`) runs in two lanes: **Managed by Valyd** — the user signs in and you run a hosted
+> session with their `valyd_access_token`, where every check is available (ID/KYC, liveness, face
+> match, age, professional license, face uniqueness, location) and passed proofs save to their
+> Valyd ID; and **Verify Fresh** — no login, no account, liveness + face-uniqueness + anti-spoof
+> only, hosted or as direct API calls, with the result returned to you. Verification calls need an
+> App API key. Everything runs through the Valyd IdP host. This file is the machine-readable index
+> of the docs.
 > Every page below is available as clean Markdown at the linked `.md` URL — fetch those directly;
 > do not try to scrape the HTML site (it is a client-rendered SPA and returns no static content).
 
@@ -30,44 +33,48 @@ guess them.
     the passed proof saves to their Valyd ID; PII stays with Valyd.
     Credential: OIDC Bearer `valyd_access_token` (from Login with Valyd).
     Fetch: https://docs.valyd.work/docs/user-token.md
-- Q3 — Run verification checks (not necessarily tied to a Valyd login)? Ask TWO sub-questions:
-  - Q3a — Who holds the person's data?
-    - "Valyd holds the PII, I get only proofs/verified status" → **account-connected**: attach the
-      user's `valyd_access_token` to the check; PII stays with Valyd.
-      Fetch: https://docs.valyd.work/verify/managed.md
-    - "I manage the data myself" → **Direct API Checks** (standalone): full results incl. identity
-      fields return to you; you store/protect them. Credential: App `X-API-Key`.
-      Fetch: https://docs.valyd.work/verify/standalone.md
-  - Q3b — Whose UI collects the documents/selfie?
-    - "Valyd's UI" → **Hosted**: compose a workflow (KYC/license/liveness/location/face-match), one
-      `sessions.create({ workflowId, redirectUrl })` call, combined decision on the webhook.
-      Credential: App `X-API-Key` + `workflow_id`. Fetch: https://docs.valyd.work/verify/hosted.md
-    - "My own UI / call the API directly" → **Direct API Checks** (same standalone page above).
+- Q3 — Run verification checks? Two lanes — pick by login + which checks:
+  - "The user signs in / I want proofs on their account, or I need ID/KYC, face match, age,
+    professional license, or location" → **Managed by Valyd**: the user signs in, you run a hosted
+    session with their `valyd_access_token`, and EVERY check is available (ID/KYC, liveness, face
+    match, age, professional license, face uniqueness, location). Passed proofs save to their Valyd
+    ID; PII stays encrypted with Valyd; you get the decision + reusable proofs (never raw PII).
+    `sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
+    Credential: App `X-API-Key` + `workflow_id` + the user's `valyd_access_token`.
+    Fetch: https://docs.valyd.work/verify/managed.md
+  - "One-off, no login, I only need liveness / uniqueness" → **Verify Fresh**: no Valyd account,
+    the liveness + face-uniqueness + anti-spoof family ONLY, on Valyd's hosted page OR as direct API
+    calls (`POST /api/v2/liveness`, `/api/v2/face-uniqueness`, `/api/v2/antispoof`). The result
+    returns to your system; nothing is saved to a Valyd account. Credential: App `X-API-Key`.
+    Fetch: https://docs.valyd.work/verify/standalone.md
+  NOTE: ID/KYC, face match, age, professional license, and location are no longer self-serve direct
+  checks — they run ONLY through Managed by Valyd (a signed-in user's hosted session).
 - Q4 — Login only (sign the user in, run no check)?
   → **Login with Valyd** (OAuth2/OIDC). Credential: `client_id` + `client_secret`.
     Fetch: https://docs.valyd.work/docs/overview.md
 - Q5 — Want it all in one flow (user signs in AND you run several checks on Valyd's hosted UI, with
-  proofs saved to their account)?
-  → **Hosted workflow WITH the token**: `sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
-    Drop the `valydAccessToken` and the same call returns full results to you instead (Standalone).
-    Credential: App `X-API-Key` + `workflow_id` (+ the user's `valyd_access_token`).
-    Fetch: https://docs.valyd.work/verify/hosted.md
+  proofs saved to their account)? That IS **Managed by Valyd**:
+  `sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
+    Credential: App `X-API-Key` + `workflow_id` + the user's `valyd_access_token`.
+    Fetch: https://docs.valyd.work/verify/managed.md
 
 Then clarify (as relevant), fetching the named `.md`:
 - Which checks? ID/KYC, liveness, face match, age (age *bands* like `is_18_plus`, never the DOB),
   professional license, location/EVV presence, anti-spoof, face uniqueness (one-person-one-account
   dedup). → https://docs.valyd.work/verify/types.md
-- Reusable identity (KYC-reuse)? Save the passed check as a proof (account-connected, needs the
-  user's `valyd_access_token`) vs one-off (Direct API Checks). → https://docs.valyd.work/docs/user-token.md
-- Result delivery? Async signed webhook (hosted) vs synchronous API response (standalone).
-  → https://docs.valyd.work/verify/webhooks.md
+- Reusable identity (KYC-reuse)? Save the passed check as a proof — that's **Managed by Valyd**
+  (needs the user's `valyd_access_token`). A one-off **Verify Fresh** liveness/uniqueness check
+  saves nothing. → https://docs.valyd.work/docs/user-token.md
+- Result delivery? Async signed webhook (Managed by Valyd, or Verify Fresh hosted) vs synchronous
+  API response (Verify Fresh direct). → https://docs.valyd.work/verify/webhooks.md
 - Need RAW identity data (DOB, document number, address)? Requires the consent flow (the user
   approves on their device); otherwise you get proofs / verified-status only.
   → https://docs.valyd.work/docs/request-data.md
 - Login scopes? profile (legal name, country, verified status), verifications (proofs/badges),
   email, doctor_license. → https://docs.valyd.work/docs/scopes.md
-- Professional license check? Discover states → license types first, then verify (name comes from
-  the account or you supply it). → https://docs.valyd.work/verify/standalone/credential-verification.md
+- Professional license check? Runs through **Managed by Valyd** (a signed-in user's hosted session);
+  the name comes from the account and the verified badge saves to their Valyd ID.
+  → https://docs.valyd.work/verify/managed.md
 - Drop-in button or your own OIDC library? "Sign in with Valyd" button
   (https://docs.valyd.work/docs/overview.md) vs any OIDC library via discovery
   (https://docs.valyd.work/docs/oidc.md).
@@ -133,25 +140,25 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 ## Verification APIs — Guides
 
-- [Introduction](https://docs.valyd.work/verify/intro.md): Verification without login, optional account-connected verification, Hosted vs Direct API checks, and data handling.
-- [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an App API key and run a license check or hosted session without OIDC login.
+- [Introduction](https://docs.valyd.work/verify/intro.md): The two lanes — Managed by Valyd (signed-in, all checks, proofs) vs Verify Fresh (no login, liveness/uniqueness) — and data handling.
+- [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an App API key and run a Verify Fresh liveness check or a hosted session.
 - [Developer Portal](https://docs.valyd.work/verify/console.md): Apps, API keys, workflows, webhooks, SSO. (Human-only UI steps.)
-- [Choose an integration](https://docs.valyd.work/verify/modes.md): Decide whether the result belongs to your system or a Valyd account, then choose Hosted or Standalone.
-- [Account-connected verification](https://docs.valyd.work/verify/managed.md): OIDC first, then Verification API; successful proofs are saved to the user's account.
-- [Hosted Verification](https://docs.valyd.work/verify/hosted.md): No-login capture page, signed webhooks, decision API, statuses, and optional account linking.
-- [Direct API Checks (standalone)](https://docs.valyd.work/verify/standalone.md): No-login server-to-server checks — overview, idempotency, and SDK quick start. Per-endpoint pages: [ID verification](https://docs.valyd.work/verify/standalone/id-verification.md), [Liveness](https://docs.valyd.work/verify/standalone/liveness.md), [Anti-spoof](https://docs.valyd.work/verify/standalone/antispoof.md), [Face uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), [Location](https://docs.valyd.work/verify/standalone/location.md), [Face match](https://docs.valyd.work/verify/standalone/face-match.md), [Age verification](https://docs.valyd.work/verify/standalone/age-verification.md), [Credential verification](https://docs.valyd.work/verify/standalone/credential-verification.md), [KYC + credential](https://docs.valyd.work/verify/standalone/kyc-credential.md), [Raw HTTP (cURL)](https://docs.valyd.work/verify/standalone/http.md), [Common errors](https://docs.valyd.work/verify/standalone/errors.md).
+- [Choose an integration](https://docs.valyd.work/verify/modes.md): Decide between Managed by Valyd (signed-in user, all checks, proofs on their account) and Verify Fresh (no login, liveness/uniqueness returned to you).
+- [Managed by Valyd](https://docs.valyd.work/verify/managed.md): The signed-in lane — sign the user in, run a hosted session with their token; every check is available and passed proofs save to their account.
+- [Hosted delivery](https://docs.valyd.work/verify/hosted.md): The Valyd-hosted capture page used by both lanes — signed webhooks, decision API, statuses, and optional account linking.
+- [Verify Fresh (standalone)](https://docs.valyd.work/verify/standalone.md): No-login liveness + uniqueness + anti-spoof — overview, idempotency, and SDK quick start. Per-endpoint pages: [Liveness](https://docs.valyd.work/verify/standalone/liveness.md), [Anti-spoof](https://docs.valyd.work/verify/standalone/antispoof.md), [Face uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), [Raw HTTP (cURL)](https://docs.valyd.work/verify/standalone/http.md), [Common errors](https://docs.valyd.work/verify/standalone/errors.md). (ID/KYC, face match, age, professional license, and location run only through Managed by Valyd.)
 - [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.
 - [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it.
 
 ## Verification APIs — API Reference
 
-- [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, Direct API checks, Decision, and Errors & rate limits. All calls use `X-API-Key`.
+- [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, Verify Fresh checks, Decision, and Errors & rate limits. All calls use `X-API-Key`.
 
 ## API specs (OpenAPI 3.1)
 
 - [Valyd ID OpenAPI](https://docs.valyd.work/openapi/valyd-id.json): OIDC login and account-resource endpoints, schemas, auth, and errors.
-- [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, Direct API checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen and endpoint discovery.
+- [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, Verify Fresh checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen and endpoint discovery.
 
 ## Downloads & tooling
 

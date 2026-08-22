@@ -29,15 +29,12 @@ if (valyd.verify.kyc.isRequired(verifications)) {
 }
 ```
 
-> **Reading vs performing.** In account mode the direct
-> [`id-verification`](/verifications/standalone/id-verification) check only **reads back** the
-> account's existing `id_verified` status — it cannot *write* the vault. To actually establish
-> `id_verified: true`, use one of the hosted handoffs above. (Running ID/KYC on data **you** supply,
-> with the result returned to you, is the separate [Direct API](/verifications/standalone) product.)
+> **The hosted handoffs are the only way to establish `id_verified`.** ID/KYC now runs exclusively
+> through **Managed by Valyd** (the hosted handoffs above) — there is no self-serve direct ID/KYC
+> call. The raw document stays encrypted with Valyd; your app receives the reusable `id_verified`
+> proof, never the raw fields.
 
 Steps their account has already passed are skipped automatically. Once done,
 `id_verified: true` is readable forever via [the account reads](/docs/user-token/account).
 
-Full walkthrough with portal screenshots: [Hosted for your users](/verifications/hosted).
-Need the raw document data in *your* system instead? That's the
-[standalone product](/verifications/standalone) — no token, data returns to you.
+Full walkthrough: [Hosted verification](/verifications/hosted) · [Managed by Valyd](/verifications/managed).

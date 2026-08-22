@@ -1,55 +1,10 @@
 # Location
 
-`POST /api/v2/location` — records/validates a geolocation fix for a session (used by
-workflows like EVV).
+This check now runs through **Managed by Valyd** — [Verify & save a proof](/verifications/managed).
 
-**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/location` · **Auth:** `X-API-Key`
+Location is no longer a self-serve direct call. Run it on a signed-in user's hosted verification
+session (for example in an EVV workflow); your app receives the location decision as part of the
+session result.
 
-**Fields:** `latitude`, `longitude` (numbers) **required**; optional `accuracy` (metres).
-Optionally add an expected point — `expected_latitude`, `expected_longitude`, and `radius_m`
-(metres) — to turn the capture into a verdict.
-
-**Request:**
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
-
-```javascript
-import { VerifyClient } from "@valyd/sdk";
-const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
-
-const { check } = await verify.standalone.locationMatch({
-  latitude: 34.0522,           // where the person actually is
-  longitude: -118.2437,
-  accuracy: 12,                // optional, metres
-  expectedLatitude: 34.0511,   // optional — where they should be
-  expectedLongitude: -118.244,
-  radiusM: 250,                // optional — allowed radius in metres
-});
-// check.data.match, check.data.distance_m
-```
-
-</Tabs.Tab>
-<Tabs.Tab>
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/location \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "latitude": 34.0522, "longitude": -118.2437, "accuracy": 12,
-        "expected_latitude": 34.0511, "expected_longitude": -118.244, "radius_m": 250 }'
-```
-
-</Tabs.Tab>
-</Tabs>
-
-What `status` means depends on what you ask for:
-
-- expected point + `radius_m` → the status **is** the verdict: `passed` inside the radius,
-  `failed` outside it (`data.match` is the boolean, `data.distance_m` the distance).
-- expected point, no `radius_m` → `passed`, and `data.distance_m` is reported
-  (`data.match` is null) — you decide what "close enough" means.
-- no expected point → capture-only: `passed`, with the accurate captured coordinates.
-
-A real GPS fix is always required — a blocked permission or missing coordinates is a hard
-`failed`, and in the hosted flow the user cannot skip the step.
+The `POST /api/v2/location` endpoint still exists in the
+[Verification OpenAPI](/verifications/api) for existing integrations.

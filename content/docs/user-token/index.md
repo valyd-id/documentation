@@ -26,8 +26,12 @@ makes Valyd cheap and fast: **read first, verify only what's missing.**
 | [KYC / ID verification](/docs/user-token/kyc) | Government-ID identity — hosted page only |
 | [Hosted for your users](/verifications/hosted) | Select checks in the portal, we run them all on one page |
 
-Every check is the **same call as a one-off**, plus `valydAccessToken` on the request — the passed
-proof saves to the user's Valyd ID, and next time [the read](/docs/user-token/account) answers yes.
+Running a check **with the user's token** is the **[Managed by Valyd](/verifications/managed)** lane:
+you run a hosted session with `valydAccessToken` attached, the passed proof saves to the user's
+Valyd ID, and next time [the read](/docs/user-token/account) answers yes. ID/KYC, face match, age,
+and professional license all run this way — on the signed-in user's session, not as self-serve
+direct calls. (A tokenless liveness/uniqueness check with nothing saved is the
+[Verify Fresh](/verifications/standalone) lane.)
 
 ## Or let us host the whole thing
 
