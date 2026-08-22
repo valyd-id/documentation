@@ -69,14 +69,14 @@ export default {
   'vf-overview': { title: <MetaTitle icon={ScanFace}>Overview</MetaTitle>, href: '/verifications' },
   'vf-setup': { title: <MetaTitle icon={Settings}>Setup</MetaTitle>, href: '/verifications/setup' },
   'vf-types': { title: <MetaTitle icon={Tags}>Verification types</MetaTitle>, href: '/verifications/types' },
-  '--v-hosted': { type: 'separator', title: 'Hosted' },
+  '--v-hosted': { type: 'separator', title: 'Managed by Valyd' },
   'vf-hosted': { title: <MetaTitle icon={Globe}>Hosted verification</MetaTitle>, href: '/verifications/hosted' },
   'vf-quickstart': { title: <MetaTitle icon={Rocket}>Quickstart</MetaTitle>, href: '/verifications/quickstart' },
   'vf-workflows': { title: <MetaTitle icon={Braces}>Workflows</MetaTitle>, href: '/verifications/workflows' },
   'vf-lifecycle': { title: <MetaTitle icon={History}>Session lifecycle</MetaTitle>, href: '/verifications/session-lifecycle' },
   'vf-statuses': { title: <MetaTitle icon={ShieldCheck}>Results &amp; decisions</MetaTitle>, href: '/verifications/statuses' },
   'vf-webhooks': { title: <MetaTitle icon={Braces}>Webhooks</MetaTitle>, href: '/verifications/webhooks' },
-  '--v-direct': { type: 'separator', title: 'Verify Fresh · direct checks' },
+  '--v-direct': { type: 'separator', title: 'Verify Fresh (non account)' },
   'vf-liveness': { title: <MetaTitle icon={ScanFace}>Liveness</MetaTitle>, href: '/verifications/standalone/liveness' },
   'vf-antispoof': { title: <MetaTitle icon={ShieldAlert}>Anti-spoof</MetaTitle>, href: '/verifications/standalone/antispoof' },
   'vf-faceuniqueness': { title: <MetaTitle icon={ScanFace}>Face uniqueness</MetaTitle>, href: '/verifications/standalone/face-uniqueness' },
@@ -100,17 +100,7 @@ export default {
   changelog: { title: <MetaTitle icon={History}>Changelog</MetaTitle> },
   deprecations: { title: <MetaTitle icon={History}>Deprecations</MetaTitle> },
   'data-and-trust': { title: <MetaTitle icon={ShieldCheck}>Security &amp; data</MetaTitle> },
-  '--sec': { type: 'separator', title: 'Security & data' },
-  'security-trust': { title: <MetaTitle icon={Lock}>Trust Center</MetaTitle> },
-  'data-retention': { title: <MetaTitle icon={Database}>Data retention</MetaTitle> },
-  'data-residency': { title: <MetaTitle icon={Globe}>Data residency</MetaTitle> },
-  'api-key-lifecycle': { title: <MetaTitle icon={KeyRound}>API key lifecycle</MetaTitle> },
-  'security-disclosure': { title: <MetaTitle icon={ShieldAlert}>Security disclosure</MetaTitle> },
-  'audit-logging': { title: <MetaTitle icon={ScrollText}>Audit logging</MetaTitle> },
-  '--status': { type: 'separator', title: 'Status / reliability' },
   'operations-sla': { title: <MetaTitle icon={Timer}>Status / reliability</MetaTitle> },
-  'disaster-recovery': { title: <MetaTitle icon={DatabaseBackup}>Disaster recovery</MetaTitle> },
-  'support-escalation': { title: <MetaTitle icon={LifeBuoy}>Support &amp; escalation</MetaTitle> },
 
   // ============================ REFERENCE ============================
   '--reference': { type: 'separator', title: 'REFERENCE' },
@@ -140,5 +130,15 @@ export default {
   sessions: { display: 'hidden' },
   flows: { display: 'hidden' },
   'quick-start': { display: 'hidden' },
-  'login-sessions': { display: 'hidden' }
+  'login-sessions': { display: 'hidden' },
+  // Enterprise sub-pages — reachable + indexed, surfaced as cards on their parent landing page
+  // (Security & data / Status & reliability) to keep the sidebar short.
+  'security-trust': { display: 'hidden' },
+  'data-retention': { display: 'hidden' },
+  'data-residency': { display: 'hidden' },
+  'api-key-lifecycle': { display: 'hidden' },
+  'security-disclosure': { display: 'hidden' },
+  'audit-logging': { display: 'hidden' },
+  'disaster-recovery': { display: 'hidden' },
+  'support-escalation': { display: 'hidden' }
 } satisfies MetaRecord

@@ -55,17 +55,17 @@ export const SECTIONS = [
       { title: 'Overview', route: '/verifications', home: 'verifications', icon: 'ScanFace' },
       { title: 'Setup', route: '/verifications/setup', home: 'verifications', icon: 'Settings' },
       { title: 'Verification types', route: '/verifications/types', home: 'verifications', icon: 'Tags' },
-      { title: 'Hosted verification', route: '/verifications/hosted', home: 'verifications', icon: 'Globe', group: 'Hosted' },
-      { title: 'Quickstart', route: '/verifications/quickstart', home: 'verifications', icon: 'Rocket', group: 'Hosted' },
-      { title: 'Workflows', route: '/verifications/workflows', home: 'verifications', icon: 'Braces', group: 'Hosted' },
-      { title: 'Session lifecycle', route: '/verifications/session-lifecycle', home: 'verifications', icon: 'History', group: 'Hosted' },
-      { title: 'Results & decisions', route: '/verifications/statuses', home: 'verifications', icon: 'ShieldCheck', group: 'Hosted' },
-      { title: 'Webhooks', route: '/verifications/webhooks', home: 'verifications', icon: 'Braces', group: 'Hosted' },
+      { title: 'Hosted verification', route: '/verifications/hosted', home: 'verifications', icon: 'Globe', group: 'Managed by Valyd' },
+      { title: 'Quickstart', route: '/verifications/quickstart', home: 'verifications', icon: 'Rocket', group: 'Managed by Valyd' },
+      { title: 'Workflows', route: '/verifications/workflows', home: 'verifications', icon: 'Braces', group: 'Managed by Valyd' },
+      { title: 'Session lifecycle', route: '/verifications/session-lifecycle', home: 'verifications', icon: 'History', group: 'Managed by Valyd' },
+      { title: 'Results & decisions', route: '/verifications/statuses', home: 'verifications', icon: 'ShieldCheck', group: 'Managed by Valyd' },
+      { title: 'Webhooks', route: '/verifications/webhooks', home: 'verifications', icon: 'Braces', group: 'Managed by Valyd' },
       // Verify Fresh — the only non-account direct checks (liveness & uniqueness family). Every
       // other check runs through Managed by Valyd (hosted, all checks) — see STUBS below.
-      { title: 'Liveness', route: '/verifications/standalone/liveness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh · direct checks' },
-      { title: 'Anti-spoof', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ShieldAlert', group: 'Verify Fresh · direct checks' },
-      { title: 'Face uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh · direct checks' },
+      { title: 'Liveness', route: '/verifications/standalone/liveness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh (non account)' },
+      { title: 'Anti-spoof', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ShieldAlert', group: 'Verify Fresh (non account)' },
+      { title: 'Face uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh (non account)' },
     ],
   },
   {
@@ -89,17 +89,12 @@ export const SECTIONS = [
       { title: 'Errors', route: '/docs/errors', home: 'docs', icon: 'AlertTriangle' },
       { title: 'Rate limits', route: '/docs/rate-limits', home: 'docs', icon: 'Gauge' },
       { title: 'Idempotency', route: '/docs/idempotency', home: 'docs', icon: 'Braces' },
+      // Security & data and Status / reliability are section landing pages; their sub-pages are
+      // surfaced as on-page cards (not sidebar rows) to keep the sidebar short. They stay reachable,
+      // indexed, and in the corpus — see the `SECONDARY` list below for the nav-consistency gate.
       { title: 'Security & data', route: '/docs/data-and-trust', home: 'docs', icon: 'ShieldCheck' },
-      { title: 'Trust Center', route: '/docs/security-trust', home: 'docs', icon: 'Lock', group: 'Security & data' },
-      { title: 'Data retention', route: '/docs/data-retention', home: 'docs', icon: 'Database', group: 'Security & data' },
-      { title: 'Data residency', route: '/docs/data-residency', home: 'docs', icon: 'Globe', group: 'Security & data' },
-      { title: 'API key lifecycle', route: '/docs/api-key-lifecycle', home: 'docs', icon: 'KeyRound', group: 'Security & data' },
-      { title: 'Security disclosure', route: '/docs/security-disclosure', home: 'docs', icon: 'ShieldAlert', group: 'Security & data' },
-      { title: 'Audit logging', route: '/docs/audit-logging', home: 'docs', icon: 'ScrollText', group: 'Security & data' },
       { title: 'Go live', route: '/docs/go-live', home: 'docs', icon: 'Rocket' },
       { title: 'Status / reliability', route: '/docs/operations-sla', home: 'docs', icon: 'Timer' },
-      { title: 'Disaster recovery', route: '/docs/disaster-recovery', home: 'docs', icon: 'DatabaseBackup', group: 'Status / reliability' },
-      { title: 'Support & escalation', route: '/docs/support-escalation', home: 'docs', icon: 'LifeBuoy', group: 'Status / reliability' },
       { title: 'Versioning', route: '/verifications/versioning', home: 'verifications', icon: 'History' },
       { title: 'Changelog', route: '/docs/changelog', home: 'docs', icon: 'History' },
       { title: 'Deprecations', route: '/docs/deprecations', home: 'docs', icon: 'History' },
@@ -161,6 +156,19 @@ export const STUBS = [
 ]
 
 export const ALL_NAV_ROUTES = SECTIONS.flatMap((s) => s.items.map((i) => i.route))
+
+// Reachable + indexed canonical pages that are intentionally NOT sidebar rows — surfaced as
+// on-page cards on their parent landing page instead, to keep the sidebar short. NOT stubs.
+export const SECONDARY = [
+  { route: '/docs/security-trust', parent: '/docs/data-and-trust' },
+  { route: '/docs/data-retention', parent: '/docs/data-and-trust' },
+  { route: '/docs/data-residency', parent: '/docs/data-and-trust' },
+  { route: '/docs/api-key-lifecycle', parent: '/docs/data-and-trust' },
+  { route: '/docs/security-disclosure', parent: '/docs/data-and-trust' },
+  { route: '/docs/audit-logging', parent: '/docs/data-and-trust' },
+  { route: '/docs/disaster-recovery', parent: '/docs/operations-sla' },
+  { route: '/docs/support-escalation', parent: '/docs/operations-sla' },
+]
 
 // ---- Page registry (rich metadata) -----------------------------------------------------------
 // The manifest is the canonical page registry, not just a sidebar. Every route carries enough

@@ -7,6 +7,11 @@ diagnostic contract — the `X-Request-Id` header documented in
 figures is available for enterprise plans — contact your Valyd account team. Nothing on this
 page is itself a contractual commitment.
 
+## In Status & reliability
+
+- **[Disaster recovery](/docs/disaster-recovery)** — backups, RPO/RTO, and failover posture.
+- **[Support & escalation](/docs/support-escalation)** — support channels, hours, and how to escalate an incident.
+
 ## Availability
 
 | Item | Value |

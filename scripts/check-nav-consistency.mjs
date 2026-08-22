@@ -11,7 +11,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SECTIONS, STUBS } from '../docs-manifest.mjs'
+import { SECTIONS, STUBS, SECONDARY } from '../docs-manifest.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const failures = []
@@ -39,6 +39,12 @@ for (const s of SECTIONS) {
 // 2. stubs → content page exists (old URLs must still resolve)
 for (const st of STUBS) {
   if (!contentFile(st.route)) failures.push(`stub: ${st.route} declared but no content page (old links would 404)`)
+}
+
+// 2b. secondary (off-sidebar) pages → both the page and its parent landing page exist
+for (const s of SECONDARY || []) {
+  if (!contentFile(s.route)) failures.push(`secondary: ${s.route} declared off-sidebar but no content page`)
+  if (s.parent && !contentFile(s.parent)) failures.push(`secondary: ${s.route} parent ${s.parent} has no content page`)
 }
 
 // 3. capability manifest → canonical page exists (in the generated corpus)

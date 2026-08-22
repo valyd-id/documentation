@@ -3,6 +3,15 @@
 What a Valyd verification actually asserts, what happens to the data a check touches, and what
 your app can (and cannot) receive.
 
+## In Security & data
+
+- **[Trust Center](/docs/security-trust)** — compliance status, DPA, pen-test summaries, and how to request reports.
+- **[Data retention](/docs/data-retention)** — how long each class of data is kept.
+- **[Data residency](/docs/data-residency)** — where data is processed and stored, and the subprocessor list.
+- **[API key lifecycle](/docs/api-key-lifecycle)** — creating, rotating, and revoking API keys.
+- **[Security disclosure](/docs/security-disclosure)** — how to report a vulnerability.
+- **[Audit logging](/docs/audit-logging)** — what activity Valyd records and how to read it.
+
 ## What "verified" means
 
 A verification is a **point-in-time assertion**: at the moment the check ran, the document was
