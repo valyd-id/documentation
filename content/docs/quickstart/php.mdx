@@ -1,6 +1,6 @@
 ---
-title: PHP (Laravel) quickstart — Login with Valyd
-description: 'Add Login with Valyd to a Laravel app with plain OIDC: session state, hash_equals CSRF check, form-encoded token exchange with Http::asForm, userinfo.'
+title: PHP (Laravel) quickstart — Connect with Valyd
+description: 'Add Connect with Valyd to a Laravel app with plain OIDC: session state, hash_equals CSRF check, form-encoded token exchange with Http::asForm, userinfo.'
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,7 +9,7 @@ import { Callout } from 'nextra/components'
 
 > 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🐘 Raw API recipe · ⏱ ~10 minutes
 
-**What you'll build:** two Laravel routes where "Login with Valyd" returns the user's
+**What you'll build:** two Laravel routes where "Connect with Valyd" returns the user's
 pseudonymous `valyd_id` to your backend — no SDK, just Laravel's `Http` client.
 
 <Callout type="info">
@@ -57,7 +57,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
-// GET /auth/valyd — the "Login with Valyd" button links here
+// GET /auth/valyd — the "Connect with Valyd" button links here
 Route::get('/auth/valyd', function () {
     $state = Str::random(32);                    // CSRF: Valyd echoes it back
     session(['valyd_state' => $state]);

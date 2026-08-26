@@ -1,135 +1,204 @@
 ---
 product: valyd-verify
-api_version: v2
 sdk_min_version: 1.10.3
-auth: x-api-key
 billable: true
-pii_mode: standalone
+pii_mode: proofs
 human_setup_required: true
-source_of_truth: openapi
+source_of_truth: sdk
 ---
 
-# Verification quickstart
+# Run a verification
 
-> 🔑 **Auth:** App API key (`X-API-Key`) · 👤 To save the proof to the user's Valyd ID, include their `valyd_access_token`
+> 🔑 **Auth:** SDK client (App API key) + a `workflowId` · 👤 Include the connected user's `valyd_access_token` so the proof saves to their Valyd ID
 
-Run your first check in minutes. Only your developer/admin signs in to the Developer Portal once
-to create credentials — the person being checked never does; when the user is signed in to your
-app, their token simply rides along on the call and the passed proof lands on their Valyd ID
-([Verify the user](/verifications/managed) covers that end-to-end flow).
+Start a verification session for your [workflow](/verifications/workflows), send the user to
+Valyd's verification page — Valyd handles the capture UI, camera, retries, and security — and read
+one combined decision when they're done. There is no capture UI to build.
+
+The flow at a glance:
+
+1. Create a session on your server with a `workflowId` (and the user's `valyd_access_token`).
+2. Redirect the user's browser to the returned `url`.
+3. Valyd captures everything and redirects back to your `redirectUrl`.
+4. Receive a signed webhook, then fetch the authoritative result with `verify.sessions.decision(id)`.
 
 ### Prerequisites
-- Access to the Developer Portal at https://dev.valyd.work. This is developer setup, not part of
-  your end-user verification flow.
-- The App API key, copied at App creation (shown once). Store it server-side only.
-- For the Hosted snippet: a `workflow_id` from a Workflow you created in the Console.
 
-### Steps
+All from [Create a workflow](/verifications/setup) — developer setup, not part of your end-user
+flow:
 
-1. Sign in to the Developer Portal and create an app. Copy its **App API key** for verification.
-   Ignore the OIDC `client_id` and `client_secret` unless you separately decide to add Login with
-   Valyd. (Human-only setup step.)
+- The **App API key**, copied at app creation (shown once). Store it server-side only.
+- A **`workflowId`** from a workflow you created in the [Developer Portal](https://dev.valyd.work).
+- A **webhook URL + signing secret** configured under Webhooks in the portal.
+- The connected user's `valyd_access_token` from [Connect with Valyd](/docs/authentication), so the
+  passed proofs save to their Valyd ID and already-proven steps are skipped.
 
-   ```text
-   Open https://dev.valyd.work and sign in with Valyd SSO.
-   ```
+Install and initialize the SDK:
 
-   **Expected output:** You are signed in and a default App is visible in the Console.
+```bash
+npm i @valyd/sdk@^1.10.4
+```
 
-2. Copy the App API key (shown once at creation). Keep it server-side only. (Human-only step.) Then store it in your environment.
+```javascript
+import { VerifyClient } from "@valyd/sdk";
 
-   ```bash
-   export VALYD_API_KEY="paste-the-one-time-app-api-key-here"
-   ```
+const verify = new VerifyClient({
+  apiKey:        process.env.VALYD_API_KEY,
+  webhookSecret: process.env.VALYD_WEBHOOK_SECRET, // used by verify.webhooks.constructEvent
+});
+```
 
-   (Get the API key from the Developer Portal → your App → it is shown once at creation: https://dev.valyd.work)
+## Create a session
 
-   **Expected output:** `VALYD_API_KEY` is set in your shell/`.env`. The key cannot be retrieved again after creation — rotate it in the Console if lost.
+Call `verify.sessions.create` from your **backend**. The response includes the `url` you send the
+user to:
 
-3. (Hosted only) Create a Workflow and copy its `workflow_id`. (Human-only step.) Then store it.
+```javascript
+const session = await verify.sessions.create({
+  workflowId:       process.env.VALYD_WORKFLOW_ID, // the checks you picked in the portal
+  valydAccessToken: accessToken,                   // ties the run to the connected user
+  redirectUrl:      "https://app.example.com/verify/callback",
+  callback:         "https://api.example.com/webhooks/valyd",
+  vendorData:       "user_123",          // your internal ref — echoed back on the webhook
+  ttlSeconds:       900,
+});
 
-   ```bash
-   export VALYD_WORKFLOW_ID="paste-your-workflow-id-here"
-   ```
+// session.url       → redirect the user's browser here
+// session.sessionId, session.sessionToken, session.expiresAt
+```
 
-   (Get the `workflow_id` from the Developer Portal → Workflows → your Workflow: https://dev.valyd.work)
+The returned `session` carries the verification-page `url` plus `sessionId`, `sessionToken`,
+`features`, `redirectUrl`, and `expiresAt`:
 
-   **Expected output:** `VALYD_WORKFLOW_ID` is set. Required only for the Hosted session call in step 6.
+```json
+{
+  "sessionId":    "ses_…",
+  "status":       "NOT_STARTED",
+  "url":          "https://idp.valyd.work/s/…",
+  "sessionToken": "stk_…",
+  "features":     ["id_verification","liveness","face_match","credential"],
+  "redirectUrl":  "https://app.example.com/verify/callback",
+  "expiresAt":    "2026-06-11T12:00:00Z"
+}
+```
 
-4. (Hosted only) Set your webhook URL and signing secret under Webhooks in the Console. (Human-only step.)
+> Keep your API key **server-side only** — never create a session from the browser. Only the
+> session `url` and the `sessionToken` are safe to send to the client. `VALYD_WORKFLOW_ID` is the
+> `workflowId` from the Developer Portal (https://dev.valyd.work → Workflows).
 
-   ```text
-   In the Console → Webhooks: set the endpoint URL (e.g. https://your-app.com/api/valyd-webhook)
-   and copy the signing secret.
-   ```
+Then redirect the user's browser to `session.url` (e.g. `res.redirect(session.url)`). Valyd renders
+the whole capture and verification UI; the steps auto-adapt to the workflow's checks. With the
+user's token on the session, the run pre-fills from their account, skips already-proven steps, and
+saves passed proofs to their Valyd ID.
 
-   **Expected output:** Valyd will POST signed events to your URL when a session reaches a terminal state.
+## After the user returns
 
-5. Run a one-off **Verify Fresh** liveness check with just the API key (Verify Fresh covers
-   liveness, anti-spoof, and face uniqueness — ID/KYC, face match, age, license, and location run
-   through [Managed by Valyd](/verifications/managed) instead).
+Valyd sends the user's browser back to your `redirectUrl` with `?session_id=…&status=…`. **Treat
+`status` as a hint only** — never grant access on that query param. Fetch the authoritative outcome
+with `verify.sessions.decision(id)` (or wait for the signed webhook):
 
-   ```bash
-   curl -X POST https://idp.valyd.work/api/v2/liveness \
-     -H "X-API-Key: $VALYD_API_KEY" \
-     -F "image=@./selfie.jpg"
-   ```
+```javascript
+const decision = await verify.sessions.decision(sessionId);
+// decision.status, decision.checks[]
+```
 
-   **Expected output:** HTTP `200` with the standard envelope, e.g. `{ "success": true, "data": { ... } }`. On a bad/missing key expect a `4xx` with `{ "success": false, "error": { "code": "...", "message": "..." } }`.
+- [Session lifecycle](/verifications/session-lifecycle) — the full state machine and what to do at each stage.
+- [Results & decisions](/verifications/statuses) — every status value, the per-check statuses, and reading the decision payload.
+- [Webhooks](/verifications/webhooks) — the signed terminal-state callback and how to verify it.
 
-6. (Hosted only) Create a Hosted session from your server, then redirect the user's browser to the
-   returned capture URL. This is a verification page, not an OIDC login page.
+## Other session helpers
 
-   ```javascript
-   const res = await fetch("https://idp.valyd.work/api/v2/session", {
-     method: "POST",
-     headers: {
-       "X-API-Key": process.env.VALYD_API_KEY,
-       "Content-Type": "application/json",
-     },
-     body: JSON.stringify({
-       workflow_id: process.env.VALYD_WORKFLOW_ID,
-       redirect_url: "https://your-app.com/verify/result",
-       callback: "https://your-app.com/api/valyd-webhook",
-       vendor_data: "user-123",
-     }),
-   });
-   const { data } = await res.json();
-   // Redirect the user's browser to data.url
-   ```
+```javascript
+const session = await verify.sessions.retrieve(sessionId);
+const page    = await verify.sessions.list({ status: "APPROVED", vendorData: "user_123", limit: 50 });
+await verify.sessions.updateStatus(sessionId, "APPROVED"); // or "DECLINED" — manual review decision (IN_REVIEW sessions only)
+```
 
-   **Expected output:** HTTP `200` with `{ "success": true, "data": { "url": "https://..." } }`. Redirect the user's browser to `data.url`. The verification result arrives later via your configured webhook (step 4).
+## SDK surface used in this flow
 
-### Verification
-- Verify Fresh checks: the liveness curl in step 5 returns HTTP `200` and a body where `success` is `true`.
+| SDK method | Purpose |
+| --- | --- |
+| `verify.sessions.create({ workflowId, valydAccessToken?, redirectUrl, callback?, vendorData?, ttlSeconds? })` | Create a verification session. |
+| `verify.sessions.decision(id)` | Read the authoritative decision and per-check breakdown. |
+| `verify.sessions.retrieve(id)` | Retrieve a session. |
+| `verify.sessions.list({ status?, vendorData?, limit? })` | List sessions. |
+| `verify.sessions.updateStatus(id, "APPROVED" \| "DECLINED")` | Manually decide an `IN_REVIEW` session (approval still requires passed ID, liveness, and face-match checks). |
+| `verify.webhooks.constructEvent(rawBody, headers)` | Verify and parse the signed webhook Valyd POSTs to your `callback`. |
 
-  ```bash
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://idp.valyd.work/api/v2/liveness \
-    -H "X-API-Key: $VALYD_API_KEY" \
-    -F "image=@./selfie.jpg"
-  ```
+> **Workflow CRUD is not in the SDK** — compose workflows in the
+> [Developer Portal](https://dev.valyd.work) and pass the resulting `workflowId` to
+> `verify.sessions.create({ workflowId, … })`.
 
-  Expect `200` printed.
-- Hosted: the step-6 call returns a non-empty `data.url`. Confirm `echo $VALYD_WORKFLOW_ID` is non-empty before calling.
+## Full implementation example
+
+The complete Express integration — create the session, handle the redirect back (status is a hint
+only), verify the signed webhook, then pull the authoritative decision:
+
+```javascript
+import express from "express";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
+
+const app = express();
+const verify = new VerifyClient({
+  apiKey:        process.env.VALYD_API_KEY,
+  webhookSecret: process.env.VALYD_WEBHOOK_SECRET,
+});
+
+// 1) Start verification
+app.post("/start-verification", express.json(), async (req, res) => {
+  const session = await verify.sessions.create({
+    workflowId:  process.env.VALYD_WORKFLOW_ID,   // license-only OR kyc+license
+    redirectUrl: `${process.env.APP_URL}/verify/callback`,
+    callback:    `${process.env.APP_URL}/webhooks/valyd`,
+    vendorData:  req.body.userId,
+  });
+  res.json({ url: session.url, sessionId: session.sessionId });
+});
+
+// 2) Redirect-back (status is a hint only)
+app.get("/verify/callback", (req, res) => {
+  res.redirect(`/verify/pending?s=${req.query.session_id}`);
+});
+
+// 3) Signed webhook — MUST use raw body
+app.post(
+  "/webhooks/valyd",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const event = verify.webhooks.constructEvent(req.body, req.headers);
+
+      // 4) Pull the full decision (webhook is a notification)
+      const decision = await verify.sessions.decision(event.sessionId);
+      await persist(event.vendorData, decision);
+
+      res.json({ ok: true });
+    } catch (err) {
+      if (err instanceof ValydVerifyError && err.code === "invalid_signature") {
+        return res.status(400).send("bad signature");
+      }
+      throw err;
+    }
+  }
+);
+
+app.listen(3000);
+```
 
 ### Common errors
 
-1. **401 / 403 Unauthorized**
-   - **Cause:** Missing, wrong, or rotated `X-API-Key`, or the key was sent client-side.
-   - **Fix:** Re-copy the API key from the Console (or rotate it), set `VALYD_API_KEY` server-side, and send it in the `X-API-Key` header. Never expose it in browser code.
-
-2. **400 Bad Request on /api/v2/session**
-   - **Cause:** Missing or invalid `workflow_id` (Hosted requires a real Workflow id), or malformed JSON body.
-   - **Fix:** Create a Workflow in the Console, set `VALYD_WORKFLOW_ID`, and verify `echo $VALYD_WORKFLOW_ID` is non-empty. Ensure `Content-Type: application/json` and valid JSON.
-
-3. **No webhook received after a Hosted session**
-   - **Cause:** Webhook URL/signing secret not configured, or your endpoint is not publicly reachable.
-   - **Fix:** Set the webhook URL and signing secret in Console → Webhooks (step 4), ensure the URL is publicly reachable, and verify the signature using the signing secret before trusting the event.
+1. **`API_KEY_INVALID`** — missing, wrong, or rotated API key, or it was used client-side.
+   Re-copy the key from the portal (or rotate it), set `VALYD_API_KEY` server-side, and pass it to
+   `new VerifyClient({ apiKey })`. Never expose it in browser code.
+2. **`VALIDATION_ERROR` on `verify.sessions.create`** — missing or invalid `workflowId`. Create a
+   workflow in the portal, set `VALYD_WORKFLOW_ID`, and verify `echo $VALYD_WORKFLOW_ID` is
+   non-empty.
+3. **No webhook received** — webhook URL/signing secret not configured, or your endpoint is not
+   publicly reachable. Set them in Portal → Webhooks, ensure the URL is publicly reachable, and
+   verify the signature via `verify.webhooks.constructEvent` before trusting the event.
 
 ### Next steps
 
-- **Full runnable example** — the complete Express integration (create → redirect → webhook →
-  decision) lives in [Hosted verification → Full implementation example](/verifications/hosted#full-implementation-example).
-- **Compose the checks** — [Workflows](/verifications/workflows).
+- **Compose the checks** — [Workflows](/verifications/workflows) · [Checks reference](/verifications/types).
 - **Track the run** — [Session lifecycle](/verifications/session-lifecycle).
-- **Read the result** — [Decisions & statuses](/verifications/statuses) and [Webhooks](/verifications/webhooks).
+- **Read the result** — [Results & decisions](/verifications/statuses) and [Webhooks](/verifications/webhooks).

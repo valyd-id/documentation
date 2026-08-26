@@ -1,13 +1,13 @@
 import type { MetaRecord } from 'nextra'
 
-// The "Reusable Identity" hub. Manifest lists only Overview + Read proofs here; every per-check
-// page canonicalized to /verifications/standalone/* (thin hidden stubs kept for inbound links).
-// kyc stays a full page (account-KYC is hosted-only, no standalone equivalent) but is out of nav.
+// "Read verified data" — what a connected user's token lets you read. Surfaced in the Verify tab
+// under Reusable Verification. Per-check pages are retired stubs (capabilities are workflow
+// checks now — /verifications/types); kyc stays a full page reachable by URL, out of nav.
 export default {
   index: { title: 'Overview' },
-  account: { title: 'Read proofs' },
+  account: { title: 'Read verified data' },
 
-  // Canonicalized → /verifications/standalone/* (or /verifications/hosted); hidden stubs.
+  // Retired stubs — kept reachable by URL (inbound links + llms.txt .md mirrors).
   'face-match': { display: 'hidden' },
   liveness: { display: 'hidden' },
   license: { display: 'hidden' },

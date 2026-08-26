@@ -9,15 +9,15 @@
   ```
   **Expected output:** `v18.x.x` or higher. If lower, upgrade Node before continuing.
 - Credentials from the Valyd Developer Portal (https://dev.valyd.work):
-  - `VALYD_API_KEY` — sent as the `X-API-Key` header on every request.
-  - `VALYD_WEBHOOK_SECRET` — needed to verify webhook signatures (hosted flow).
-  - `VALYD_WORKFLOW_ID` — needed when creating hosted sessions.
+  - `VALYD_API_KEY` — the App API key the SDK client authenticates with on every request.
+  - `VALYD_WEBHOOK_SECRET` — needed to verify webhook signatures (Reusable Verification).
+  - `VALYD_WORKFLOW_ID` — needed when creating verification sessions.
 
 ```text
-IF you are building a hosted flow (redirect the user to a Valyd-hosted page):
+IF you are building Reusable Verification (send the user to Valyd's verification page):
   → you need VALYD_API_KEY, VALYD_WEBHOOK_SECRET, and VALYD_WORKFLOW_ID
-IF you are building a standalone-checks flow (call individual checks server-side):
-  → you only need VALYD_API_KEY
+IF you are using the Unique Human API (a no-account session for a liveness/uniqueness workflow):
+  → you need VALYD_API_KEY and VALYD_WORKFLOW_ID
 IF unsure which credentials you have:
   → log in to https://dev.valyd.work and check your app's API keys / webhooks / workflows
 ```
@@ -32,9 +32,9 @@ IF unsure which credentials you have:
 
 2. **Set environment variables** (e.g. in a `.env` file or your process environment). Get each value from the Valyd Developer Portal: https://dev.valyd.work.
    ```bash
-   VALYD_API_KEY=your_api_key_here          # X-API-Key for every request
-   VALYD_WEBHOOK_SECRET=your_webhook_secret  # required for hosted/webhook flows
-   VALYD_WORKFLOW_ID=your_workflow_id        # required to create hosted sessions
+   VALYD_API_KEY=your_api_key_here          # App API key for every request
+   VALYD_WEBHOOK_SECRET=your_webhook_secret  # required for webhook handling
+   VALYD_WORKFLOW_ID=your_workflow_id        # required to create verification sessions
    ```
    **Expected output:** no output; these are read at runtime via `process.env.*`.
 
@@ -52,7 +52,7 @@ IF unsure which credentials you have:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `apiKey` | string | — | Required. Sent as the `X-API-Key` header on every request. |
+| `apiKey` | string | — | Required. The App API key the client authenticates with on every request. |
 | `baseUrl` | string | `https://idp.valyd.work` | API base URL. Override only for staging/self-hosted. |
 | `webhookSecret` | string | — | Optional. When set, `webhooks.constructEvent` / `verify` can be called without passing the secret explicitly. |
 | `timeoutMs` | number | `15000` | Per-request timeout. **Credential lookups (`credentialVerification`, `kycCredential`) automatically use at least 60s** — set a higher value here only if you want a bigger floor for all calls. |
@@ -61,18 +61,18 @@ IF unsure which credentials you have:
 ### Authentication
 
 Every Verification API call is authenticated by your **App API key** — the `apiKey` you pass to the
-constructor, sent as the `X-API-Key` header on each request. This is the credential that matters for the SDK; get it from the Developer Portal → your
+constructor. This is the credential that matters for the SDK; get it from the Developer Portal → your
 project → Credentials.
 
-- **`apiKey` (`vrf_…`)** — authenticates all `verify.*` calls (sessions, standalone checks,
+- **`apiKey` (`vrf_…`)** — authenticates all `verify.*` calls (sessions, the Unique Human API,
   workflows). This is the only credential the SDK needs to make requests.
 - **`webhookSecret` (`whsec_…`)** — NOT an auth credential for outbound calls. It is used only to
   verify the HMAC signature on **incoming** webhooks (`verify.webhooks.constructEvent`).
-- **`client_id` / `client_secret`** — these belong to **Login with Valyd** (OAuth 2.0 / OIDC), a
-  separate product. They do **not** authenticate verification calls; use the App API key for that.
-  (If you build both, you hold both credentials, used independently.)
+- **`client_id` / `client_secret`** — these belong to **Connect with Valyd** (standard OAuth 2.0 /
+  OIDC), the sign-in step of Reusable Verification. They do **not** authenticate verification
+  calls; use the App API key for that. (You hold both credentials, used independently.)
 
-So: verification-only integrations need just the `apiKey`. There is no constructor form that
+So: integrations that only call the Verification API need just the `apiKey`. There is no constructor form that
 authenticates verify calls without it.
 
 ### Resources
@@ -80,7 +80,7 @@ authenticates verify calls without it.
 After initialising `verify`, use these resource namespaces.
 
 #### `verify.sessions`
-- `create(params): Promise<Session>` — Create a hosted session. Returns `.url` and `.sessionId` — see the Hosted Verification guide.
+- `create(params): Promise<Session>` — Create a verification session. Returns `.url` and `.sessionId` — see [Run a verification](/verifications/quickstart).
 - `retrieve(id): Promise<Session>` — Fetch a session by id.
 - `list({ status?, vendorData?, limit? }): Promise<SessionSummary[]>` — List sessions, filterable by status / vendor_data.
 - `decision(id): Promise<Decision>` — Authoritative result with `.checks[]` — call this after the webhook.
@@ -89,30 +89,24 @@ After initialising `verify`, use these resource namespaces.
 > **Workflows** are composed in the [Developer Portal](https://dev.valyd.work) — the Node SDK does
 > not expose workflow CRUD. You pass the resulting `workflowId` to `sessions.create(...)`.
 
-#### `verify.standalone`
+#### The Unique Human API
 
-These are the **Verify Fresh** checks — the non-account liveness / anti-spoof / face-uniqueness
-family you can call directly with just the API key:
+The **Unique Human API** is the same `verify.sessions` surface with **no user token**: create a
+session for a workflow containing the anti-spoof and/or face-uniqueness checks, redirect the
+person to `session.url`, and read the verdict from `verify.sessions.decision()`. No account is
+involved, the result returns to you, and nothing is saved to one. See the
+[Unique Human API](/verifications/standalone) reference.
 
-- `liveness({ image }): Promise<CheckEnvelope>` — Passive liveness on a selfie.
-- `antispoof({ image? | frames?, challengeId? }): Promise<CheckEnvelope>` — "Is this a live human capture?" — `human_score` 0–100 in `check.data`. Single `image` (score capped at 85) or 3–8 burst `frames`. *v1.10.2+*
-- `antispoofIdentity({ image? | frames?, challengeId? }): Promise<CheckEnvelope>` — Anti-spoof, then resolves the proven-live face to a stable `valyd_` uuid (`check.data.identity`). *v1.10.2+*
-- `antispoofChallenge(): Promise<LivenessChallengeResult>` — Single-use 60s gesture challenge; echo `challengeId` back on antispoof / face-uniqueness runs. *v1.10.2+*
-- `faceUniqueness({ selfie? | frames?, externalRef?, challengeId? }): Promise<CheckEnvelope>` — One face = one uuid: enroll-or-match against the global gallery (`check.data.valyd_uuid`, `registered`).
-- `faceUniquenessUnlink(valydUuid): Promise<{ valyd_uuid, unlinked, deleted }>` — GDPR forget: unlink a face from your project.
+- `faceUniquenessUnlink(valydUuid)` — GDPR: forget this project's link to a face id (deletes the
+  face entirely when no remaining project or Valyd account knows it).
 
-> **ID/KYC, face match, age, professional license, and location now run through
-> [Managed by Valyd](/verifications/managed)** (a signed-in user's hosted session) — they are no
-> longer self-serve direct calls. The raw `standalone.*` methods for them (`idVerification`,
-> `faceMatch`, `ageVerification`, `locationMatch`, `credentialVerification`, `kycCredential`) remain
-> in the SDK types for existing integrations, but new code should route those checks through a
-> hosted session.
+> **ID/KYC, face match, age, professional license, and location run only as workflow checks in
+> [Reusable Verification](/verifications)** (a verification session for a user who connected with
+> Valyd), never as their own public APIs. The SDK's other low-level `verify.standalone.*` methods
+> remain for compatibility and are not part of the public products.
 
 Every billable check also accepts an optional `idempotencyKey` (*v1.10.2+*) — sent as the
-`Idempotency-Key` header so a network retry can never double-charge or double-run
-([how it behaves](/verifications/standalone#idempotency)).
-
-See the [Verify Fresh](/verifications/standalone) reference for full field details.
+`Idempotency-Key` header so a network retry can never double-charge or double-run.
 
 #### `verify.credentials`
 - `states(): Promise<CredentialState[]>` — List supported states.
@@ -165,13 +159,14 @@ Every failure throws `ValydVerifyError` with `{ code, status?, data? }`. The `co
 - `config_error` — missing `apiKey` / `webhookSecret`.
 
 ```javascript
-import { VerifyClient, ValydVerifyError, readImage } from "@valyd/sdk";
+import { VerifyClient, ValydVerifyError } from "@valyd/sdk";
 
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
 
 try {
-  const { check } = await verify.standalone.liveness({
-    image: readImage("./selfie.jpg"),
+  const session = await verify.sessions.create({
+    workflowId:  process.env.VALYD_WORKFLOW_ID!,
+    redirectUrl: "https://yourapp.com/checked",
   });
 } catch (err) {
   if (err instanceof ValydVerifyError) {
@@ -185,7 +180,7 @@ try {
 
 ### Quickstarts
 
-#### Hosted quickstart
+#### Reusable Verification quickstart
 
 ```javascript
 import { VerifyClient } from "@valyd/sdk";
@@ -214,31 +209,29 @@ const decision = await verify.sessions.decision(event.sessionId);
 
 **Expected output:** `verify.sessions.create(...)` resolves to a `Session` with `.url` (redirect the user here) and `.sessionId`. After the user finishes, your webhook fires; `constructEvent` returns the parsed `WebhookEvent`, and `verify.sessions.decision(...)` resolves to a `Decision` with `.status` and `.checks[]`.
 
-#### Verify Fresh quickstart
+#### Unique Human API quickstart
 
-Verify Fresh is the non-account lane — liveness, anti-spoof, and face uniqueness, called directly
-with just the API key. (ID/KYC, face match, age, license, and location run through
-[Managed by Valyd](/verifications/managed) instead.)
+The Unique Human API is API-key-only — a **no-account session** for a workflow containing the
+liveness and/or uniqueness checks; the person is redirected to Valyd's verification page and
+nothing is saved to an account. (ID/KYC, face match, age, license, and location run as workflow
+checks in [Reusable Verification](/verifications) instead.)
 
 ```javascript
-import { VerifyClient, readImage } from "@valyd/sdk";
+import { VerifyClient } from "@valyd/sdk";
 
-const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
+const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
 
-// Liveness — passive check on a single selfie
-const { check } = await verify.standalone.liveness({
-  image: readImage("./selfie.jpg"),
+const session = await verify.sessions.create({
+  workflowId:  process.env.VALYD_WORKFLOW_ID,   // liveness and/or uniqueness
+  redirectUrl: "https://yourapp.com/checked",
 });
-// check.status === "passed" when the selfie is a live capture
-
-// One face = one uuid — duplicate-account / sybil detection
-const uniq = await verify.standalone.faceUniqueness({
-  selfie: readImage("./selfie.jpg"),
-});
-// uniq.check.data.valyd_uuid, uniq.check.data.registered
+// → redirect the person to session.url, then:
+const decision = await verify.sessions.decision(session.sessionId);
+// antispoof check data → { human_score, assurance: "captured", ... }
+// face_uniqueness check data → { valyd_uuid, registered: "new" | "existing" }
 ```
 
-**Expected output:** `verify.standalone.liveness(...)` resolves to a `CheckEnvelope` whose `.check.status` is `"passed"` on a live selfie, and `verify.standalone.faceUniqueness(...)` resolves to a `CheckEnvelope` carrying the stable `valyd_uuid` and whether the face was newly registered.
+**Expected output:** the decision's `status` is `"APPROVED"` on a live, unique capture, with the per-check data on `decision.checks[]`.
 
 ### Express webhook
 
@@ -281,7 +274,7 @@ app.post(
   npm ls @valyd/sdk
   ```
   **Expected output:** `@valyd/sdk@1.10.4` (or a newer compatible version allowed by `^1.10.4`).
-- Confirm credentials are wired (standalone path, only needs `VALYD_API_KEY`):
+- Confirm credentials are wired (only needs `VALYD_API_KEY`):
   ```javascript
   import { VerifyClient } from "@valyd/sdk";
   const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });

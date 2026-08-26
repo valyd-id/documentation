@@ -36,7 +36,7 @@ carry reusable proofs of who they are.
 ```mermaid
 flowchart LR
     I["Invite member<br/>(gets a vmem_… id)"] --> F["Face activation<br/>(scan face once)"]
-    F --> S["Signs in with Login with Valyd<br/>(face, no passwords)"]
+    F --> S["Signs in with Connect with Valyd<br/>(face, no passwords)"]
     S --> T["Tracked by valyd_org_member_id"]
     T --> V["Layer verification on top<br/>(KYC · license · liveness)"]
 ```
@@ -49,7 +49,7 @@ Here's the flow — it's how real integrations work (e.g. how Cisive onboarded t
    your own employee/user record; it's your correlation key between your roster and Valyd.
 2. **Each member gets an email invite** — a face-activation link. They tap it and **scan their face
    once**, which binds the membership to a real Valyd identity.
-3. **From then on they sign in by face.** Your apps use **Login with Valyd**, so the very face the
+3. **From then on they sign in by face.** Your apps use **Connect with Valyd**, so the very face the
    member activated with is how they authenticate into your tools — no passwords, on Valyd's IdP.
    When that member signs in, the **`valyd_org_member_id`** claim comes back on the OIDC
    [userinfo response](/docs/endpoints#get-userinfo--get-user-profile) and in the ID token (scoped
@@ -62,8 +62,9 @@ Here's the flow — it's how real integrations work (e.g. how Cisive onboarded t
 **Map your existing roles onto members.** Add **all** your people — employees, staff, contractors —
 as **members** (they log in by face). On top of that, promote specific people to **admin** or
 **developer**, who manage things in the Valyd **Developer Portal** — the organization, apps,
-workflows, and billing — while plain members only face-login to your apps and never see the
-organization. Keep your own business roles and permissions in **your** system; the
+workflows, and billing — while plain members only face-login to your apps and get read-only
+visibility into the organization (its members list, not its projects). Keep your own business roles
+and permissions in **your** system; the
 `valyd_org_member_id` is the **join key** between your roles and Valyd's identity/login layer.
 Valyd's `member` role means only "can face-login to these apps." And with **private apps** you
 scope an app to assigned members only (enforced right at the login gate), so **only your workforce
@@ -102,7 +103,7 @@ for exactly what each role can do.
 
 ## How to integrate
 
-1. **Add the login button** — wire [Login with Valyd](/docs) into your app so members authenticate
+1. **Add the button** — wire [Connect with Valyd](/docs) into your app so members authenticate
    by face with the identity they activated.
 2. **Add your people** — push your roster with the [members API](/docs/organizations/api)
    (or CSV / one at a time in the portal); each member gets a face-activation invite.
@@ -120,7 +121,7 @@ for exactly what each role can do.
 ## Notes for integrators
 
 - Organizations do not change the login/verification API surface. Your app still uses the same OAuth
-  `client_id` / `client_secret` for Login with Valyd and the same App API key for the Verification
+  `client_id` / `client_secret` for Connect with Valyd and the same App API key for the Verification
   APIs — an organization governs **who owns the app**, **who may log into it**, and gives you the
   **[Members API](/docs/organizations/api)** for workforce onboarding.
 - For a **private** org app, a user who is not an assigned member is refused at the OAuth authorize

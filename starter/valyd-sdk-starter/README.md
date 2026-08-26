@@ -1,7 +1,7 @@
 # Valyd SDK Starter
 
 A minimal Express app that demonstrates the full **Valyd OpenID Connect** flow using
-`@valyd/sdk@^1.10.1`: state, nonce, S256 PKCE, one-time code exchange, RS256/JWKS
+`@valyd/sdk@^1.10.3`: state, nonce, S256 PKCE, one-time code exchange, RS256/JWKS
 signature validation, and UserInfo.
 
 ## Why a server-side OIDC transaction?
@@ -25,9 +25,14 @@ npm run dev
 # → http://localhost:8080
 ```
 
-In the Valyd dev portal, register a redirect URI matching `VALYD_REDIRECT_URI`
-(default: `http://localhost:8080/callback`) and enable the scopes you want
-(default: `profile verifications`).
+In the [Valyd dev portal](https://dev.valyd.work), create a **project** (a "Login with Valyd" app).
+Give it a **Domain** and a **Redirect URL** matching `VALYD_REDIRECT_URI`
+(default: `http://localhost:8080/callback`) — redirects are exact-match. Copy the project's
+**Client ID** and **Client Secret** into `.env`. The default scopes are `profile verifications`.
+
+> Verification for the signed-in user lives on the project's **Verification** tab (its API key +
+> workflows). For a quick no-account anti-spoof check, every organization also has a built-in
+> **Verify Fresh** key on the dashboard.
 
 ## What's wired up
 

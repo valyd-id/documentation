@@ -112,14 +112,14 @@
    );
    ```
 
-4. **Fetch the full decision after acknowledging the webhook.** The webhook body is a notification; the decision endpoint (session id from the event) returns the full per-check breakdown — complete extracted data on standalone (tokenless) sessions, proofs + public data on sessions created with the user's `valyd_access_token`.
+4. **Fetch the full decision after acknowledging the webhook.** The webhook body is a notification; `verify.sessions.decision(id)` (session id from the event) returns the full per-check breakdown — proofs + public data on sessions created with the user's `valyd_access_token`.
 
-   ```bash
-   curl https://idp.valyd.work/api/v2/session/SES_ID/decision \
-     -H "X-API-Key: $VALYD_API_KEY"
+   ```javascript
+   const decision = await verify.sessions.decision(event.sessionId);
+   // decision.status, decision.checks[]
    ```
 
-   **Expected output:** HTTP 200 with the full decision and per-check data for that session. (See api-reference.md → Decision for the endpoint details.)
+   **Expected output:** a `Decision` with the full per-check data for that session.
 
 ### Event body
 
@@ -143,10 +143,10 @@ Field notes:
   - `verification.approved` — terminal, passed.
   - `verification.declined` — terminal, failed.
   - `verification.in_review` — a manual/agent review is pending (not yet terminal).
-  - `verification.abandoned` — the user left the hosted flow without finishing.
+  - `verification.abandoned` — the user left the verification page without finishing.
   - `verification.expired` — the session's TTL elapsed before completion.
-- `session_id` — the session that triggered the event; pass it to `GET /api/v2/session/{id}/decision`.
-- `status` — the session status (e.g. `APPROVED`). See statuses.md for every possible value.
+- `session_id` — the session that triggered the event; pass it to `verify.sessions.decision(id)`.
+- `status` — the session status (e.g. `APPROVED`). See [Results & decisions](/verifications/statuses) for every possible value.
 - `decision` — the final business outcome string (`approved` / `declined`).
 
 ### Delivery and retries
@@ -183,8 +183,8 @@ a bug in your handler, or if an endpoint was down during the automatic retry win
 carries the **same** `X-Valyd-Event-Id` as the original, so an idempotent handler treats it as the same
 event rather than a new one.
 
-> If a webhook is ever missed entirely, the decision API (`GET /api/v2/session/{id}/decision`) is the
-> authoritative source of the result — poll or fetch it any time.
+> If a webhook is ever missed entirely, `verify.sessions.decision(id)` is the authoritative source
+> of the result — call it any time.
 
 ### Verification
 - Send a test webhook (or trigger a real terminal session) and confirm your handler logs a valid signature and returns HTTP 200.

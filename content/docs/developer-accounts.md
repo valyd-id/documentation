@@ -6,8 +6,8 @@ The Developer Portal at `https://dev.valyd.work` has **two** ways in — there i
 
 1. **Magic link (email).** Enter your email; Valyd sends a one-time sign-in link. Opening it signs
    you in. This is the usual path for owners, admins and developers.
-2. **Face — "Login with Valyd".** If your account has a verified Valyd identity linked, you can sign
-   in with your face (the same OAuth/OIDC "Login with Valyd" flow your own app uses).
+2. **Face — "Connect with Valyd".** If your account has a verified Valyd identity linked, you can sign
+   in with your face (the same OAuth/OIDC "Connect with Valyd" flow your own app uses).
 
 Workforce **members** (the people your organization onboards to *use* your apps, not build them) do
 not use either of the above — they activate and sign in **by face only**, from an invite. See
@@ -15,7 +15,7 @@ not use either of the above — they activate and sign in **by face only**, from
 
 ### Which one should I use?
 - Just getting started, or no Valyd identity yet → **magic link**.
-- You want faster, phishing-resistant sign-in → **link your face** (below), then use Login with Valyd.
+- You want faster, phishing-resistant sign-in → **link your face** (below), then use Connect with Valyd.
 
 ## Connect your Valyd ID
 
@@ -24,14 +24,14 @@ it at any time so you can sign in by face and prove who you are:
 
 1. Sign in (magic link) and open **Profile**.
 2. Under your identity, choose **Connect your Valyd ID**.
-3. Complete Login with Valyd (face). The returned identity is linked to your current, already
+3. Complete Connect with Valyd (face). The returned identity is linked to your current, already
    signed-in account.
 
 Notes:
 - Linking **requires an authenticated session** by design — you connect a face *to the account you
   are already signed in to*. You cannot link a face to an account you are not signed in to.
 - This is different from **Connected apps** on an *end-user's* Valyd account (the third-party sites a
-  user authorized via Login with Valyd). Developer "Connect your Valyd ID" links *your own* face to
+  user authorized via Connect with Valyd). Developer "Connect your Valyd ID" links *your own* face to
   *your own* console account.
 
 ## One person, multiple accounts
@@ -53,12 +53,21 @@ signing in again.
 > [device pairing](/docs/create-project). That extends the same identity to another device; it does
 > not create another account.)
 
-## Personal apps vs organization apps
+## Projects live under an organization
 
-- **Personal apps** live under your individual account — any signed-in developer account can create
-  them.
-- **Organization apps** belong to a shared org tenant and are role-gated (owner / admin / developer).
-  Ownership stays with the org even when a person leaves.
+Everything you build lives inside an **organization** — there is no separate "personal vs
+organization app" split. On first sign-in Valyd creates your **personal organization**
+automatically: an org of one that can't be deleted. Every project (a "Login with Valyd" app with its
+own verification) belongs to whichever organization is **active in the sidebar switcher**:
+
+- **Your personal organization** — your solo workspace. Its projects and its bill are yours.
+- **Team organizations** — shared tenants you create or are invited to. Projects, members and the
+  per-seat bill belong to the org, and ownership stays with it even when a person leaves. Access is
+  role-gated: **owner / admin** manage everything, **developers** build with the keys, and
+  **members** are read-only and can't see projects.
+
+Switch between the organizations you own or joined from the **org dropdown** at the top of the
+sidebar. Billing is a flat **$0.99 per active member**, drawn from the organization's prepaid balance.
 
 See [Organizations & teams](/docs/organizations) for roles, the face-verified workforce, and the
 Members API.
@@ -76,5 +85,5 @@ Members API.
 - **"I got an account picker I didn't expect."** — Your email/identity owns more than one account.
   Pick the right company; use **Switch account** later to change.
 - **"Can I automate portal login for CI?"** — No. Sign-in, linking and switching are human portal
-  steps. For server-to-server automation use an app's `client_id`/`client_secret` (Login with Valyd)
+  steps. For server-to-server automation use an app's `client_id`/`client_secret` (Connect with Valyd)
   or an app's **API key** (Verification APIs) — not a portal login.

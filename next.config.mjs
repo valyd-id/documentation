@@ -47,6 +47,17 @@ export default withNextra({
         permanent: true
       })),
       { source: '/verify/api', destination: '/verifications/api', permanent: true },
+      // Retired product-model pages (2026-08 two-product restructure). Content pages remain as
+      // noindex stubs for llms.txt .md mirrors; the HTML routes 301 to the canonical page.
+      { source: '/docs/choose', destination: '/docs/introduction', permanent: true },
+      { source: '/verifications/managed', destination: '/verifications', permanent: true },
+      { source: '/verifications/hosted', destination: '/verifications/quickstart', permanent: true },
+      { source: '/verifications/standalone/liveness', destination: '/verifications/standalone/antispoof', permanent: true },
+      ...['id-verification', 'face-match', 'age-verification', 'credential-verification', 'kyc-credential', 'location'].map(s => ({
+        source: `/verifications/standalone/${s}`,
+        destination: '/verifications/types',
+        permanent: true
+      })),
       // The API Playground moved into the Docs tree so it gets the docs sidebar.
       { source: '/sandbox', destination: '/docs/sandbox', permanent: true }
     ]

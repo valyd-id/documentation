@@ -1,4 +1,4 @@
-# Complete example — Login with Valyd
+# Complete example — Connect with Valyd
 
 > 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 📖 **After login:** read the account with a Bearer access token
 

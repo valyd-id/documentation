@@ -1,8 +1,6 @@
-# Choose your verification integration
+# Verification modes (retired)
 
-This page has moved: the decision tree and comparison table now live at
-[**Choose your integration**](/docs/choose).
+> 📄 **This page is retired.** Valyd now has **two products** — no mode selection is needed.
 
-- Signed-in user, all checks, proofs on their account? → [Managed by Valyd](/verifications/managed)
-- One-off, no login, only liveness / uniqueness? → [Verify Fresh](/verifications/standalone)
-- Want Valyd to host the capture UI either way? → [Hosted verification](/verifications/hosted)
+- Live, unique human with an API key? → [Unique Human API](/verifications/standalone)
+- Reusable verified identity + workflows? → [Reusable Verification](/verifications)

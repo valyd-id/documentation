@@ -1,9 +1,9 @@
-# Decisions & statuses
+# Results & decisions
 
 **The decision is the authoritative outcome — never trust redirect query params as final.** The
 `?status=` your `redirect_url` receives is a hint only; confirm every result via the signed
-[webhook](/verifications/webhooks) or `GET /api/v2/session/{id}/decision`
-([hosted flow, step 4](/verifications/hosted)).
+[webhook](/verifications/webhooks) or `verify.sessions.decision(id)`
+([Run a verification, step 4](/verifications/quickstart)).
 
 ## Session status
 
@@ -26,7 +26,7 @@ stateDiagram-v2
 
 | Status        | Meaning                                              |
 |---------------|------------------------------------------------------|
-| `NOT_STARTED` | Session created, user not yet on the hosted page     |
+| `NOT_STARTED` | Session created, user not yet on the verification page     |
 | `IN_PROGRESS` | User is interacting with the flow                    |
 | `IN_REVIEW`   | Awaiting human / async review                        |
 | `APPROVED`    | All checks passed (or manually approved)             |
@@ -44,8 +44,7 @@ them.
 ### Manual review decisions
 
 An `IN_REVIEW` session can be resolved by a reviewer on your side via
-`PATCH /api/v2/session/{id}/status` with `{ "status": "APPROVED" | "DECLINED" }`
-([reference](/verifications/api-reference#patch-apiv2sessionidstatus--manual-override)). This
+`verify.sessions.updateStatus(id, "APPROVED" | "DECLINED")`. This
 records your **business decision** on the session — it does not change what the individual checks
 proved; the per-check results are preserved in the decision. Only `IN_REVIEW` sessions can be
 manually decided, and a manual `APPROVED` still requires the session's ID verification, liveness,
@@ -54,14 +53,14 @@ and face-match checks to have passed.
 ### Decision tree — how to act on a session status
 
 ```text
-IF status == NOT_STARTED:   → do nothing yet; wait for the user to open the hosted page. Keep the session pending.
+IF status == NOT_STARTED:   → do nothing yet; wait for the user to open the verification page. Keep the session pending.
 IF status == IN_PROGRESS:   → do nothing yet; the user is mid-flow. Keep the session pending.
 IF status == IN_REVIEW:     → do nothing yet; await the review outcome. The session will move to APPROVED or DECLINED. Do not grant access.
-IF status == APPROVED:      → fetch GET /api/v2/session/{id}/decision for the full extracted data, then grant access / complete onboarding.
-IF status == DECLINED:      → fetch GET /api/v2/session/{id}/decision to see which checks failed; deny access and surface a retry path if your policy allows.
+IF status == APPROVED:      → call verify.sessions.decision(id) for the full extracted data, then grant access / complete onboarding.
+IF status == DECLINED:      → call verify.sessions.decision(id) to see which checks failed; deny access and surface a retry path if your policy allows.
 IF status == ABANDONED:     → treat as not verified; prompt the user to restart verification (create a new session).
 IF status == EXPIRED:       → treat as not verified; the session TTL elapsed. Create a new session if the user still needs to verify.
-IF unsure of current state: → run `curl https://idp.valyd.work/api/v2/session/{id} -H "X-API-Key: $VALYD_API_KEY"` to read the current status.
+IF unsure of current state: → call verify.sessions.retrieve(id) to read the current status.
 ```
 
 ## Check status
@@ -80,7 +79,7 @@ Each individual check within a session reports one of three values:
 IF check == passed: → this check is satisfied. If all checks are passed, the session moves toward APPROVED.
 IF check == failed: → this check did not succeed. It typically drives the session toward DECLINED; inspect the decision for the failure reason.
 IF check == review: → inconclusive. The session typically sits in IN_REVIEW until a human or async process resolves it. Do not grant access on this check yet.
-IF unsure:          → run `curl https://idp.valyd.work/api/v2/session/{id}/decision -H "X-API-Key: $VALYD_API_KEY"` to read per-check statuses.
+IF unsure:          → call verify.sessions.decision(id) to read per-check statuses.
 ```
 
 Relationship between check status and session status:
@@ -90,13 +89,13 @@ Relationship between check status and session status:
 
 ## Reading the decision
 
-The webhook is a notification; the **decision endpoint** holds the authoritative result and the
-full per-check breakdown. Pull it with the SDK, or call `GET /api/v2/session/{id}/decision`
-directly ([hosted flow](/verifications/hosted); [webhooks](/verifications/webhooks)):
+The webhook is a notification; the **decision call** holds the authoritative result and the
+full per-check breakdown. Pull it with `verify.sessions.decision(id)`
+([Run a verification](/verifications/quickstart); [webhooks](/verifications/webhooks)):
 
 ```text
-IF you received a webhook:               → it carries event.status and event.decision; still call the decision API for the full check breakdown.
-IF you want to pull the result yourself: → GET /api/v2/session/<session_id>/decision with X-API-Key.
+IF you received a webhook:               → it carries event.status and event.decision; still call verify.sessions.decision(id) for the full check breakdown.
+IF you want to pull the result yourself: → call verify.sessions.decision(sessionId).
 
 Then read d.status:
   IF d.status == "APPROVED":   → verification succeeded (see the per-check rule below for KYC + License).
@@ -125,15 +124,10 @@ if (credential.status === "failed") {
 }
 ```
 
-```bash
-curl https://idp.valyd.work/api/v2/session/ses_…/decision \
-  -H "X-API-Key: $VALYD_API_KEY"
-```
-
-**Mode note:** the raw extracted fields shown below (`fields`, `portrait`, DOB) appear only on
-sessions created **without** a `valyd_access_token` (the [standalone product](/verifications/standalone));
-with the user's token the decision carries what passed, proofs, and public data — the PII stays on
-their account.
+**Mode note:** the decision below illustrates a [Reusable Verification](/verifications)
+session (created **with** a `valyd_access_token`). With the user's token the decision carries what
+passed, proofs, and public data — the raw PII stays encrypted on their account and never reaches
+your server.
 
 ```json
 {

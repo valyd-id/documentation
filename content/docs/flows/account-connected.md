@@ -1,20 +1,19 @@
 # Account-connected verification flow
 
-> 📄 **This page moved.** Account-connected verification is now documented in one canonical
-> place: **[Verify & save a new proof](/verifications/managed)**. This stub stays so old links
-> keep working.
+> 📄 **This page moved.** This journey is now documented in one canonical place:
+> **[Reusable Verification](/verifications)**. This stub stays so old links keep working.
 
-**Account-connected verification** chains two things: **Login with Valyd** gives your backend a
-user access token, and the **Verification API** runs a check *with that token attached*. A passed
-check becomes a durable **proof** on the user's Valyd account (pseudonym, `id_verified`, license
-badges, age bands) — next time you just read it back instead of re-running the check. This is
-Valyd's **Reusable Identity** model: the verified identity belongs to the user's account, reusable
-across sessions and apps, and your system holds proofs rather than raw PII.
+**Reusable Verification** chains two things: **Connect with Valyd** gives your backend a user
+access token, and a configured **workflow** runs any checks still missing *with that token
+attached*. A passed check becomes a durable **proof** on the user's Valyd ID (pseudonym,
+`id_verified`, license badges, age bands) — next time you just read it back instead of re-running
+the check. The verified identity belongs to the user's account, reusable across sessions and
+apps, and your system holds proofs rather than raw PII.
 
 ## Read the canonical guide
 
-- **Verify & save a new proof** (full guide — steps, check endpoints, consent): [`/verifications/managed`](/verifications/managed)
-- **Read existing proofs** back after login: [Reusable Identity APIs](/docs/user-token/account)
-- The login half: [Authorization Code flow](/docs/flows/authorization-code)
-- Reading proofs after login: [Login API Reference — Resource API](/docs/endpoints#resource-api--user-data)
+- **Reusable Verification** (the full journey — Connect, read, verify, decide): [`/verifications`](/verifications)
+- **Read existing proofs** back after Connect: [Account APIs](/docs/user-token/account)
+- The Connect half: [Authorization Code flow](/docs/flows/authorization-code)
+- Reading proofs after Connect: [Account API — Resource API](/docs/endpoints#resource-api--user-data)
 - Where PII lives and what the account never returns: [Security & data](/docs/data-and-trust)

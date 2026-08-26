@@ -1,6 +1,6 @@
 ---
 title: Anti-spoof / Liveness
-description: A ready-to-go demo — let a user log in with Valyd and share their verified details, then run a passive-liveness check that flags presentation attacks like photos, masks, replays, and deepfakes.
+description: A ready-to-go demo — let a user connect with Valyd and share their verified details, then run a passive-liveness check that flags presentation attacks like photos, masks, replays, and deepfakes.
 ---
 
 import { Callout, Steps } from 'nextra/components'
@@ -9,7 +9,7 @@ import { Callout, Steps } from 'nextra/components'
 
 **Anti-spoof · Liveness**
 
-A ready-to-go demo: let a user log in with Valyd and share their verified details, then run a passive-liveness check that flags presentation attacks — photos, masks, replays, deepfakes. Copy the credentials and the snippet below and you're running in minutes.
+A ready-to-go demo: let a user connect with Valyd and share their verified details, then run a passive-liveness check that flags presentation attacks — photos, masks, replays, deepfakes. Copy the credentials and the snippet below and you're running in minutes.
 
 ## Try the live anti-spoof check
 
@@ -62,7 +62,7 @@ These are public demo credentials on a dedicated, balance-capped Valyd account. 
 ## The flow
 
 <Steps>
-### Login with Valyd
+### Connect with Valyd
 
 Redirect to Valyd, the user authorizes, you get a code and exchange it server-side.
 
@@ -75,7 +75,7 @@ Read the user's shared profile + proofs (`valyd_id`, name, `human_verified`) fro
 Start the liveness workflow, open the hosted capture, poll the decision — human or not.
 </Steps>
 
-## Server (Node) — login, share details, verify face
+## Server (Node) — connect, share details, verify face
 
 ```javascript filename="server.js"
 // server.js — Node 18+ (Express). Install: npm i express @valyd/sdk@^1.10.4
@@ -97,7 +97,7 @@ const APP_KEY     = "pvi34NsFwzlb7u7NDWNcIxpCxy3eCBrd5D-Pyzud3TU";
 const WORKFLOW_ID = "cd2e8501-28d0-45cb-aa4a-c11c998a1cf8";
 const IDP         = "https://idp.valyd.work";
 
-// 1) Login button → send the user to Valyd to authorize.
+// 1) Connect button → send the user to Valyd to authorize.
 app.get("/login", (_req, res) => {
   const url = idp.getAuthorizationUrl({
     scope: ["profile","verifications"],
@@ -151,7 +151,7 @@ app.listen(PORT, () => console.log("Anti-spoof demo on http://localhost:" + PORT
 
 ```html filename="index.html"
 <!-- index.html — the two buttons your server backs -->
-<button onclick="location.href='/login'">Login with Valyd</button>
+<button onclick="location.href='/login'">Connect with Valyd</button>
 
 <button onclick="verifyFace()">Verify your face</button>
 <script>
@@ -168,7 +168,7 @@ If you also want to know **who** the live person is, use `POST /api/v2/antispoof
 
 ## Next steps
 
-- [Anti-spoof & face-uniqueness API](/verifications/standalone/antispoof)
-- [Hosted verification](/verifications/hosted)
-- [Verify docs](/verifications)
+- [Liveness API](/verifications/standalone/antispoof) · [Uniqueness API](/verifications/standalone/face-uniqueness)
+- [Run a verification](/verifications/quickstart)
+- [Reusable Verification docs](/verifications)
 - [Dev Portal](https://dev.valyd.work)

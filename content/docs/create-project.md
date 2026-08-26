@@ -1,7 +1,8 @@
-# Create an app and choose the right credential
+# Apps & API keys
 
 > **Terminology:** the Developer Portal UI labels this object a **"project"**; these docs call it
-> your **app**. It is the same thing — one OAuth client plus its verification capability. Where an
+> your **app**. It is the same thing — one OAuth client plus its **Verification** tab (API key +
+> workflows). Where an
 > API path literally says `project` (e.g. `/verify/projects/{id}`), keep the literal path.
 
 ## Prerequisites
@@ -106,23 +107,24 @@ VALYD_CLIENT_SECRET=sk_live_a1b2c3d4e5f6g7h8i9j0...
 VALYD_API_KEY=vrf_...
 ```
 
-**Expected output:** Login integrations have `client_id` + `client_secret`. Verification-only
-integrations have `VALYD_API_KEY`. Hosted verification also has a workflow ID and webhook secret.
+**Expected output:** Connect with Valyd integrations have `client_id` + `client_secret`. Unique
+Human API calls need only `VALYD_API_KEY`. Reusable Verification uses both, plus a workflow ID
+and webhook secret.
 
 ## Choose your next step
 
-For user account login:
+For Reusable Verification (Connect with Valyd, then verify what's missing):
 
 1. Store your `client_secret` securely in your backend environment variables.
-2. Follow the [Login with Valyd quickstart](/docs/quick-start); the SDK builds the OIDC URL.
+2. Follow the [Connect with Valyd quickstart](/docs/quick-start); the SDK builds the OIDC URL.
 3. Handle the callback and exchange the one-time code for tokens using your `client_secret` (backend only).
-4. Use the `access_token` to fetch scoped account data.
+4. Use the `access_token` to fetch scoped account data, then [run a verification](/verifications/quickstart) with a configured workflow for anything missing.
 
-For KYC or license verification without user login:
+For the Unique Human API (liveness and face uniqueness, API key only):
 
 1. Store `VALYD_API_KEY` on your backend.
-2. Do not build an OIDC login route.
-3. Follow the [Verification API quickstart](/verifications/quickstart).
+2. Do not build an OIDC login route — these calls involve no user account.
+3. Follow the [Unique Human API](/verifications/standalone) guide.
 
 ## Verification
 

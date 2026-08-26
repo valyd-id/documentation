@@ -1,136 +1,17 @@
 import type { MetaRecord } from 'nextra'
-import {
-  AlertTriangle,
-  BookOpen,
-  Bot,
-  Braces,
-  Code,
-  Database,
-  DatabaseBackup,
-  FlaskConical,
-  Fingerprint,
-  Gauge,
-  Globe,
-  History,
-  KeyRound,
-  LayoutDashboard,
-  LifeBuoy,
-  Lock,
-  LogIn,
-  Play,
-  Rocket,
-  ScanFace,
-  ScrollText,
-  Settings,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  Signpost,
-  Sparkles,
-  Tags,
-  Timer,
-  UserCog,
-  UserPlus,
-  Users
-} from 'lucide-react'
+import { Bot, Braces, Code, KeyRound, Rocket } from 'lucide-react'
 import { MetaTitle } from '@/components/meta-title'
 
-// UNIFIED 9-SECTION SIDEBAR (see docs-manifest.mjs). AI & AGENTS is local here; every other
-// section is a flat href into its real route.
+// AI & AGENTS tab — the machine-facing surface only (module-scoped sidebar). Login /
+// Organizations live in the Docs tab; verification in the Verify tab.
 export default {
-  // ============================ GET STARTED ============================
-  '--get-started': { type: 'separator', title: 'GET STARTED' },
-  'gs-overview': { title: <MetaTitle icon={BookOpen}>Overview</MetaTitle>, href: '/docs/introduction' },
-  'gs-how': { title: <MetaTitle icon={Sparkles}>How Valyd works</MetaTitle>, href: '/docs/how-valyd-works' },
-  'gs-choose': { title: <MetaTitle icon={Signpost}>Choose your integration</MetaTitle>, href: '/docs/choose' },
-  'gs-account': { title: <MetaTitle icon={UserPlus}>Create an account</MetaTitle>, href: '/docs/create-account' },
-  'gs-quickstarts': { title: <MetaTitle icon={Rocket}>Quickstarts</MetaTitle>, href: '/docs/quickstarts' },
-  '--qs': { type: 'separator', title: 'Quickstarts' },
-  'gs-node': { title: <MetaTitle icon={Rocket}>Node.js</MetaTitle>, href: '/docs/quickstart/node' },
-  'gs-nextjs': { title: <MetaTitle icon={Rocket}>Next.js</MetaTitle>, href: '/docs/quickstart/nextjs' },
-  'gs-python': { title: <MetaTitle icon={Rocket}>Python</MetaTitle>, href: '/docs/quickstart/python' },
-  'gs-php': { title: <MetaTitle icon={Rocket}>Laravel</MetaTitle>, href: '/docs/quickstart/php' },
-  'gs-curl': { title: <MetaTitle icon={Rocket}>Raw HTTP</MetaTitle>, href: '/docs/quickstart/curl' },
-
-  // ============================ LOGIN ============================
-  '--login': { type: 'separator', title: 'LOGIN' },
-  'login-overview': { title: <MetaTitle icon={KeyRound}>Overview</MetaTitle>, href: '/docs' },
-  'login-add': { title: <MetaTitle icon={LogIn}>Add Login with Valyd</MetaTitle>, href: '/docs/authentication' },
-  'login-oidc': { title: <MetaTitle icon={Fingerprint}>OIDC integration</MetaTitle>, href: '/docs/oidc' },
-  'login-scopes': { title: <MetaTitle icon={Tags}>Scopes &amp; claims</MetaTitle>, href: '/docs/scopes' },
-  'login-tokens': { title: <MetaTitle icon={KeyRound}>Tokens &amp; login sessions</MetaTitle>, href: '/docs/tokens' },
-
-  // ============================ REUSABLE IDENTITY ============================
-  '--reusable': { type: 'separator', title: 'REUSABLE IDENTITY' },
-  'rl-overview': { title: <MetaTitle icon={ShieldCheck}>Overview</MetaTitle>, href: '/docs/user-token' },
-  'rl-readproofs': { title: <MetaTitle icon={BookOpen}>Read proofs</MetaTitle>, href: '/docs/user-token/account' },
-  'rl-managed': { title: <MetaTitle icon={ShieldCheck}>Verify &amp; save a proof</MetaTitle>, href: '/verifications/managed' },
-  'rl-request': { title: <MetaTitle icon={Lock}>Request raw data</MetaTitle>, href: '/docs/request-data' },
-  'rl-consent': { title: <MetaTitle icon={ShieldCheck}>Consent</MetaTitle>, href: '/verifications/data-sharing' },
-
-  // ============================ VERIFICATION ============================
-  '--verification': { type: 'separator', title: 'VERIFICATION' },
-  'vf-overview': { title: <MetaTitle icon={ScanFace}>Overview</MetaTitle>, href: '/verifications' },
-  'vf-setup': { title: <MetaTitle icon={Settings}>Setup</MetaTitle>, href: '/verifications/setup' },
-  'vf-types': { title: <MetaTitle icon={Tags}>Verification types</MetaTitle>, href: '/verifications/types' },
-  '--v-hosted': { type: 'separator', title: 'Managed by Valyd' },
-  'vf-hosted': { title: <MetaTitle icon={Globe}>Hosted verification</MetaTitle>, href: '/verifications/hosted' },
-  'vf-quickstart': { title: <MetaTitle icon={Rocket}>Quickstart</MetaTitle>, href: '/verifications/quickstart' },
-  'vf-workflows': { title: <MetaTitle icon={Braces}>Workflows</MetaTitle>, href: '/verifications/workflows' },
-  'vf-lifecycle': { title: <MetaTitle icon={History}>Session lifecycle</MetaTitle>, href: '/verifications/session-lifecycle' },
-  'vf-statuses': { title: <MetaTitle icon={ShieldCheck}>Results &amp; decisions</MetaTitle>, href: '/verifications/statuses' },
-  'vf-webhooks': { title: <MetaTitle icon={Braces}>Webhooks</MetaTitle>, href: '/verifications/webhooks' },
-  '--v-direct': { type: 'separator', title: 'Verify Fresh (non account)' },
-  'vf-liveness': { title: <MetaTitle icon={ScanFace}>Liveness</MetaTitle>, href: '/verifications/standalone/liveness' },
-  'vf-antispoof': { title: <MetaTitle icon={ShieldAlert}>Anti-spoof</MetaTitle>, href: '/verifications/standalone/antispoof' },
-  'vf-faceuniqueness': { title: <MetaTitle icon={ScanFace}>Face uniqueness</MetaTitle>, href: '/verifications/standalone/face-uniqueness' },
-
-  // ============================ ORGANIZATIONS ============================
-  '--organizations': { type: 'separator', title: 'ORGANIZATIONS' },
-  'org-overview': { title: <MetaTitle icon={Users}>Overview</MetaTitle>, href: '/docs/organizations' },
-  'org-members': { title: <MetaTitle icon={UserPlus}>Members</MetaTitle>, href: '/docs/organizations/members' },
-  'org-roles': { title: <MetaTitle icon={Shield}>Roles</MetaTitle>, href: '/docs/organizations/roles' },
-  'org-onboarding': { title: <MetaTitle icon={UserCog}>Workforce onboarding</MetaTitle>, href: '/docs/organizations/onboarding' },
-  'org-api': { title: <MetaTitle icon={Code}>API</MetaTitle>, href: '/docs/organizations/api' },
-
-  // ============================ DEVELOP & OPERATE ============================
-  '--develop': { type: 'separator', title: 'DEVELOP & OPERATE' },
-  'dev-portal': { title: <MetaTitle icon={LayoutDashboard}>Developer Portal</MetaTitle>, href: '/docs/create-project' },
-  'dev-accounts': { title: <MetaTitle icon={UserCog}>Developer accounts</MetaTitle>, href: '/docs/developer-accounts' },
-  'dev-environments': { title: <MetaTitle icon={KeyRound}>Environments &amp; credentials</MetaTitle>, href: '/docs/environments' },
-  'dev-testing': { title: <MetaTitle icon={FlaskConical}>Testing</MetaTitle>, href: '/docs/testing' },
-  'dev-customize': { title: <MetaTitle icon={Settings}>Customization</MetaTitle>, href: '/docs/customize' },
-  'dev-errors': { title: <MetaTitle icon={AlertTriangle}>Errors</MetaTitle>, href: '/docs/errors' },
-  'dev-ratelimits': { title: <MetaTitle icon={Gauge}>Rate limits</MetaTitle>, href: '/docs/rate-limits' },
-  'dev-idempotency': { title: <MetaTitle icon={Braces}>Idempotency</MetaTitle>, href: '/docs/idempotency' },
-  'dev-golive': { title: <MetaTitle icon={Rocket}>Go live</MetaTitle>, href: '/docs/go-live' },
-  'do-versioning': { title: <MetaTitle icon={History}>Versioning</MetaTitle>, href: '/verifications/versioning' },
-  'dev-changelog': { title: <MetaTitle icon={History}>Changelog</MetaTitle>, href: '/docs/changelog' },
-  'dev-deprecations': { title: <MetaTitle icon={History}>Deprecations</MetaTitle>, href: '/docs/deprecations' },
-  'dev-security': { title: <MetaTitle icon={ShieldCheck}>Security &amp; data</MetaTitle>, href: '/docs/data-and-trust' },
-  'dev-status': { title: <MetaTitle icon={Timer}>Status / reliability</MetaTitle>, href: '/docs/operations-sla' },
-
-  // ============================ REFERENCE ============================
-  '--reference': { type: 'separator', title: 'REFERENCE' },
-  'ref-loginapi': { title: <MetaTitle icon={Code}>Login API</MetaTitle>, href: '/docs/endpoints' },
-  'ref-vapi': { title: <MetaTitle icon={Code}>Verification API</MetaTitle>, href: '/verifications/api-reference' },
-  'ref-sdk': { title: <MetaTitle icon={Braces}>Node SDK</MetaTitle>, href: '/verifications/sdk' },
-  'ref-sdks': { title: <MetaTitle icon={Braces}>SDKs &amp; tools</MetaTitle>, href: '/docs/sdks' },
-  'ref-loginopenapi': { title: <MetaTitle icon={Braces}>Login OpenAPI</MetaTitle>, href: '/docs/api-reference' },
-  'ref-vopenapi': { title: <MetaTitle icon={Braces}>Verification OpenAPI</MetaTitle>, href: '/verifications/api' },
-  'ref-http': { title: <MetaTitle icon={Code}>Raw HTTP</MetaTitle>, href: '/verifications/standalone/http' },
-
-  // ============================ AI & AGENTS ============================
   '--ai': { type: 'separator', title: 'AI & AGENTS' },
   index: { title: <MetaTitle icon={Bot}>Overview</MetaTitle> },
   'agent-guide': { title: <MetaTitle icon={Bot}>Agent integration guide</MetaTitle> },
   'machine-readable': { title: <MetaTitle icon={Braces}>Machine-readable docs</MetaTitle> },
+
   '--ai-mcp': { type: 'separator', title: 'MCP' },
   'mcp-setup': { title: <MetaTitle icon={Rocket}>Quickstart</MetaTitle> },
   'mcp-tools': { title: <MetaTitle icon={Code}>Tools</MetaTitle> },
-  'mcp-auth': { title: <MetaTitle icon={KeyRound}>Authentication</MetaTitle> },
-
-  // ============================ API PLAYGROUND ============================
-  '--playground': { type: 'separator', title: 'API PLAYGROUND' },
-  'pg-sandbox': { title: <MetaTitle icon={Play}>API Playground</MetaTitle>, href: '/docs/sandbox' }
+  'mcp-auth': { title: <MetaTitle icon={KeyRound}>Authentication</MetaTitle> }
 } satisfies MetaRecord

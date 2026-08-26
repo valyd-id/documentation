@@ -257,11 +257,12 @@ export const TryApisContent = () => {
             API Playground
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg dark:text-gray-400">
-            Valyd does two things. <span className="font-semibold text-gray-900 dark:text-gray-100">Login with Valyd</span>{' '}
-            signs a user in and lets you read what's already on their account — profile, licenses,
-            verification proofs. The <span className="font-semibold text-gray-900 dark:text-gray-100">Verification API</span>{' '}
-            runs checks — KYC, liveness, license lookups — from your backend with an API key,{' '}
-            <span className="font-semibold">no user login needed</span>. Pick the lane you're
+            Valyd does two things. The <span className="font-semibold text-gray-900 dark:text-gray-100">Unique Human API</span>{' '}
+            runs liveness and uniqueness checks from your backend with just an API key —{' '}
+            <span className="font-semibold">no user login, nothing saved</span>.{' '}
+            <span className="font-semibold text-gray-900 dark:text-gray-100">Reusable Verification</span>{' '}
+            starts with Connect with Valyd (standard OIDC): read the user's verified data, run a
+            configured workflow, and passed proofs save to their Valyd ID. Pick what you're
             building for below.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -277,22 +278,22 @@ export const TryApisContent = () => {
       </header>
 
       <div className="mt-8 space-y-6">
-        {/* Lane picker — the same two product lanes the docs sell: login vs verification. */}
+        {/* Product picker — the same two products the docs sell: Connect vs API-key checks. */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(
             [
               {
                 id: 'login' as const,
-                label: 'Login with Valyd',
-                tag: 'User signs in',
-                desc: 'Standard OIDC. The user logs in with Valyd and you read what their account already holds — profile (legal name), licenses, verification proofs. Try the whole flow live below.',
+                label: 'Connect with Valyd',
+                tag: 'User connects',
+                desc: 'Standard OIDC — the first step of Reusable Verification. The user connects their Valyd ID and you read what their account already holds — profile (legal name), licenses, verification proofs. Try the whole flow live below.',
                 icon: Fingerprint
               },
               {
                 id: 'verify' as const,
-                label: 'Verification API — just an API key',
-                tag: 'Just an API',
-                desc: 'Run KYC, liveness, face or license checks from your backend with an App API key. The person being checked never creates or uses a Valyd login.',
+                label: 'Run a verification',
+                tag: 'Workflows + API',
+                desc: 'Run a configured verification workflow for a connected user (proofs save to their Valyd ID), or call the Unique Human API — liveness and uniqueness with just an App API key.',
                 icon: Shield
               }
             ]
@@ -343,8 +344,8 @@ export const TryApisContent = () => {
           })}
         </div>
 
-        {/* SDK starter repo — login-lane tooling, so hide it in the verify lane where
-            "no OIDC needed" is the whole point. */}
+        {/* SDK starter repo — Connect with Valyd tooling, so hide it on the API-key side
+            where "no OIDC needed" is the whole point. */}
         {lane !== 'verify' && (
         <section
           className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-white p-6 sm:p-8 dark:bg-slate-950"
@@ -403,50 +404,50 @@ npm run dev`}
               <Sparkles className="h-5 w-5" />
             </div>
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Pick a lane to get started
+              Pick a product to get started
             </h3>
             <p className="mx-auto mt-1.5 max-w-md text-sm text-gray-500 dark:text-gray-400">
-              <span className="font-medium text-gray-900 dark:text-gray-100">Login with Valyd</span>{' '}
-              when a user signs in and you read their account.{' '}
-              <span className="font-medium text-gray-900 dark:text-gray-100">Verification API</span>{' '}
-              when you just run checks from your backend — no user login involved.
+              <span className="font-medium text-gray-900 dark:text-gray-100">Connect with Valyd</span>{' '}
+              when a user connects their Valyd ID and you read their verified data.{' '}
+              <span className="font-medium text-gray-900 dark:text-gray-100">Run a verification</span>{' '}
+              to try a workflow live, or the Unique Human API from your backend — no login involved.
             </p>
           </div>
         ) : lane === 'verify' ? (
           <div key="verify" className="vd-rise space-y-6" style={{ '--i': 5 } as React.CSSProperties}>
             <Alert tone="info">
-              <span className="font-semibold">Just an API key — the person never signs in.</span> Every call below is
-              server-to-server with your App API key (<code className="font-mono">X-API-Key</code>)
-              from the{' '}
+              <span className="font-semibold">Authenticated with your App API key</span> (
+              <code className="font-mono">X-API-Key</code>) from the{' '}
               <a href={DEV_PORTAL_URL} className="font-medium underline" target="_blank" rel="noopener noreferrer">
                 Developer Portal
               </a>
-              . Results come back to <em>your</em> system — nothing is added to any Valyd account
-              unless you use the account-connected flow after a login.
+              . Unique Human API results come back to <em>your</em> system and nothing is saved;
+              add a connected user's access token to a workflow run and passed proofs save to
+              their Valyd ID.
             </Alert>
             <VerifyPlayground />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {[
                 {
-                  title: 'Run a KYC and get the data',
+                  title: 'Liveness — anti-spoof check',
                   method: 'POST',
-                  path: '/api/v2/kyc-credential',
-                  desc: 'Send a document + selfie, get the verdict and extracted document data back in the response. One call, one result — nothing stored on a Valyd account.',
-                  href: '/verifications/standalone'
+                  path: 'verify.sessions.create → antispoof check',
+                  desc: "A no-account workflow session on Valyd's verification page — live camera burst, human_score verdict back to you. API key + workflowId, nothing saved.",
+                  href: '/verifications/standalone/antispoof'
                 },
                 {
-                  title: 'Verify a professional license',
+                  title: 'Uniqueness — one face, one user',
                   method: 'POST',
-                  path: '/api/v2/credential-verification',
-                  desc: "Look up a medical / nursing license and get the verification result directly. The person never logs in anywhere — it's just an API you call.",
-                  href: '/verifications/standalone'
+                  path: 'verify.sessions.create → face_uniqueness check',
+                  desc: "Match the captured face against the Valyd registry and get a stable valyd_uuid — catch duplicate accounts. API key + workflowId, no login, nothing saved.",
+                  href: '/verifications/standalone/face-uniqueness'
                 },
                 {
-                  title: 'Hosted capture page',
+                  title: 'Run a verification workflow',
                   method: 'POST',
-                  path: '/api/v2/session',
-                  desc: 'Create a session, redirect the person to a Valyd-hosted capture page, get the decision by signed webhook + decision endpoint. Still no Valyd login for them.',
-                  href: '/verifications/hosted'
+                  path: 'verify.sessions.create',
+                  desc: 'Create a session for a configured workflow, send the connected user through it, and get the decision by signed webhook + decision endpoint.',
+                  href: '/verifications/quickstart'
                 }
               ].map(c => (
                 <Link
@@ -472,11 +473,11 @@ npm run dev`}
               <span className="font-semibold text-gray-900 dark:text-gray-100">
                 Want the result saved to the user's Valyd account?
               </span>{' '}
-              That's the one case where the two lanes combine: sign the user in first (Login with
-              Valyd), then create the verification with their access token — the passed check
-              attaches to their account as a reusable proof.{' '}
-              <Link href="/verifications/managed" className="font-medium text-(--vd-primary) underline">
-                Account-connected verification →
+              That's Reusable Verification: connect the user first (Connect with Valyd), then
+              create the workflow session with their access token — passed proofs save to their
+              Valyd ID and are reusable across your apps.{' '}
+              <Link href="/verifications" className="font-medium text-(--vd-primary) underline">
+                Reusable Verification →
               </Link>
             </div>
           </div>

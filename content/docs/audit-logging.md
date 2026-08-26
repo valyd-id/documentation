@@ -23,7 +23,7 @@ Each verification session produces durable, machine-readable event records you c
 
 - **Terminal outcomes** — `verification.approved` / `verification.declined`.
 - **Non-terminal states** — `verification.in_review` (a manual/agent review is pending),
-  `verification.abandoned` (the user left the hosted flow), `verification.expired` (the
+  `verification.abandoned` (the user left Valyd's verification page), `verification.expired` (the
   session TTL elapsed).
 
 Each event carries a stable **`event_id`** (mirrored in the `X-Valyd-Event-Id` header) and the
@@ -46,7 +46,7 @@ event. This is the built-in place to confirm what Valyd told your endpoint and w
 ## Who signed in: `valyd_org_member_id`
 
 For an [organization](/docs/organizations), you always know exactly which of your people just
-logged in. When an org member signs in with Login with Valyd, the **`valyd_org_member_id`** claim
+logged in. When an org member signs in with Connect with Valyd, the **`valyd_org_member_id`** claim
 returns on the OIDC [userinfo response](/docs/endpoints#get-userinfo--get-user-profile) and in the
 ID token (scoped to your org's client). Its value is that member's `vmem_…` id — your join key
 between your own roster and the login — so you can attribute and track logins against your own

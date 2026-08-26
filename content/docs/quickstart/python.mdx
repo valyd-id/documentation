@@ -1,6 +1,6 @@
 ---
-title: Python (Flask) quickstart — Login with Valyd
-description: 'Add Login with Valyd to a Flask app with plain OIDC: session state and nonce, authorize redirect, form-encoded token exchange, userinfo.'
+title: Python (Flask) quickstart — Connect with Valyd
+description: 'Add Connect with Valyd to a Flask app with plain OIDC: session state and nonce, authorize redirect, form-encoded token exchange, userinfo.'
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,7 +9,7 @@ import { Callout } from 'nextra/components'
 
 > 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🐍 Raw API recipe · ⏱ ~10 minutes
 
-**What you'll build:** a two-route Flask app where "Login with Valyd" returns the user's
+**What you'll build:** a two-route Flask app where "Connect with Valyd" returns the user's
 pseudonymous `valyd_id` to your backend — no SDK, just `requests`.
 
 <Callout type="info">
@@ -64,7 +64,7 @@ app.secret_key = os.environ["SESSION_SECRET"]
 
 @app.route("/")
 def home():
-    return '<a href="/login">Login with Valyd</a>'
+    return '<a href="/login">Connect with Valyd</a>'
 
 
 @app.route("/login")
@@ -128,7 +128,7 @@ directly from the token endpoint; for production, verify its signature against t
 python app.py
 ```
 
-Open http://localhost:5000 and click **Login with Valyd**.
+Open http://localhost:5000 and click **Connect with Valyd**.
 
 <Callout type="info" emoji="✅">
 **Checkpoint:** `/login` redirects to `https://idp.valyd.work/api/auth/oidc/authorize?...` with

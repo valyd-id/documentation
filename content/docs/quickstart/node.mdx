@@ -1,6 +1,6 @@
 ---
-title: Node.js (Express) quickstart — Login with Valyd
-description: 'Add Login with Valyd to an Express app in one file with @valyd/sdk: authorization request, server-side transaction, verified callback.'
+title: Node.js (Express) quickstart — Connect with Valyd
+description: 'Add Connect with Valyd to an Express app in one file with @valyd/sdk: authorization request, server-side transaction, verified callback.'
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,7 +9,7 @@ import { Callout } from 'nextra/components'
 
 > 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 **This IS the login** — standard OpenID Connect · 🟩 Official SDK · ⏱ ~5 minutes
 
-**What you'll build:** a single-file Express app where "Login with Valyd" returns the user's
+**What you'll build:** a single-file Express app where "Connect with Valyd" returns the user's
 pseudonymous `valyd_id` and verification proofs to your backend.
 
 <Callout type="info">
@@ -75,7 +75,7 @@ const valyd = new Valyd({
   idpBaseUrl: process.env.VALYD_IDP_URL,
 });
 
-app.get("/", (_req, res) => res.type("html").send('<a href="/login">Login with Valyd</a>'));
+app.get("/", (_req, res) => res.type("html").send('<a href="/login">Connect with Valyd</a>'));
 
 app.get("/login", (req, res, next) => {
   try {
@@ -119,7 +119,7 @@ app.listen(8080, () => console.log("Open http://localhost:8080"));
 node server.mjs
 ```
 
-Open http://localhost:8080 and click **Login with Valyd**. A successful callback returns the
+Open http://localhost:8080 and click **Connect with Valyd**. A successful callback returns the
 user's pseudonymous `valydId`, verification proof, and granted scopes.
 
 <Callout type="info" emoji="✅">

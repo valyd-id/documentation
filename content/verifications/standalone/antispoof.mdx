@@ -1,171 +1,71 @@
-# Anti-spoof
+---
+product: valyd-verify
+sdk_min_version: 1.10.3
+billable: true
+pii_mode: standalone
+human_setup_required: true
+source_of_truth: sdk
+---
 
-One family, two endpoints: `POST /api/v2/antispoof` answers "is this a live human capture?",
-and `POST /api/v2/antispoof/identity` additionally resolves the proven-live face to a stable
-`valyd_` uuid for duplicate-account / sybil detection.
+# Liveness
 
-## POST /api/v2/antispoof — Anti-spoof (single image or burst)
+Detects presentation and spoof attacks (printouts, screens, replays, masks) — the
+[Unique Human API](/verifications/standalone)'s anti-spoof check.
 
-Answers "is this a live human capture?" and returns a vendor-neutral `human_score`
-(0–100) with a pass/fail verdict. Accepts **either** a single `image` or a short
-**burst** of frames; a burst adds per-frame voting, motion analysis and same-person
-consistency, which is far stronger than a single frame.
+> 🔑 **Auth:** App API key + a workflow with the anti-spoof check · 👤 **User account:** none · 💾 **Result:** returned to your system, nothing saved
 
-**Method:** POST
-**Full URL:** `https://idp.valyd.work/api/v2/antispoof`
-**Auth header:** `X-API-Key: <App API key>`
+## How it works
 
-**Fields (send one of):**
-- `image` (image) — single still. Analysis-only; `human_score` is capped at 85 (`assurance: "upload"`).
-- `frames[]` (3–8 images) — chronological stills captured over ~2s (`assurance: "burst"`).
+You create a session for a workflow containing the anti-spoof check and redirect the person to
+Valyd's verification page. The page captures a **live camera burst with a random on-screen
+action** — the strongest assurance level (`assurance: "captured"`), with per-frame voting, motion
+analysis, and same-person consistency. The check answers "is this a live human capture?" with a
+vendor-neutral `human_score` (0–100) and a pass/fail verdict. No account is involved and nothing
+is stored.
 
-**Request:**
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
+## Run it
 
 ```javascript
-import { VerifyClient, readImage } from "@valyd/sdk";
+import { VerifyClient } from "@valyd/sdk";
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
 
-// burst (strongest): 3–8 chronological stills captured over ~2s
-const { check } = await verify.standalone.antispoof({
-  frames: [
-    readImage("./f1.jpg"), readImage("./f2.jpg"), readImage("./f3.jpg"),
-    readImage("./f4.jpg"), readImage("./f5.jpg"),
-  ],
+const session = await verify.sessions.create({
+  workflowId:  process.env.VALYD_WORKFLOW_ID,  // a workflow with the anti-spoof check
+  redirectUrl: "https://yourapp.com/checked",
+  vendorData:  "user-123",
 });
-// …or a single still (human_score capped at 85):
-// await verify.standalone.antispoof({ image: readImage("./selfie.jpg") });
-
-console.log(check.score, check.data.assurance); // 100 "burst"
+// → redirect the person's browser to session.url
 ```
 
-</Tabs.Tab>
-<Tabs.Tab>
+## Result
 
-```bash
-curl -X POST https://idp.valyd.work/api/v2/antispoof \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg" \
-  -F "frames[]=@./f4.jpg" -F "frames[]=@./f5.jpg"
-```
-
-Single still instead of a burst: send one `-F "image=@./selfie.jpg"`.
-
-</Tabs.Tab>
-</Tabs>
-
-**Expected output:** HTTP 200; `check.type` is `"antispoof"`, `check.score` is the `human_score`. `check.data`:
-
-```json
-{
-  "assurance": "burst",
-  "frames_analyzed": 5,
-  "frames_genuine": 5,
-  "frames_spoof": 0,
-  "motion": "natural",
-  "face_consistency": "consistent",
-  "human_score": 100
-}
-```
-
-On failure `check.data.signal` is one of: `no_face`, `face_unreadable`, `spoof_detected`,
-`low_confidence`, `duplicate_frames`, `static_capture`, `discontinuous_motion`, `different_faces`.
-
-> For the strongest assurance, run anti-spoof through the **hosted flow**, where Valyd
-> captures a live camera burst and issues a random on-screen action (turn head, open
-> mouth, nod, move closer). That path returns `assurance: "captured"` — see
-> [Hosted Verification](/verifications/hosted).
-
-## POST /api/v2/antispoof/identity — Anti-spoof + identity
-
-Runs the identical anti-spoof pipeline and, only if it passes, resolves the proven-live
-face against the global Valyd face gallery — returning the person's **stable `valyd_`
-uuid**. The same face resolves to the same uuid across all your requests (matching is by
-biometric-vector similarity against the gallery), so this
-is duplicate-account / sybil detection. If liveness fails, no identity lookup runs (and
-none is billed).
-
-**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/antispoof/identity` · **Auth:** `X-API-Key`
-
-**Request:**
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
+Read the decision (or receive it on a signed [webhook](/verifications/webhooks)):
 
 ```javascript
-const { check } = await verify.standalone.antispoofIdentity({
-  frames: [readImage("./f1.jpg"), readImage("./f2.jpg"), readImage("./f3.jpg")],
-});
-// check.data.identity.valyd_uuid, check.data.identity.registered
+const decision = await verify.sessions.decision(session.sessionId);
+// decision.status: "APPROVED" | "DECLINED" | "IN_REVIEW"
+
+// the antispoof check's data:
+// {
+//   assurance: "captured",       // live camera burst with a random on-screen action
+//   frames_analyzed: 5,
+//   frames_genuine: 5,
+//   frames_spoof: 0,
+//   motion: "natural",
+//   face_consistency: "consistent",
+//   human_score: 100
+// }
 ```
 
-</Tabs.Tab>
-<Tabs.Tab>
+On a failure the check data carries a `signal` field, one of: `no_face`, `face_unreadable`,
+`spoof_detected`, `low_confidence`, `duplicate_frames`, `static_capture`,
+`discontinuous_motion`, `different_faces`. Nothing is written to any Valyd account — the verdict
+is yours to act on.
 
-Same input as `/antispoof` (`image` or `frames[]`), different path:
+## Next
 
-```bash
-curl -X POST https://idp.valyd.work/api/v2/antispoof/identity \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg"
-```
-
-</Tabs.Tab>
-</Tabs>
-
-Same input as `/antispoof` (`image` or `frames[]`). Response adds `identity` to `check.data`:
-
-```json
-{
-  "human_score": 100,
-  "identity": { "valyd_uuid": "valyd_f35fecf0…", "registered": "existing" }
-}
-```
-
-`registered` is `"new"` the first time a face is seen, `"existing"` afterwards.
-
-## Gesture challenge
-
-`POST /api/v2/antispoof/challenge` issues a **single-use, 60-second** liveness challenge — a
-random gesture (turn head, open mouth, nod, move closer). Show it to the person, capture the
-burst while they perform it, then echo the `challenge_id` on the run. Optional on plain
-`/antispoof`; **strict projects require it** (plus a 3–8 frame burst) on `/antispoof/identity`
-and [face uniqueness](/verifications/standalone/face-uniqueness) enrollments.
-
-**Request:**
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
-
-```javascript
-const { challengeId, challenge } = await verify.standalone.antispoofChallenge();
-// show `challenge` (e.g. "turn head") and capture the burst while it's performed…
-
-const { check } = await verify.standalone.antispoofIdentity({ frames, challengeId });
-```
-
-</Tabs.Tab>
-<Tabs.Tab>
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/antispoof/challenge \
-  -H "X-API-Key: $VALYD_API_KEY"
-```
-
-Returns `data: { "challenge_id": "…", "challenge": "turn_head", "expires_in": 60 }` —
-single-use, 60s. Echo it back as a `challenge_id` field on the antispoof / face-uniqueness run:
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/antispoof/identity \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "challenge_id=<challenge_id>" \
-  -F "frames[]=@./f1.jpg" -F "frames[]=@./f2.jpg" -F "frames[]=@./f3.jpg"
-```
-
-</Tabs.Tab>
-</Tabs>
-
-An expired or reused id returns `400 challenge_expired`; a strict project run without one
-returns `400 challenge_required`.
+- **[Uniqueness](/verifications/standalone/face-uniqueness)** — add "have we seen this face
+  before?" to the same workflow.
+- Liveness bound to a connected user's account runs inside a
+  [Reusable Verification](/verifications) workflow — see the
+  [checks reference](/verifications/types).

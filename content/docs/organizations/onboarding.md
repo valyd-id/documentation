@@ -22,7 +22,7 @@ flowchart LR
 3. **They activate by face.** The member taps the link and scans their face once. That single scan
    **binds the membership to a real Valyd identity** — the moment this happens, the seat becomes
    `active` (the only billable state).
-4. **They sign in by face from then on.** Members log into your apps with **Login with Valyd**
+4. **They sign in by face from then on.** Members log into your apps with **Connect with Valyd**
    (standard OIDC) using face authentication — no passwords to manage or reset.
 
 ## Member status during onboarding

@@ -1,88 +1,96 @@
 # Valyd — Identity & Verify API Documentation
 
-> Valyd has two separate integration paths in one SDK. **Login with Valyd** uses OIDC and reads a
-> signed-in user's account through `valyd.auth`. **Verification** (Hosted Verification, through
-> `valyd.verify`) runs in two lanes: **Managed by Valyd** — the user signs in and you run a hosted
-> session with their `valyd_access_token`, where every check is available (ID/KYC, liveness, face
-> match, age, professional license, face uniqueness, location) and passed proofs save to their
-> Valyd ID; and **Verify Fresh** — no login, no account, liveness + face-uniqueness + anti-spoof
-> only, hosted or as direct API calls, with the result returned to you. Verification calls need an
-> App API key. Everything runs through the Valyd IdP host. This file is the machine-readable index
-> of the docs.
-> Every page below is available as clean Markdown at the linked `.md` URL — fetch those directly;
-> do not try to scrape the HTML site (it is a client-rendered SPA and returns no static content).
+> Valyd offers two products in one SDK. **Unique Human API** — API-key-only, no user account:
+> create a session for a workflow containing the liveness and/or face-uniqueness checks
+> (`verify.sessions.create({ workflowId, redirectUrl })`, NO user token), redirect the person to
+> Valyd's verification page, and read the verdict from the decision; nothing is saved to an
+> account. **Reusable Verification** — the user connects with Valyd (standard
+> OIDC), you read their verified data through `valyd.auth`, run a configured **workflow** on a
+> verification session (`verify.sessions.create({ workflowId, valydAccessToken, redirectUrl })`)
+> where every check is available (ID/KYC, liveness, face match, age, professional license, face
+> uniqueness, location), and passed proofs save to the user's Valyd ID for reuse.
+> Verification runs through the SDK on Valyd's verification page — there are no raw verification
+> endpoints to call. Everything runs through the Valyd IdP host. This file is the machine-readable
+> index of the docs. Every page below is available as clean Markdown at the linked `.md` URL —
+> fetch those directly; do not try to scrape the HTML site (it is a client-rendered SPA and
+> returns no static content).
 
 ## How to integrate (decision flow)
 
-Ask the developer these questions, in order; each answer pins one path + credential + one `.md`
+Ask the developer these questions, in order; each answer pins one product + credential + one `.md`
 page to fetch and follow. Credentials must be supplied by a human (see "Human-only steps") — never
 guess them.
 
-- Q0 (context only): Existing app or starting fresh? Tells you where the login button and keys go.
+- Q0 (context only): Existing app or starting fresh? Tells you where the connect button and keys go.
 - Q1 — Team/workforce you onboard AND control (add members, gate who can log in, assign roles)?
-  - YES → **Organizations**. Members join by face-activation, then sign in with Login with Valyd;
+  - YES → **Organizations**. Members join by face-activation, then sign in with Connect with Valyd;
     roles owner/admin/developer/member; the `valyd_org_member_id` claim (a `vmem_…` id) tells you
     who logged in; unlimited verifications on a per-active-member monthly plan (14-day trial;
     current price → https://docs.valyd.work/docs/organizations/billing.md).
-    Credential: `client_id` + `client_secret` (login) + Members API (`X-Client-Id`/`X-Client-Secret`).
+    Credential: `client_id` + `client_secret` (connect) + Members API (`X-Client-Id`/`X-Client-Secret`).
     Fetch: https://docs.valyd.work/docs/organizations.md
   - NO → continue.
-- Q2 — Just read or verify a user who signs in with Valyd (read their existing proofs, or add a
-  check that saves to THEIR account)?
-  → **Reusable Identity (with the user's token)**. Read proofs free; run a check with the token and
-    the passed proof saves to their Valyd ID; PII stays with Valyd.
-    Credential: OIDC Bearer `valyd_access_token` (from Login with Valyd).
-    Fetch: https://docs.valyd.work/docs/user-token.md
-- Q3 — Run verification checks? Two lanes — pick by login + which checks:
-  - "The user signs in / I want proofs on their account, or I need ID/KYC, face match, age,
-    professional license, or location" → **Managed by Valyd**: the user signs in, you run a hosted
-    session with their `valyd_access_token`, and EVERY check is available (ID/KYC, liveness, face
-    match, age, professional license, face uniqueness, location). Passed proofs save to their Valyd
-    ID; PII stays encrypted with Valyd; you get the decision + reusable proofs (never raw PII).
-    `sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
-    Credential: App `X-API-Key` + `workflow_id` + the user's `valyd_access_token`.
-    Fetch: https://docs.valyd.work/verify/managed.md
-  - "One-off, no login, I only need liveness / uniqueness" → **Verify Fresh**: no Valyd account,
-    the liveness + face-uniqueness + anti-spoof family ONLY, on Valyd's hosted page OR as direct API
-    calls (`POST /api/v2/liveness`, `/api/v2/face-uniqueness`, `/api/v2/antispoof`). The result
-    returns to your system; nothing is saved to a Valyd account. Credential: App `X-API-Key`.
+- Q2 — Just need to know a person is LIVE and/or UNIQUE, with only an API key (no login, no
+  account, result returned to you, nothing saved)?
+  → **Unique Human API**. Create a session with NO user token for a workflow containing the
+    liveness (anti-spoof) and/or face-uniqueness checks —
+    `verify.sessions.create({ workflowId, redirectUrl })` — redirect the person to `session.url`
+    (Valyd's verification page captures a live burst), then read
+    `verify.sessions.decision(sessionId)`: antispoof data carries `human_score`; face_uniqueness
+    data carries a stable `valyd_uuid` + `registered: "new" | "existing"` (one-person-one-account
+    dedup).
+    Credential: App key (via the SDK) + `workflow_id`.
     Fetch: https://docs.valyd.work/verify/standalone.md
-  NOTE: ID/KYC, face match, age, professional license, and location are no longer self-serve direct
-  checks — they run ONLY through Managed by Valyd (a signed-in user's hosted session).
-- Q4 — Login only (sign the user in, run no check)?
-  → **Login with Valyd** (OAuth2/OIDC). Credential: `client_id` + `client_secret`.
-    Fetch: https://docs.valyd.work/docs/overview.md
-- Q5 — Want it all in one flow (user signs in AND you run several checks on Valyd's hosted UI, with
-  proofs saved to their account)? That IS **Managed by Valyd**:
-  `sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
-    Credential: App `X-API-Key` + `workflow_id` + the user's `valyd_access_token`.
-    Fetch: https://docs.valyd.work/verify/managed.md
+    (Liveness: https://docs.valyd.work/verify/standalone/antispoof.md ·
+    Uniqueness: https://docs.valyd.work/verify/standalone/face-uniqueness.md)
+- Q3 — Need reusable verified identity — KYC, ID, face match, age, professional license, location —
+  or want to read/write proofs on the user's own Valyd account?
+  → **Reusable Verification**. The journey is: **Connect with Valyd** (standard OIDC) → read the
+    account's verified data (proofs like `id_verified`, age bands, licenses — free, instant) → run
+    a configured **workflow** on a verification session with the user's token —
+    `verify.sessions.create({ workflowId, valydAccessToken, redirectUrl })` — → get the decision
+    via `verify.sessions.decision()` or a signed webhook. Every check is available (ID/KYC,
+    liveness, face match, age, professional license, face uniqueness, location); passed proofs
+    save to the user's Valyd ID (reusable across apps); PII stays encrypted with Valyd — you get
+    the decision + proofs, never raw PII.
+    Credential: `client_id` + `client_secret` (connect) + App key (via the SDK) + `workflow_id` +
+    the user's `valyd_access_token`.
+    Fetch: https://docs.valyd.work/verify/intro.md then
+    https://docs.valyd.work/verify/quickstart.md
+  NOTE: ID/KYC, face match, age, professional license, and location are NOT direct public APIs —
+  they run ONLY as workflow checks inside a Reusable Verification session.
+- Q4 — Sign-in only (connect the user, run no check)?
+  → **Connect with Valyd** (OAuth2/OIDC — part of Reusable Verification; it can also serve as your
+    app's sign-in). Credential: `client_id` + `client_secret`.
+    Fetch: https://docs.valyd.work/docs/authentication.md
 
 Then clarify (as relevant), fetching the named `.md`:
-- Which checks? ID/KYC, liveness, face match, age (age *bands* like `is_18_plus`, never the DOB),
-  professional license, location/EVV presence, anti-spoof, face uniqueness (one-person-one-account
-  dedup). → https://docs.valyd.work/verify/types.md
-- Reusable identity (KYC-reuse)? Save the passed check as a proof — that's **Managed by Valyd**
-  (needs the user's `valyd_access_token`). A one-off **Verify Fresh** liveness/uniqueness check
-  saves nothing. → https://docs.valyd.work/docs/user-token.md
-- Result delivery? Async signed webhook (Managed by Valyd, or Verify Fresh hosted) vs synchronous
-  API response (Verify Fresh direct). → https://docs.valyd.work/verify/webhooks.md
+- Which workflow checks? ID/KYC, liveness, face match, age (age *bands* like `is_18_plus`, never
+  the DOB), professional license, location/EVV presence, face uniqueness.
+  → https://docs.valyd.work/verify/types.md (Checks reference)
+- Reusable identity (KYC-reuse)? Save the passed check as a proof — that's **Reusable
+  Verification** (needs the user's `valyd_access_token`). A Unique Human API call saves nothing.
+  → https://docs.valyd.work/docs/user-token.md
+- Result delivery? Async signed webhook or `verify.sessions.decision()` (Reusable Verification
+  session) vs the synchronous return of a Unique Human API SDK call.
+  → https://docs.valyd.work/verify/webhooks.md and
+  https://docs.valyd.work/verify/statuses.md
 - Need RAW identity data (DOB, document number, address)? Requires the consent flow (the user
   approves on their device); otherwise you get proofs / verified-status only.
   → https://docs.valyd.work/docs/request-data.md
-- Login scopes? profile (legal name, country, verified status), verifications (proofs/badges),
+- Connect scopes? profile (legal name, country, verified status), verifications (proofs/badges),
   email, doctor_license. → https://docs.valyd.work/docs/scopes.md
-- Professional license check? Runs through **Managed by Valyd** (a signed-in user's hosted session);
-  the name comes from the account and the verified badge saves to their Valyd ID.
-  → https://docs.valyd.work/verify/managed.md
-- Drop-in button or your own OIDC library? "Sign in with Valyd" button
+- Professional license check? Runs as a workflow check in a **Reusable Verification** session (a
+  connected user's verification session); the name comes from the account and the verified badge
+  saves to their Valyd ID. → https://docs.valyd.work/verify/intro.md
+- Drop-in button or your own OIDC library? "Connect with Valyd" button
   (https://docs.valyd.work/docs/overview.md) vs any OIDC library via discovery
   (https://docs.valyd.work/docs/oidc.md).
 - Credentials source (IMPORTANT): a human creates the app + keys in the Developer Portal
   (dev.valyd.work); an agent CANNOT mint `client_id`/`client_secret`/API key/`workflow_id` — pause
   and ask, never guess. → https://docs.valyd.work/docs/create-project.md
 - Billing? Organization = unlimited verifications on a per-active-member monthly plan (billing
-  starts the moment a member face-scans); standalone/non-org = pay per check. Current price + trial
+  starts the moment a member face-scans); non-org = pay per check. Current price + trial
   → https://docs.valyd.work/docs/organizations/billing.md
 
 Full narrative version of this tree (with example calls and the two golden rules) is the Agent
@@ -98,15 +106,15 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
   - Developer Portal (human sign-in, projects, keys): `https://dev.valyd.work`
   - Documentation (this site, `.md` + OpenAPI): `https://docs.valyd.work`
 - **There is NO password login.** Human sign-in to the Developer Portal is passwordless — an emailed
-  magic link OR face ("Login with Valyd"). Never look for, store, or send a password. Portal sign-in,
-  linking a face, and switching accounts are human-only steps an agent cannot perform.
+  magic link OR face ("Connect with Valyd"). Never look for, store, or send a password. Portal
+  sign-in, linking a face, and switching accounts are human-only steps an agent cannot perform.
 - **Credentials cannot be created via API.** A human must sign up and generate them in the portal
   (see "Human-only steps" at the bottom). Pause and request these values rather than guessing:
   `client_id`, `client_secret` (Valyd ID); App `API key`, `workflow_id`, webhook signing secret
   (Verification APIs).
-- Auth is not interchangeable: Login/account endpoints use an OIDC Bearer access token;
-  Verification API calls use `X-API-Key: <App API key>`. An account-connected verification uses
-  the App API key plus the signed-in user's `valyd_access_token` in the documented request field.
+- Auth is not interchangeable: connect/account endpoints use an OIDC Bearer access token;
+  verification runs through the SDK with your App key (server-side). A Reusable Verification
+  session also carries the connected user's `valyd_access_token`.
 - Token exchange and webhook signature verification MUST run server-side (never expose the client
   secret or webhook secret to a browser).
 - **Machine-readable API specs (OpenAPI 3.1):** for endpoint discovery, schemas, and codegen, fetch
@@ -114,18 +122,19 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 - **Capability matrix (machine-readable):** to pick a path deterministically, fetch
   `https://docs.valyd.work/agent/capabilities.json` — a JSON array mapping each real goal to its
   `path`, `product`, `auth`, `credential`, `billable`, `pii_mode`, `saves_proof`, and the `.md`
-  `doc` to follow (Login, account-read, account-connected verify, standalone, hosted, organizations).
+  `doc` to follow (connect, account-read, reusable-verification session, Unique Human API,
+  organizations).
 
 ## Valyd ID — Getting started
 
-- [Overview](https://docs.valyd.work/docs/overview.md): When to use OIDC login, what it reads from an account, and when to use Verification API instead.
+- [Overview](https://docs.valyd.work/docs/overview.md): When to use OIDC connect, what it reads from an account, and when to run a verification session instead.
 - [Create a Project & Get Credentials](https://docs.valyd.work/docs/create-project.md): Dev-portal setup — sign up, create a project, set redirect/scopes, copy client_id + client_secret. (Human-only.)
-- [Quickstarts — Login with Valyd](https://docs.valyd.work/docs/quickstarts.md): Stack-by-stack complete logins — Node.js, Next.js, Python, PHP (Laravel), cURL, or any OIDC library — each a full working OIDC flow (state comparison, code exchange, userinfo). (The old /docs/quick-start.md is a compatibility redirect to this page.)
-- [OIDC session security](https://docs.valyd.work/docs/login-sessions.md): Store and validate state, nonce, PKCE, and redirect URI as one server-side transaction.
+- [Quickstarts — Connect with Valyd](https://docs.valyd.work/docs/quickstarts.md): Stack-by-stack complete flows — Node.js, Next.js, Python, PHP (Laravel), cURL, or any OIDC library — each a full working OIDC flow (state comparison, code exchange, userinfo). (The old /docs/quick-start.md is a compatibility redirect to this page.)
+- [OIDC session security](https://docs.valyd.work/docs/tokens.md): Store and validate state, nonce, PKCE, and redirect URI as one server-side transaction.
 
 ## Valyd ID — Authentication & integration
 
-- [Authentication (OAuth2 / OIDC flow)](https://docs.valyd.work/docs/authentication.md): Authorization URL, state/nonce CSRF, callback handling, code→token exchange, refresh rotation.
+- [Authentication (OAuth2 / OIDC flow)](https://docs.valyd.work/docs/authentication.md): Connect with Valyd — authorization URL, state/nonce CSRF, callback handling, code→token exchange, refresh rotation.
 - [OpenID Connect (OIDC) Integration](https://docs.valyd.work/docs/oidc.md): Discovery endpoint, manual config, Mendix setup, claim/user mapping, testing, troubleshooting, security.
 
 ## Valyd ID — Reference
@@ -140,25 +149,26 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 ## Verification APIs — Guides
 
-- [Introduction](https://docs.valyd.work/verify/intro.md): The two lanes — Managed by Valyd (signed-in, all checks, proofs) vs Verify Fresh (no login, liveness/uniqueness) — and data handling.
-- [Quickstart](https://docs.valyd.work/verify/quickstart.md): Get an App API key and run a Verify Fresh liveness check or a hosted session.
+- [Reusable Verification](https://docs.valyd.work/verify/intro.md): The journey — Connect with Valyd, read verified data, run a workflow on a verification session with the user's token, get the decision; every check available, passed proofs save to the account.
+- [Run a verification (quickstart)](https://docs.valyd.work/verify/quickstart.md): Get an App key, connect the user, and run `verify.sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
+- [Create a workflow (setup)](https://docs.valyd.work/verify/setup.md): Developer Portal setup — the App API key (shown once), a `workflow_id`, and the webhook secret. (Human-only UI steps.)
+- [Workflows](https://docs.valyd.work/verify/workflows.md): Configure which checks a verification session runs, in the Developer Portal, and get the `workflow_id`.
+- [Unique Human API](https://docs.valyd.work/verify/standalone.md): API-key-only, no user account — a workflow session (no user token) on Valyd's verification page running the Liveness and/or Uniqueness checks; verdict returned to you, nothing saved to an account. See [Liveness](https://docs.valyd.work/verify/standalone/antispoof.md), [Uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), and [Common errors](https://docs.valyd.work/verify/standalone/errors.md). (ID/KYC, face match, age, professional license, and location run only as workflow checks in a Reusable Verification session.)
 - [Developer Portal](https://docs.valyd.work/verify/console.md): Apps, API keys, workflows, webhooks, SSO. (Human-only UI steps.)
-- [Choose an integration](https://docs.valyd.work/verify/modes.md): Decide between Managed by Valyd (signed-in user, all checks, proofs on their account) and Verify Fresh (no login, liveness/uniqueness returned to you).
-- [Managed by Valyd](https://docs.valyd.work/verify/managed.md): The signed-in lane — sign the user in, run a hosted session with their token; every check is available and passed proofs save to their account.
-- [Hosted delivery](https://docs.valyd.work/verify/hosted.md): The Valyd-hosted capture page used by both lanes — signed webhooks, decision API, statuses, and optional account linking.
-- [Verify Fresh (standalone)](https://docs.valyd.work/verify/standalone.md): No-login liveness + uniqueness + anti-spoof — overview, idempotency, and SDK quick start. Per-endpoint pages: [Liveness](https://docs.valyd.work/verify/standalone/liveness.md), [Anti-spoof](https://docs.valyd.work/verify/standalone/antispoof.md), [Face uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), [Raw HTTP (cURL)](https://docs.valyd.work/verify/standalone/http.md), [Common errors](https://docs.valyd.work/verify/standalone/errors.md). (ID/KYC, face match, age, professional license, and location run only through Managed by Valyd.)
 - [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.
-- [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it.
+- [Statuses & decisioning](https://docs.valyd.work/verify/statuses.md): Every session/check status, what it means, and how to act on it — plus `verify.sessions.decision()`.
+- [Checks reference](https://docs.valyd.work/verify/types.md): Every workflow check — ID/KYC, liveness, face match, age bands, professional license, face uniqueness, location.
+- [Consent & data access](https://docs.valyd.work/verify/data-sharing.md): What the user consents to share, what your app receives (proofs, never raw PII), and what stays with Valyd.
 
 ## Verification APIs — API Reference
 
-- [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, Verify Fresh checks, Decision, and Errors & rate limits. All calls use `X-API-Key`.
+- [API Reference](https://docs.valyd.work/verify/api-reference.md): Sessions, Workflows, the Unique Human API checks, Decision, and Errors & rate limits — all driven through the SDK with your App key.
 
 ## API specs (OpenAPI 3.1)
 
-- [Valyd ID OpenAPI](https://docs.valyd.work/openapi/valyd-id.json): OIDC login and account-resource endpoints, schemas, auth, and errors.
-- [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, Verify Fresh checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen and endpoint discovery.
+- [Valyd ID OpenAPI](https://docs.valyd.work/openapi/valyd-id.json): OIDC connect and account-resource endpoints, schemas, auth, and errors.
+- [Verification APIs OpenAPI](https://docs.valyd.work/openapi/valyd-verify.json): Sessions, the Unique Human API checks, credentials, and the verification webhook (HMAC-SHA256). Use for SDK/codegen.
 
 ## Downloads & tooling
 
@@ -168,7 +178,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 ## Developer portal — accounts, organizations & teams
 
-- [Developer accounts & sign-in](https://docs.valyd.work/docs/developer-accounts.md): Passwordless sign-in (emailed magic link or face / Login with Valyd — there is NO password), connecting a Valyd face identity to an email-only account, and how one identity can own several console accounts (one per company) with an account switcher. Human-only portal actions.
+- [Developer accounts & sign-in](https://docs.valyd.work/docs/developer-accounts.md): Passwordless sign-in (emailed magic link or face / Connect with Valyd — there is NO password), connecting a Valyd face identity to an email-only account, and how one identity can own several console accounts (one per company) with an account switcher. Human-only portal actions.
 - [Organizations & teams](https://docs.valyd.work/docs/organizations.md): Individual vs organization accounts, the owner/developer/member roles, shared apps, public vs private apps, adding a workforce by face, and one-account billing.
 
 ## Human-only steps (an agent must pause and request these)

@@ -1,56 +1,41 @@
-# Setup
+# Create a workflow
 
-> 🔑 **What you leave with:** an App **API key** (`X-API-Key`, shown once) and — for hosted runs — a `workflow_id`
+> 🔑 **What you leave with:** an App **API key** (shown once), a `workflowId`, and a webhook secret
 
-Where verification lives in the [Developer Portal](https://dev.valyd.work), and the three things
-to grab before your first call. Don't have an account yet?
-[Create one first](/docs/create-account) — it takes a minute and comes with a $100 welcome credit.
+Portal setup for [Reusable Verification](/verifications): where verification lives in the
+[Developer Portal](https://dev.valyd.work), and the three things to grab before your first
+session. Don't have an account yet? [Create one first](/docs/create-account) — it takes a minute
+and comes with a $100 welcome credit.
 
 ## Where verification lives in the portal
 
-There are two homes, matching the two lanes:
+Verification is configured **inside your app** — the same app whose OIDC credentials power
+[Connect with Valyd](/docs/authentication). Open the app → its **Verification** tab:
 
-- **[Managed by Valyd](/verifications/managed) lives inside your app.** If you're pairing
-  verification with [Sign in with Valyd](/docs) — the main story — open the app itself → its
-  **Verification** tab. The app's OAuth side signs users in; this tab is its verification side,
-  where a signed-in user's token unlocks every check:
+![The Verification tab inside an app in the Developer Portal](/images/screenshots/portal-app-verification.png)
 
-  ![The Verification tab inside an app in the Developer Portal](/images/screenshots/portal-app-verification.png)
-
-- **[Verify Fresh](/verifications/standalone) projects live on the dashboard.** The non-account,
-  API-key-only lane — liveness, anti-spoof, and face uniqueness on data you capture: your project,
-  your key, results returned to you. Create and manage these directly from the dashboard's
-  Verifications area:
-
-  ![Standalone verification projects on the Developer Portal dashboard](/images/screenshots/portal-dashboard-verifications.png)
-
-  Click **New verification-only project** — one dialog, no login setup:
-
-  ![Creating a verification-only project](/images/screenshots/portal-create-verification-project.png)
-
-Either way you end up with the same credential — an App API key — and the same APIs.
+(Building only with the [Unique Human API](/verifications/standalone)? No project needed — every
+organization has a built-in **Verify Fresh** key on the dashboard for no-account anti-spoof checks;
+see that page's setup section.)
 
 ## Get your API key (shown once)
 
-![The app's Verification tab with the API key panel](/images/screenshots/portal-app-verification.png)
+When you open the app's **Verification** tab, the portal shows the **API key exactly once**
+in a show-once panel. Copy it immediately and store it server-side — it cannot be retrieved
+again. If you lose it, rotate it in the portal to mint a new one.
 
-When you create the project (or enable the app's verification capability), the portal shows the
-**API key exactly once** in a show-once panel. Copy it immediately and store it server-side —
-it cannot be retrieved again. If you lose it, rotate it in the portal to mint a new one.
+Never put the key in browser code: it belongs in your backend's environment, passed to the SDK
+client on server-to-server calls only.
 
-Never put the key in browser code: it belongs in your backend's environment
-(`X-API-Key` header on server-to-server calls only).
+## Build the workflow
 
-## Create a workflow (hosted runs)
-
-Hosted sessions run a **workflow** — a saved bundle of checks. Build one with the workflow
-wizard in the portal (or [via the API](/verifications/workflows)) and copy its `workflow_id`:
+A [workflow](/verifications/workflows) is the saved bundle of checks your app requires — KYC,
+professional license, face match, liveness, location, and more. Build one with the workflow
+wizard and copy its `workflowId`:
 
 ![The workflow creation wizard in the Developer Portal](/images/screenshots/portal-workflow-wizard.png)
 
-Verify Fresh direct calls don't need a workflow — just the key.
-
-## Configure webhooks (hosted runs)
+## Configure webhooks
 
 Set your endpoint URL and copy the signing secret under **Webhooks**. Valyd POSTs signed events
 there when a session finishes — [Webhooks](/verifications/webhooks) covers verification of the
@@ -61,6 +46,7 @@ before going live:
 
 ## Next
 
-- [Quickstart](/verifications/quickstart) — run your first check with the key you just copied.
-- [Hosted verification](/verifications/hosted) — let Valyd build the capture UI.
-- [The Developer Portal reference](/verifications/console) — apps, workflows, webhooks, SSO.
+- [Run a verification](/verifications/quickstart) — first session with the key and `workflowId`
+  you just copied.
+- [Workflows](/verifications/workflows) — presets, bundling checks, and changing a workflow.
+- [Checks reference](/verifications/types) — everything a workflow can verify.

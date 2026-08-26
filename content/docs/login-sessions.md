@@ -1,6 +1,6 @@
 # OIDC session security
 
-Login with Valyd uses the standard OIDC Authorization Code flow. Keep one complete login
+Connect with Valyd uses the standard OIDC Authorization Code flow. Keep one complete login
 transaction in the user's server-side session:
 
 - `state` prevents callback CSRF;

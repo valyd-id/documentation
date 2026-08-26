@@ -1,10 +1,5 @@
-# ID Verification
+# ID / KYC verification (moved)
 
-This check now runs through **Managed by Valyd** — [Verify & save a proof](/verifications/managed).
-
-ID / KYC is no longer a self-serve direct call. Run it on a signed-in user's hosted
-verification session: the raw document stays encrypted with Valyd and your app receives the
-decision plus a reusable `id_verified` proof on the user's Valyd ID.
-
-The `POST /api/v2/id-verification` endpoint still exists in the
-[Verification OpenAPI](/verifications/api) for existing integrations.
+> 📄 **This page is retired.** ID / KYC verification is not offered as a direct public API — it
+> runs as a check inside a [Reusable Verification](/verifications) workflow. See the
+> [checks reference](/verifications/types) and [Run a verification](/verifications/quickstart).

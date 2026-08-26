@@ -8,7 +8,7 @@ contact **support@valyd.id** if you need them for capacity planning.
 ## Verification API (`/api/v2/…`)
 
 All `/api/v2` routes are rate limited **per client IP** at **~150 requests / minute**. This
-covers both standalone check endpoints and hosted-session calls.
+covers both the Unique Human API endpoints and verification-session calls.
 
 A throttled request returns `429` with this body — and, importantly, **no `Retry-After`
 header**:

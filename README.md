@@ -1,7 +1,7 @@
 # Valyd Developer Docs
 
-Documentation site for Valyd — Login with Valyd (OAuth 2.0 / OIDC), the Verification APIs
-(KYC, liveness, face match, license), and MCP for AI agents. Built with the **default Nextra
+Documentation site for Valyd — the Unique Human API (liveness + uniqueness) and Reusable
+Verification (Connect with Valyd / OIDC, verified data, workflows), plus MCP for AI agents. Built with the **default Nextra
 Docs Theme**; the only visual customization is the Valyd logo and brand hue. Content was
 migrated from the old Vite SPA in `../docs` (left untouched). Currently runs at localhost only.
 

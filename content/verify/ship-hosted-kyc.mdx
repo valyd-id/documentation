@@ -1,29 +1,35 @@
 ---
-title: Ship Hosted KYC
-description: Go from zero to a working KYC flow - create a session, redirect your user to Valyd's hosted page, receive a signed webhook, and act on the authoritative decision.
+title: Ship KYC with a workflow
+description: Go from zero to a working KYC flow - create a verification session with the SDK, send your connected user to Valyd's verification page, receive a signed webhook, and act on the authoritative decision.
 ---
 
 import { Callout, Steps } from 'nextra/components'
 
-# Ship Hosted KYC
+# Ship KYC with a workflow
 
-Go from zero to a working KYC flow: create a session, redirect your user to Valyd's hosted
-page, receive a signed webhook, and act on the authoritative decision. Covers both
-"License Verification" and "KYC + License" workflows — only the `workflow_id` changes.
+Go from zero to a working KYC flow: create a verification session with the SDK, send your
+connected user to Valyd's verification page, receive a signed webhook, and act on the
+authoritative decision. This runs on **[Reusable Verification](/verifications)** — the user
+[connects with Valyd](/docs/authentication), you open a verification session on their
+`valyd_access_token`, and passed proofs save to their Valyd ID (reusable). Covers both
+"License Verification" and "KYC + License" workflows — only the `workflowId` changes.
 
 `~30 min` · `Express / Node.js` · `@valyd/sdk`
 
 ## Prerequisites
 
+Everything comes from the **[Developer Portal](https://dev.valyd.work)** — there is no separate
+Verify console and no raw API to call.
+
 | Variable | Where to get it |
 | --- | --- |
-| `VALYD_API_KEY` | Developer Portal → your app's Verification settings (shown as a Verify "project") → API key (shown once) |
+| `VALYD_API_KEY` | Developer Portal → your app's Verification settings (shown as a Verify "project") → app key (shown once) |
 | `VALYD_WEBHOOK_SECRET` | Developer Portal → your app's Verification settings → Webhooks |
-| `VALYD_WORKFLOW_ID` | Developer Portal → Workflows → copy `workflow_id` |
+| `VALYD_WORKFLOW_ID` | Developer Portal → Workflows → copy the workflow id |
 | `APP_URL` | Your public server URL (e.g. `https://api.example.com`) |
 
 ```bash filename=".env"
-VALYD_API_KEY=your_api_key
+VALYD_API_KEY=your_app_key
 VALYD_WEBHOOK_SECRET=your_webhook_secret
 VALYD_WORKFLOW_ID=wf_…
 APP_URL=https://api.example.com
@@ -37,11 +43,9 @@ npm i @valyd/sdk@^1.10.4
 
 ### Create a session
 
-Call `POST /api/v2/session` from your server. The response includes a hosted `url` — that's
-where you'll send the user. Pass `vendor_data` to correlate the result back to your user later.
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
+Once the user has connected with Valyd, call `verify.sessions.create` from your server with their
+`valydAccessToken`. The SDK returns the verification page `url` — that's where you'll send the user. Pass
+`vendorData` to correlate the result back to your user later.
 
 ```javascript
 import { VerifyClient } from "@valyd/sdk";
@@ -51,57 +55,40 @@ const verify = new VerifyClient({
   webhookSecret: process.env.VALYD_WEBHOOK_SECRET!,
 });
 
-// In your route handler:
+// In your route handler (the user has already connected with Valyd):
 const session = await verify.sessions.create({
-  workflowId:  process.env.VALYD_WORKFLOW_ID!,
-  redirectUrl: `${process.env.APP_URL}/verify/callback`,
-  callback:    `${process.env.APP_URL}/webhooks/valyd`,
-  vendorData:  req.user.id,   // echoed back on the webhook
-  ttlSeconds:  900,
+  workflowId:       process.env.VALYD_WORKFLOW_ID!,
+  valydAccessToken: user.valydAccessToken,  // ← identifies the person → valyd_id
+  redirectUrl:      `${process.env.APP_URL}/verify/callback`,
+  callback:         `${process.env.APP_URL}/webhooks/valyd`,
+  vendorData:       user.id,                // echoed back on the webhook
+  ttlSeconds:       900,
 });
 
-// session.url        → send the user here (step 2)
+// session.url       → send the user here (step 2)
 // session.sessionId → store this for later lookups
 ```
 
-</Tabs.Tab>
-<Tabs.Tab>
-
-```bash
-curl -X POST https://idp.valyd.work/api/v2/session \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "workflow_id":  "wf_…",
-    "redirect_url": "https://app.example.com/verify/callback",
-    "callback":     "https://api.example.com/webhooks/valyd",
-    "vendor_data":  "user_123",
-    "ttl_seconds":  900
-  }'
-```
-
-</Tabs.Tab>
-</Tabs>
-
 <Callout type="info">
-  **Which workflow_id?** Use the "License Verification" workflow to check a professional
+  **Which workflow?** Use the "License Verification" workflow to check a professional
   license only. Use "KYC + License" to also verify the user's identity (ID scan + selfie +
   face match) before the license lookup. Both use the same integration code — only the
-  `workflow_id` differs.
+  `workflowId` differs. Compose either one in the [Developer Portal](https://dev.valyd.work).
 </Callout>
 
 ### Redirect the user
 
-Send the user's browser to `session.url`. Valyd's hosted page handles the entire capture and
+Send the user's browser to `session.url`. Valyd's verification page handles the entire capture and
 verification UI — no camera or document handling on your side.
 
 ```javascript filename="Express route"
 app.post("/start-verification", express.json(), async (req, res) => {
   const session = await verify.sessions.create({
-    workflowId:  process.env.VALYD_WORKFLOW_ID!,
-    redirectUrl: `${process.env.APP_URL}/verify/callback`,
-    callback:    `${process.env.APP_URL}/webhooks/valyd`,
-    vendorData:  req.body.userId,
+    workflowId:       process.env.VALYD_WORKFLOW_ID!,
+    valydAccessToken: req.user.valydAccessToken,
+    redirectUrl:      `${process.env.APP_URL}/verify/callback`,
+    callback:         `${process.env.APP_URL}/webhooks/valyd`,
+    vendorData:       req.user.id,
   });
   res.redirect(session.url);
 });
@@ -109,9 +96,9 @@ app.post("/start-verification", express.json(), async (req, res) => {
 
 ### Handle the redirect back
 
-When the user finishes (or abandons), Valyd redirects to your `redirect_url` with
+When the user finishes (or abandons), Valyd redirects to your `redirectUrl` with
 `?session_id=…&status=…`. The `status` query param is a hint — never treat it as the final
-result. Your authoritative source is the webhook (step 4) and the decision API (step 5).
+result. Your authoritative source is the webhook (step 4) and the decision call (step 5).
 
 ```javascript filename="Express route"
 app.get("/verify/callback", (req, res) => {
@@ -124,14 +111,14 @@ app.get("/verify/callback", (req, res) => {
 
 <Callout type="warning">
   Never trust `?status=APPROVED` from the redirect URL. A user can manipulate query params.
-  Always confirm via the webhook or the decision API.
+  Always confirm via the webhook or the decision call.
 </Callout>
 
 ### Receive and verify the webhook
 
-When the session reaches a terminal state, Valyd POSTs to your `callback` URL. You must
-verify the HMAC-SHA256 signature against the **raw request body** — do not re-serialise the
-JSON. Use `X-Valyd-Event-Id` to deduplicate retries.
+When the session reaches a terminal state, Valyd POSTs to your `callback` URL. Let the SDK verify
+the signature against the **raw request body** — do not re-serialise the JSON. Use the event id to
+deduplicate retries.
 
 ```javascript filename="Express webhook handler"
 import { ValydVerifyError } from "@valyd/sdk";
@@ -167,17 +154,13 @@ app.post(
 <Callout type="info">
   **Webhook event types:** `verification.approved`, `verification.declined`,
   `verification.in_review`, `verification.abandoned`, `verification.expired`. The webhook is
-  a notification — always call the decision endpoint for the full check breakdown.
+  a notification — always read the decision for the full check breakdown.
 </Callout>
 
 ### Read the authoritative decision
 
-Call `GET /api/v2/session/{id}/decision` to get the final outcome plus per-check details. Do
-this inside your webhook handler (or from a polling mechanism if the webhook hasn't arrived
-yet).
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
+Call `verify.sessions.decision(id)` to get the final outcome plus per-check details. Do this
+inside your webhook handler (or from a polling mechanism if the webhook hasn't arrived yet).
 
 ```javascript
 const d = await verify.sessions.decision(event.sessionId);
@@ -191,17 +174,6 @@ if (credential?.status === "failed") {
   // e.g. "License belongs to a different name"
 }
 ```
-
-</Tabs.Tab>
-<Tabs.Tab>
-
-```bash
-curl https://idp.valyd.work/api/v2/session/ses_…/decision \
-  -H "X-API-Key: $VALYD_API_KEY"
-```
-
-</Tabs.Tab>
-</Tabs>
 
 </Steps>
 
@@ -230,12 +202,12 @@ curl https://idp.valyd.work/api/v2/session/ses_…/decision \
 **Trusting `?status=` as final**
 
 - **Cause:** Reading `req.query.status` on the redirect callback and gating access on it.
-- **Fix:** Always confirm the outcome via the webhook or the decision API. The query param is a UX hint only.
+- **Fix:** Always confirm the outcome via the webhook or the decision call. The query param is a UX hint only.
 
-**401 on session create**
+**Unauthorized on session create**
 
-- **Cause:** `X-API-Key` is missing, wrong, or being sent from the browser.
-- **Fix:** Keep the API key server-side only. Confirm the key is the App API key, not a different credential type.
+- **Cause:** The SDK app key is missing, wrong, or being used from the browser.
+- **Fix:** Keep the app key server-side only. Confirm it is the app's Verify key, not a different credential type, and that the session carries a valid `valydAccessToken`.
 
 **Webhook not received**
 

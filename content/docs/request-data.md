@@ -200,5 +200,5 @@ curl https://idp.valyd.work/api/auth/attribute-request/<request_id>/result \
 - Proofs already granted at login: `valyd.auth.getUserInfo(token)`, `getLicenses(token)`,
   `getVerifications(token)`.
 - Run a verification check for the signed-in user (KYC, liveness, face, license) on a
-  [Managed by Valyd](/verifications/managed) session with their token: `valyd.verify.*` — returns a
+  [Reusable Verification](/verifications) session with their token: `valyd.verify.*` — returns a
   proof, not raw data.

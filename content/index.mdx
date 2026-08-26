@@ -1,6 +1,6 @@
 ---
 title: Valyd Developer Docs
-description: 'Developer documentation for Valyd: Login with Valyd (OAuth 2.0 / OIDC), the identity Verification APIs (KYC, liveness, face match, license), and MCP for AI agents.'
+description: 'Developer documentation for Valyd: the Unique Human API (liveness + uniqueness) and Reusable Verification (Connect with Valyd, verified data, workflows), plus MCP for AI agents.'
 ---
 
 import { Cards } from 'nextra/components'
@@ -9,16 +9,13 @@ import {
   Hero,
   Section,
   Steps,
-  Matrix,
   Resources,
   SupportBand
 } from '@/components/home'
 import {
   KeyRound,
   ScanFace,
-  Sparkles,
   Rocket,
-  Signpost,
   ShieldCheck,
   Users,
   Play,
@@ -26,21 +23,21 @@ import {
   AlertTriangle,
   Braces,
   FileCheck,
-  Server
+  Server,
+  Zap
 } from 'lucide-react'
 
 <div className="vd-page">
 
 <HeroGrid>
   <Hero
-    title="We verify people. You just ask if they're verified."
-    primary={{ href: '/docs/introduction', label: 'Start here' }}
-    secondary={{ href: '/docs/choose', label: 'Choose your integration' }}
+    title="Verify humans. Reuse identity."
+    primary={{ href: '/verifications/standalone', label: 'Use the Unique Human API' }}
+    secondary={{ href: '/verifications', label: 'Build with Reusable Verification' }}
   >
-    Valyd runs identity checks — KYC, liveness, face match, age, and professional licenses — and
-    saves each result to the person's Valyd ID, reusable everywhere they sign in. Three ways to use
-    it: run checks from your **backend**, let us **host** the capture flow, or let people **sign in**
-    and reuse proofs they already hold.
+    Valyd gives developers two straightforward ways to add trusted human verification: check that
+    someone is a **live, unique human** with a quick redirect to Valyd's verification page, or let
+    users **connect their Valyd identity** and reuse verified information — running any extra checks your app needs.
   </Hero>
   <div className="vd-rise max-lg:hidden">
     <div className="rounded-(--vd-radius) border border-(--vd-primary-border) bg-gradient-to-br from-(--vd-primary-soft) to-transparent p-6">
@@ -63,61 +60,64 @@ import {
 </HeroGrid>
 
 <Section
-  title="What do you want to build?"
-  sub="Pick a goal — each takes you straight to its guide."
+  title="Two products"
+  sub="Pick the outcome you need — each card takes you straight to working code."
   index={1}
 >
   <Cards>
-    <Cards.Card icon={<ScanFace />} title="Verify someone" href="/verifications/quickstart" arrow>
-      Run KYC, liveness, face, age, or license checks — hosted page or direct API.
+    <Cards.Card icon={<Zap />} title="Unique Human API" href="/verifications/standalone" arrow>
+      Determine whether someone is live and unique with your API key — start a session, redirect to
+      Valyd's verification page, read the verdict. No user accounts.
     </Cards.Card>
-    <Cards.Card icon={<ShieldCheck />} title="Reuse verified identity" href="/verifications/managed" arrow>
-      Let verified users skip re-verification — read the proofs their Valyd ID already holds.
+    <Cards.Card icon={<ShieldCheck />} title="Reusable Verification" href="/verifications" arrow>
+      Users connect their Valyd identity, share verified information they already hold, and complete
+      any additional checks your app requires — KYC, licenses, face match, and more.
     </Cards.Card>
-    <Cards.Card icon={<KeyRound />} title="Add “Sign in with Valyd”" href="/docs" arrow>
-      A two-line button gives your app verified sign-in.
+  </Cards>
+</Section>
+
+<Section
+  title="Common tasks"
+  index={1}
+>
+  <Cards>
+    <Cards.Card icon={<ScanFace />} title="Check liveness" href="/verifications/standalone/antispoof" arrow>
+      Is this a live human in front of the camera? Valyd captures and scores it; the verdict comes back to you.
     </Cards.Card>
-    <Cards.Card icon={<Rocket />} title="Pick a quickstart" href="/docs/quickstarts" arrow>
-      Node, Next.js, Python, PHP, or plain cURL — a working login in minutes.
+    <Cards.Card icon={<KeyRound />} title="Connect with Valyd" href="/docs/authentication" arrow>
+      Standard OpenID Connect — a two-line button connects a user's verified identity (and can
+      double as sign-in).
+    </Cards.Card>
+    <Cards.Card icon={<Rocket />} title="Run a verification workflow" href="/verifications/quickstart" arrow>
+      Configure the checks your app needs, start a session, read the decision.
+    </Cards.Card>
+    <Cards.Card icon={<Users />} title="Organizations & teams" href="/docs/organizations" arrow>
+      Invite teammates with roles, share apps, and bill one account.
     </Cards.Card>
     <Cards.Card icon={<Play />} title="Try it live" href="/sandbox" arrow>
       The API Playground runs the real flow against demo users.
     </Cards.Card>
-    <Cards.Card icon={<Sparkles />} title="Build with AI agents" href="/ai" arrow>
+    <Cards.Card icon={<Bot />} title="Build with AI agents" href="/ai" arrow>
       The Valyd MCP server turns verification into agent tools.
     </Cards.Card>
   </Cards>
 </Section>
 
 <Section
-  title="Two ways to verify"
-  sub="Managed by Valyd — a signed-in user's hosted session, every check, proofs saved to their Valyd ID. Or Verify Fresh — no login, liveness + uniqueness only, the result returns to you. Pick a lane."
-  index={1}
->
-  <Matrix />
-</Section>
-
-<Section
   title="Get running in 3 steps"
-  sub="Start from the result you need. Add Login with Valyd only when your app needs the user's account."
+  sub="Create an app, copy your credentials, call the API — start from the result you need."
   index={1}
 >
   <Steps />
 </Section>
 
-<Section title="Common tasks" index={1}>
+<Section title="Going deeper" index={1}>
   <Cards>
-    <Cards.Card icon={<Signpost />} title="Choose your integration" href="/docs/choose" arrow>
-      Hosted, standalone, or Login? A two-question decision tree.
-    </Cards.Card>
-    <Cards.Card icon={<ShieldCheck />} title="Ship hosted KYC" href="/verify/ship-hosted-kyc" arrow>
-      End-to-end recipe: session, redirect, webhook, decision.
-    </Cards.Card>
     <Cards.Card icon={<Braces />} title="API reference" href="/docs/endpoints" arrow>
-      Every endpoint, request, and response — the account and verification APIs.
+      Every endpoint, request, and response.
     </Cards.Card>
-    <Cards.Card icon={<Users />} title="Organizations & teams" href="/docs/organizations" arrow>
-      Invite teammates with roles, share apps, and bill one account.
+    <Cards.Card icon={<Rocket />} title="Quickstarts" href="/docs/quickstarts" arrow>
+      Node, Next.js, Python, PHP, or raw HTTP — working code in minutes.
     </Cards.Card>
     <Cards.Card icon={<AlertTriangle />} title="Errors & troubleshooting" href="/docs/errors" arrow>
       Error envelope, common causes, and fixes.
@@ -155,7 +155,7 @@ import {
     <Bot className="h-5 w-5 shrink-0 text-(--vd-primary)" aria-hidden />
     <span className="text-sm text-slate-600 dark:text-slate-300">
       <b className="text-slate-800 dark:text-slate-100">Agent integration guide</b> — the decision flow your
-      agent follows to pick an integration and call the API. The full{' '}
+      agent follows to pick a product and call the API. The full{' '}
       <span className="font-mono text-(--vd-primary)">llms.txt</span> index is in the panel at the top.
     </span>
     <span className="ml-auto shrink-0 text-sm font-semibold text-(--vd-primary)">Open →</span>

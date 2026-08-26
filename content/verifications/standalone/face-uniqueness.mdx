@@ -1,69 +1,72 @@
-# Face uniqueness (dedup)
+---
+product: valyd-verify
+sdk_min_version: 1.10.3
+billable: true
+pii_mode: standalone
+human_setup_required: true
+source_of_truth: sdk
+---
 
-`POST /api/v2/face-uniqueness` — one face = one Valyd uuid. Enrolls or matches a selfie
-against the global gallery and returns the stable `valyd_uuid` plus whether it was newly
-registered. Accepts a single `image`/`selfie` (single-frame liveness gate) or `frames[]`
-(full live pipeline gate).
+# Uniqueness
 
-**Method:** POST · **Full URL:** `https://idp.valyd.work/api/v2/face-uniqueness` · **Auth:** `X-API-Key`
+One face = one identity — matches the captured face against the Valyd face registry for sybil and
+duplicate-account detection, as part of the [Unique Human API](/verifications/standalone).
 
-**Request:**
+> 🔑 **Auth:** App API key + a workflow with the face-uniqueness check · 👤 **User account:** none · 💾 **Result:** returned to your system; the face maps to a stable `valyd_uuid`
 
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
+## How it works
+
+You create a session for a workflow containing the face-uniqueness check and redirect the person
+to Valyd's verification page. The page captures a live burst, enrolls or matches the face against
+the registry, and the decision returns a stable `valyd_uuid` plus whether it was newly
+registered. The same face resolves to the same uuid on every run, so you can detect a person
+opening a second account. The biometric is stored as an irreversible vector encrypted with Valyd
+— never as an image — and is never exposed through any API.
+
+## Run it
 
 ```javascript
-import { VerifyClient, readImage } from "@valyd/sdk";
+import { VerifyClient } from "@valyd/sdk";
 const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY });
 
-// single-click mode: one selfie (passive liveness gate)…
-const { check } = await verify.standalone.faceUniqueness({
-  selfie: readImage("./selfie.jpg"),
-  externalRef: "user-4812", // optional — your own reference, stored on the enrollment link
+const session = await verify.sessions.create({
+  workflowId:  process.env.VALYD_WORKFLOW_ID,  // a workflow with the face-uniqueness check
+  redirectUrl: "https://yourapp.com/checked",
+  vendorData:  "user-123",
 });
-// …or live mode: frames: [f1, f2, f3] (3–8 burst stills, full live pipeline gate)
-// strict projects: also pass challengeId from verify.standalone.antispoofChallenge()
-//   — see /verifications/standalone/antispoof#gesture-challenge
-
-console.log(check.data.valyd_uuid, check.data.registered); // "new" | "existing"
+// → redirect the person's browser to session.url
 ```
 
-</Tabs.Tab>
-<Tabs.Tab>
+Pair it with [Liveness](/verifications/standalone/antispoof) in the same workflow so only a
+proven-live face is matched against the registry.
 
-```bash
-curl -X POST https://idp.valyd.work/api/v2/face-uniqueness \
-  -H "X-API-Key: $VALYD_API_KEY" \
-  -F "selfie=@./selfie.jpg"
-```
-
-</Tabs.Tab>
-</Tabs>
-
-**Expected output** (`check.data`):
-
-```json
-{ "valyd_uuid": "valyd_8f2…", "registered": "existing" }
-```
-
-**Unlink:** `DELETE /api/v2/face-uniqueness/{valyd_uuid}` removes a face from the gallery
-(e.g. to clear test data):
-
-<Tabs items={['SDK', 'cURL']} storageKey="valyd-lang">
-<Tabs.Tab>
+## Result
 
 ```javascript
-await verify.standalone.faceUniquenessUnlink("valyd_8f2…");
-// → { valyd_uuid, unlinked, deleted } — deleted: true when no project links remain
+const decision = await verify.sessions.decision(session.sessionId);
+// decision.status: "APPROVED" | "DECLINED" | "IN_REVIEW"
+
+// the face_uniqueness check's data:
+// { valyd_uuid: "valyd_8f2…", registered: "existing" }
+// registered: "new" the first time a face is seen, "existing" afterwards
 ```
 
-</Tabs.Tab>
-<Tabs.Tab>
+Store the `valyd_uuid` against your own user record. A later session that resolves to an already
+seen uuid is the same human — your policy decides what happens next.
 
-```bash
-curl -X DELETE https://idp.valyd.work/api/v2/face-uniqueness/valyd_8f2… \
-  -H "X-API-Key: $VALYD_API_KEY"
+## Deleting a face (GDPR)
+
+Unlink a face your project no longer needs:
+
+```javascript
+const res = await verify.standalone.faceUniquenessUnlink(valydUuid);
+// res.unlinked: true; res.deleted: true when no remaining project (and no Valyd account) knows the face
 ```
 
-</Tabs.Tab>
-</Tabs>
+## Next
+
+- **[Liveness](/verifications/standalone/antispoof)** — the anti-spoof half of the Unique Human
+  API.
+- Uniqueness bound to a connected user's account runs inside a
+  [Reusable Verification](/verifications) workflow — see the
+  [checks reference](/verifications/types).

@@ -1,19 +1,14 @@
 ---
-title: Full OpenAPI spec — Verification API
-description: Machine-readable OpenAPI 3.1 specification for the Valyd Verification API.
+title: Verification SDK
+description: Verification runs through the Valyd SDK — create a session, send the user to Valyd's verification page, read the result back.
 ---
 
-# Full OpenAPI spec — Verification API
+# Verification SDK
 
-The complete, machine-readable OpenAPI 3.1 specification for the Verification API — hosted
-sessions, core standalone checks, credentials, workflows, and the HMAC-SHA256 webhook schema.
+Valyd verification runs **through the SDK** — there is no raw endpoint surface to
+integrate against. Install the SDK, create a verification session, send the user to Valyd's
+verification page, and read the result back.
 
-- **Download / fetch:** [`/openapi/valyd-verify.json`](/openapi/valyd-verify.json)
-
-```bash
-curl -sL https://docs.valyd.work/openapi/valyd-verify.json
-```
-
-For the human-readable endpoint list — every call, request format, and the standard response
-envelope — see the [API reference](/verifications/api-reference) page. Webhook signature
-verification is covered in [Webhooks](/verifications/webhooks).
+- **Node SDK reference** — [Node SDK](/verifications/sdk)
+- **The flow, end to end** — [Reusable Verification](/verifications)
+- **Results & webhooks** — [Results & decisions](/verifications/statuses) · [Webhooks](/verifications/webhooks)

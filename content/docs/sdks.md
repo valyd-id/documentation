@@ -6,7 +6,7 @@ discovery document.
 
 ## @valyd/sdk — Node.js (official)
 
-The one package for both products: `valyd.auth` (Login with Valyd — OIDC transaction, PKCE,
+The one package for both products: `valyd.auth` (Connect with Valyd — OIDC transaction, PKCE,
 verified ID tokens) and `valyd.verify` (verification sessions, checks, webhooks).
 
 ```bash

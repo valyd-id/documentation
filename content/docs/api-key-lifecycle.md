@@ -8,7 +8,7 @@ not stated in these docs is available from support — contact **support@valyd.i
 ## Issuance
 
 - One app in the Developer Portal carries both identities: an OAuth `client_id` /
-  `client_secret` for **Login with Valyd**, and a Verify **App API key** (prefix `vrf_…`)
+  `client_secret` for **Connect with Valyd**, and a Verify **App API key** (prefix `vrf_…`)
   for the verification APIs.
 - **API keys are created by a human in the Developer Portal — never via API.**
 - The key is **shown once at creation**. Copy it immediately and store it server-side.

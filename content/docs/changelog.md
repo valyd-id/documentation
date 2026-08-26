@@ -25,9 +25,8 @@
   also accept `challengeId` on `faceUniqueness()`).
 - **Added (SDK):** optional `idempotencyKey` on every billable standalone check — sent as the
   `Idempotency-Key` header so a network retry can never double-charge or double-run a check.
-- **Docs:** [Standalone checks](/verifications/standalone) split into per-endpoint pages, SDK
-  call first; every raw request now lives on one page — [Raw HTTP (cURL)](/verifications/standalone/http) —
-  for languages without an SDK.
+- **Docs:** [Standalone checks](/verifications/standalone) split into per-check pages, SDK call
+  first.
 
 ## v1.10.1 — Secure OIDC transaction (2026-08-18)
 

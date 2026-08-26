@@ -1,20 +1,19 @@
-# Hosted verification flow
+# Verification session flow
 
-> 📄 **This page moved.** Hosted verification is now documented in one canonical place:
-> **[Hosted verification](/verifications/hosted)**. This stub stays so old links keep working.
+> 📄 **This page moved.** Running a verification session is now documented in one canonical
+> place: **[Run a verification](/verifications/quickstart)**. This stub stays so old links keep
+> working.
 
-**Hosted verification** runs a KYC or license check with **no UI to build**: your backend creates
-a session, you send the person to Valyd's capture page, and the result comes back as a signed
-webhook plus an authoritative decision API. This is the **Hosted** delivery mode — Valyd owns the
-capture UX (camera, retries, anti-spoofing). Delivery is a separate axis from data ownership:
-include the signed-in user's `valyd_access_token` when creating the session and passed proofs save
-to their Valyd ID ([Reusable Identity](/verifications/managed)); omit it and the same session runs
-as a one-off standalone check.
+A **verification session** runs the checks your workflow defines with **no UI to build**: your
+backend calls `verify.sessions.create({ workflowId, valydAccessToken, redirectUrl })`, you send
+the person to Valyd's verification page, and the result comes back as a signed webhook plus an
+authoritative decision API. Valyd owns the capture UX (camera, retries, anti-spoofing), and
+passed proofs save to the connected user's Valyd ID — reusable next time.
 
 ## Read the canonical guide
 
-- **Hosted verification** (full guide — SDK code, webhooks, decision reading, statuses): [`/verifications/hosted`](/verifications/hosted)
-- Save results to the user's account instead: [Verify & save a new proof](/verifications/managed)
+- **Run a verification** (full guide — SDK code, webhooks, decision reading, statuses): [`/verifications/quickstart`](/verifications/quickstart)
+- The full journey around it: [Reusable Verification](/verifications)
 - Pick the checks a session runs: [Workflows](/verifications/workflows)
 - What each status means: [Decisions & statuses](/verifications/statuses)
-- Run liveness / uniqueness without a login (hosted or direct API): [Verify Fresh](/verifications/standalone)
+- Liveness / uniqueness with an API key alone: [Unique Human API](/verifications/standalone)

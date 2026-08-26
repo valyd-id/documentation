@@ -11,7 +11,7 @@ Every environment exposes the same three hosts under a different domain:
 | Role | Development | What it is |
 | --- | --- | --- |
 | **API** (`idp`) | `https://idp.valyd.work` | The Valyd API your app calls — verification, the account APIs, and sign-in (OAuth 2.0 / OIDC). |
-| **Developer Portal** (`dev`) | `https://dev.valyd.work` | Where a human creates apps, gets keys, and composes hosted workflows. No API automates app creation. |
+| **Developer Portal** (`dev`) | `https://dev.valyd.work` | Where a human creates apps, gets keys, and composes verification workflows. No API automates app creation. |
 | **Docs** (`docs`) | `https://docs.valyd.work` | These docs, the [API Playground](/sandbox), and the live demos. |
 
 The production and testing environments mirror this layout on their own domains. Point your
@@ -26,16 +26,16 @@ need depends on your integration:
 
 | Credential | Format | Issued for | Used as |
 | --- | --- | --- | --- |
-| Client ID | `9357c59b…` | Login with Valyd (OAuth 2.0 / OIDC) | `client_id` in the authorize + token requests |
-| Client Secret | `sk_live_…` (shown once) | Login with Valyd | `client_secret` in the server-side token exchange |
+| Client ID | `9357c59b…` | Connect with Valyd (OAuth 2.0 / OIDC) | `client_id` in the authorize + token requests |
+| Client Secret | `sk_live_…` (shown once) | Connect with Valyd | `client_secret` in the server-side token exchange |
 | App API key | `vrf_…` (shown once) | Verification API | the `X-API-Key` header on every verification call |
-| Webhook signing secret | `whsec_…` | Hosted verification | verifying the HMAC signature on incoming webhooks |
-| Workflow ID | `wf_…` | Hosted verification | the `workflow_id` you pass when creating a session |
+| Webhook signing secret | `whsec_…` | Verification sessions | verifying the HMAC signature on incoming webhooks |
+| Workflow ID | `wf_…` | Verification sessions | the `workflow_id` you pass when creating a session |
 
-Login integrations hold the `client_id` + `client_secret`; Verification integrations hold the App
-API key (plus a workflow ID and webhook secret for the hosted flow). The two credential families
-are independent — the App API key never authenticates login, and `client_secret` never
-authenticates verification calls.
+Connect with Valyd integrations hold the `client_id` + `client_secret`; verification integrations
+hold the App API key (plus a workflow ID and webhook secret for verification sessions). The two
+credential families are independent — the App API key never authenticates Connect, and
+`client_secret` never authenticates verification calls.
 
 ## Environment variables used across the quickstarts
 
@@ -47,15 +47,15 @@ code:
 # .env (server-side only)
 VALYD_IDP_URL=https://idp.valyd.work      # the API host for THIS environment
 
-# Login with Valyd (OAuth 2.0 / OIDC)
+# Connect with Valyd (OAuth 2.0 / OIDC)
 VALYD_CLIENT_ID=9357c59bc1794b4c9efe8823e5878147
 VALYD_CLIENT_SECRET=sk_live_a1b2c3d4e5f6g7h8i9j0...
 VALYD_REDIRECT_URI=https://yourapp.com/callback   # exact registered callback, no trailing slash
 
 # Verification API (independent of the two OIDC values above)
 VALYD_API_KEY=vrf_...
-VALYD_WEBHOOK_SECRET=whsec_...            # hosted flow only
-VALYD_WORKFLOW_ID=wf_...                  # hosted flow only
+VALYD_WEBHOOK_SECRET=whsec_...            # verification sessions only
+VALYD_WORKFLOW_ID=wf_...                  # verification sessions only
 ```
 
 Setting `VALYD_IDP_URL` per environment is how the same code deploys everywhere: change the host,
@@ -71,6 +71,6 @@ starts with.
 
 ## Related
 
-- [Create an app and choose the right credential](/docs/create-project) — the portal walkthrough.
+- [Apps & API keys](/docs/create-project) — the portal walkthrough.
 - [Testing your integration](/docs/testing) — real checks, the welcome credit, and webhook testing.
 - [API key lifecycle](/docs/api-key-lifecycle) — rotating and revoking the App API key.

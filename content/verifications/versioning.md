@@ -1,10 +1,13 @@
 # Versioning & deprecation
 
+Verification is consumed through the `@valyd/sdk` package — you pin the **SDK version**, and the
+SDK tracks the current verification contract for you.
+
 ## What is NOT a breaking change (may ship any time)
 
 These are **additive** and safe — your integration must tolerate them:
 
-- Adding a new endpoint, a new optional request field, or a new workflow feature/check.
+- Adding a new SDK method, a new optional parameter, or a new workflow feature/check.
 - Adding a new field to a response object (e.g. a new key inside `check.data`).
 - Adding a new enum value (a new `check.status`, a new failure `signal`, a new event `type`).
 - Making a previously-required field optional.
@@ -14,30 +17,31 @@ These are **additive** and safe — your integration must tolerate them:
 value — treat unknown verification states as **not approved** until your application explicitly
 supports them.
 
-## What IS a breaking change (gets a new version)
+## What IS a breaking change (gets a new major SDK version)
 
-- Removing or renaming an endpoint, request field, or response field.
+- Removing or renaming an SDK method, parameter, or response field.
 - Changing a field's type or the shape of a response.
-- Making an optional request field required, or tightening validation.
+- Making an optional parameter required, or tightening validation.
 - Removing an enum value, or changing the meaning of an existing one.
 - Changing authentication or error semantics.
 
-Breaking changes are **never** made to `/api/v2` in place. They ship under a new path version
-(`/api/v3`). `v2` continues to work.
+Breaking changes are **never** made to a released SDK major in place. They ship under a new major
+version; the pin you already have keeps working.
 
 ## Deprecation policy
 
-When a version (or a specific field/endpoint) is deprecated:
+When a method or field is deprecated:
 
 1. It is announced in the [Changelog](/docs/changelog) and marked deprecated in this documentation.
 2. It keeps working for a **minimum 6-month** migration window after the announcement.
-3. Responses may include a `Deprecation` header pointing at the replacement.
+3. The SDK surfaces a deprecation notice pointing at the replacement.
 
-You never have to migrate on our schedule inside a major version — pin to `/api/v2` and you are stable
-until we announce `v2`'s deprecation with the window above.
+You never have to migrate on our schedule inside a major version — pin the SDK (see below) and you
+are stable until we announce that major's deprecation with the window above.
 
 ## Recommended practices
 
-- Pin the version in your base URL (`/api/v2`) explicitly; don't rely on an unversioned alias.
+- Pin the SDK with a caret range — `npm i @valyd/sdk@^1.10.4` — so you get compatible patch and
+  minor updates without an unexpected major bump.
 - Subscribe to the [Changelog](/docs/changelog) for additive changes and any deprecation notices.
 - Handle unknown enum values and extra fields gracefully (see "build defensively" above).

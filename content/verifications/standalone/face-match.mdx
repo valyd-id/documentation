@@ -1,10 +1,5 @@
-# Face Match
+# Face match (moved)
 
-This check now runs through **Managed by Valyd** — [Verify & save a proof](/verifications/managed).
-
-Face match is no longer a self-serve direct call. Run it on a signed-in user's hosted
-verification session, where the selfie is matched against their stored face vector and your app
-receives the decision — never the raw images.
-
-The `POST /api/v2/face-match` endpoint still exists in the
-[Verification OpenAPI](/verifications/api) for existing integrations.
+> 📄 **This page is retired.** Face match is not offered as a direct public API — it runs as a
+> check inside a [Reusable Verification](/verifications) workflow, matching a selfie against the
+> connected account's stored face vector. See the [checks reference](/verifications/types).

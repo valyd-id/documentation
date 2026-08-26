@@ -1,17 +1,35 @@
 ---
 title: Verify a professional license
-description: Professional-license verification now runs through Managed by Valyd — a signed-in user's hosted verification session — not a self-serve direct API call.
+description: Professional-license verification runs as a workflow check in Reusable Verification — a connected user's verification session via the SDK, not its own public API.
 ---
 
 # Verify a professional license
 
-Professional-license verification is no longer a self-serve direct API call. It now runs through
-**[Managed by Valyd](/verifications/managed)** — the licensed professional signs in with Valyd, you
-run a hosted verification session with their `valyd_access_token`, and the verified license badge
-saves to their Valyd ID (reusable, no re-check next time). The name is taken from their verified
-account, so a holder can't be checked against someone else's license.
+Professional-license verification is not its own public API — it is a workflow check in
+**[Reusable Verification](/verifications)**. The licensed professional
+[connects with Valyd](/docs/authentication), you open a verification session with their
+`valyd_access_token` via the SDK, and the verified license badge saves to their Valyd ID
+(reusable, no re-check next time). The name is taken from their verified account, so a holder
+can't be checked against someone else's license.
 
-- **How to run it:** [Managed by Valyd](/verifications/managed) · [Hosted verification](/verifications/hosted)
-- **Which checks & availability:** [Verification types](/verifications/types)
-- The `POST /api/v2/credential-verification` endpoint still exists in the
-  [Verification OpenAPI](/verifications/api) for existing integrations.
+```javascript
+import { VerifyClient } from "@valyd/sdk";
+
+const verify = new VerifyClient({ apiKey: process.env.VALYD_API_KEY! });
+
+// The professional has connected with Valyd — open a license session on their token.
+const session = await verify.sessions.create({
+  workflowId:       process.env.VALYD_LICENSE_WORKFLOW_ID!, // "License Verification"
+  valydAccessToken: user.valydAccessToken,
+  redirectUrl:      `${process.env.APP_URL}/verify/callback`,
+});
+
+// Send the user to session.url — Valyd's verification page hosts the capture.
+// Then read the authoritative result:
+const decision = await verify.sessions.decision(session.sessionId);
+// decision.checks → the "credential" check carries the license status
+```
+
+- **How to run it:** [Reusable Verification](/verifications) · [Run a verification](/verifications/quickstart)
+- **Which checks & availability:** [Checks reference](/verifications/types)
+- **Compose the workflow:** in the [Developer Portal](https://dev.valyd.work) → Workflows.

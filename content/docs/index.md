@@ -9,11 +9,13 @@ human_setup_required: true
 source_of_truth: openapi
 ---
 
-# Login with Valyd
+# Connect with Valyd
 
-> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 Standard OpenID Connect · 📖 **After login:** read the user's account with a Bearer access token
+> 🔑 **Auth:** `client_id` + `client_secret` (server-side) · 👤 Standard OpenID Connect · 📖 **After connecting:** read the user's account with a Bearer access token
 
-Users sign in with their verified Valyd identity — you get their profile, licenses, and
+**Connect with Valyd** establishes the user's reusable Valyd identity in your app — the first step
+of [Reusable Verification](/verifications). It is built on **OpenID Connect (OIDC)**, so it can
+also serve as your app's sign-in. The user connects, and you get their profile, licenses, and
 verification proofs. Add the button, done:
 
 ```html
@@ -38,7 +40,7 @@ sequenceDiagram
     participant U as User
     participant App as Your app
     participant V as Valyd (idp.valyd.work)
-    U->>App: Click "Sign in with Valyd"
+    U->>App: Click "Connect with Valyd"
     App->>V: authorize
     V->>U: Face login + consent
     V-->>App: Callback with code
@@ -83,7 +85,7 @@ app.get("/auth/valyd/callback", async (req, res) => {
 Done. See the [complete example](/docs/quickstart/node), or plug in
 [your own OIDC library](/docs/oidc) instead.
 
-## The user is signed in — see what they already have
+## The user is connected — see what they already have
 
 | Endpoint | What it reads from the user's account |
 | --- | --- |
@@ -95,9 +97,9 @@ These read what the account already holds, gated by the scopes the user approved
 attributes (DOB, document data) go through the explicit
 [consent flow](/docs/request-data).
 
-KYC not done yet? License missing? Run the check **for the user** — a
-[hosted page or a direct API call](/verifications/managed), with their `valyd_access_token`
-riding along — and the passed proof lands on their Valyd ID. Next time you just read it here.
+KYC not done yet? License missing? Run your [workflow](/verifications/workflows) **for the
+user** — [create a session](/verifications/quickstart) with their `valyd_access_token` — and the
+passed proof lands on their Valyd ID. Next time you just read it here.
 
 ## Security rules
 

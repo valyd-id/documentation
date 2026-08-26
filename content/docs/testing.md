@@ -5,7 +5,7 @@
 
 ## Testing login
 
-**Login with Valyd is always free** — signing users in, the OIDC flow, and reading account data
+**Connect with Valyd is always free** — connecting users, the OIDC flow, and reading account data
 never cost anything, in development or production. Only verification checks are billed.
 
 The [Try the APIs](/sandbox) playground runs the full OAuth 2.0 / OIDC flow against **demo users**
@@ -29,8 +29,9 @@ administrator and show up in your Transactions ledger.
 
 ## Verification checks are real (and billed)
 
-There are no simulated verification results. When you call
-[`/api/v2/liveness`](/verifications/standalone), a license lookup, or any other check, the real
+There are no simulated verification results. When you call a
+[Unique Human API](/verifications/standalone) endpoint, or a workflow runs a license lookup or
+any other check, the real
 pipeline runs — against the real face models and the real license registries — and the call is
 [billed against your app](/verifications/api-reference). That's deliberate: a decision you can
 trust in production is the same decision you saw in testing.
@@ -76,7 +77,7 @@ verifications. Two extra modes exercise your handler's defenses:
 
 The result (status code, latency, response excerpt) is shown inline in the portal.
 
-**Real deliveries.** Run a real hosted session to a terminal state and confirm your handler
+**Real deliveries.** Run a real verification session to a terminal state and confirm your handler
 returns 200. Every delivery attempt (payload, headers, receiver response) is recorded under
 **Recent webhook deliveries**, with a **Resend** button to replay one after you fix your handler.
 See [Webhooks](/verifications/webhooks).

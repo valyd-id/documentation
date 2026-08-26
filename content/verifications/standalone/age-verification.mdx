@@ -1,10 +1,5 @@
-# Age Verification
+# Age verification (moved)
 
-This check now runs through **Managed by Valyd** — [Verify & save a proof](/verifications/managed).
-
-Age verification is no longer a self-serve direct call. Run it on a signed-in user's hosted
-verification session: the age bands are computed from the account's KYC-verified date of birth and
-returned to your app as a proof, while the raw DOB stays encrypted with Valyd.
-
-The `POST /api/v2/age-verification` endpoint still exists in the
-[Verification OpenAPI](/verifications/api) for existing integrations.
+> 📄 **This page is retired.** Age verification is not offered as a direct public API — age bands
+> derive from the connected account's KYC-verified date of birth, as a check inside a
+> [Reusable Verification](/verifications) workflow. See the [checks reference](/verifications/types).

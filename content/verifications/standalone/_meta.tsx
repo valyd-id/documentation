@@ -1,21 +1,25 @@
 import type { MetaRecord } from 'nextra'
 
-// Verify Fresh — the ONLY non-account direct checks (liveness & uniqueness family). Every other
-// check (ID/KYC, face match, age, location, credential, KYC+credential) now runs through Managed
-// by Valyd (hosted, all checks); those pages stay reachable as hidden redirect stubs.
+// UNIQUE HUMAN API — the API-key product: is this a live, unique human?
+//   • Liveness   → verify.standalone.antispoof (the antispoof page)
+//   • Uniqueness → verify.standalone.faceUniqueness
+// Every other file in this folder documents a capability that is NOT offered as a direct
+// public API — those run only as checks inside a Reusable Verification workflow. Their pages
+// are paused: hidden stubs kept reachable by URL for inbound links.
 export default {
   index: { title: 'Overview' },
-  liveness: { title: 'Liveness' },
-  antispoof: { title: 'Anti-spoof' },
-  'face-uniqueness': { title: 'Face uniqueness' },
-  http: { title: 'Raw HTTP (cURL)' },
-  errors: { title: 'Common errors' },
+  antispoof: { title: 'Liveness' },
+  'face-uniqueness': { title: 'Uniqueness' },
 
-  // Removed from self-serve — hidden from nav, reachable by URL (redirect stubs → Managed by Valyd).
+  // Paused APIs → capabilities documented as workflow checks (/verifications/types).
+  liveness: { display: 'hidden' },
   'id-verification': { display: 'hidden' },
   'face-match': { display: 'hidden' },
   'age-verification': { display: 'hidden' },
   location: { display: 'hidden' },
   'credential-verification': { display: 'hidden' },
-  'kyc-credential': { display: 'hidden' }
+  'kyc-credential': { display: 'hidden' },
+
+  // Retired — SDK-only product exposes no raw endpoints; errors live in the SDK/Errors docs.
+  errors: { display: 'hidden' }
 } satisfies MetaRecord

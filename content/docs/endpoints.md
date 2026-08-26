@@ -1,7 +1,8 @@
-# Login API Reference
+# Account API
 
-This page is only for Login with Valyd and reading a signed-in user's account. These endpoints do
-not start KYC or license verification. To run a check—without requiring OIDC login—use the
+This page is only for Connect with Valyd and reading a connected user's account. These endpoints
+do not start any check. To run a check, use a configured workflow — see
+[Reusable Verification](/verifications) and the
 [Verification API reference](/verifications/api-reference).
 
 ## General notes
@@ -14,7 +15,7 @@ not start KYC or license verification. To run a check—without requiring OIDC l
 ## SDK methods (@valyd/sdk 1.10.4)
 
 ### `valyd.auth.createAuthorizationRequest({ scope, redirectUri? })`
-Recommended login entry point. Generates strong `state`, `nonce`, and an S256 PKCE verifier/challenge together. Store the returned transaction server-side and redirect to `transaction.url`.
+Recommended Connect entry point. Generates strong `state`, `nonce`, and an S256 PKCE verifier/challenge together. Store the returned transaction server-side and redirect to `transaction.url`.
 
 ### `valyd.auth.getAuthorizationUrl({ state, nonce, codeChallenge, scope, redirectUri? })`
 Low-level URL builder. `state` is required. Prefer `createAuthorizationRequest()` so PKCE and nonce cannot be forgotten.

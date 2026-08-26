@@ -5,7 +5,7 @@ import { ExternalLink, KeyRound, Play, ShieldCheck } from 'lucide-react'
 import { SANDBOX_BASE_URL } from './constants'
 
 /**
- * Live hosted-verification tester: the developer pastes their own API key +
+ * Live verification-session tester: the developer pastes their own API key +
  * workflow id (and optionally a user's valyd_access_token), we create a real
  * session straight from the browser (the API allows the docs origin) and redirect
  * to the hosted page. The key never touches the docs server.
@@ -89,7 +89,7 @@ export const VerifyPlayground = () => {
         </div>
         <p className="mb-3 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
           Paste your API key and a workflow id, hit <span className="font-medium">Go</span>, and
-          you&apos;re on your own hosted verification page running the full flow. Your key stays in
+          you&apos;re on your own Valyd-hosted capture page running the full flow. Your key stays in
           this browser — the call goes straight to the API.
         </p>
         <p className="mb-4 rounded-lg border border-(--vd-border) bg-gray-50/70 px-3.5 py-2.5 text-xs leading-relaxed text-gray-600 dark:bg-slate-900/50 dark:text-gray-400">
@@ -103,7 +103,7 @@ export const VerifyPlayground = () => {
 
         {cameBack && (
           <div className="mb-4 rounded-lg border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-            <span className="font-semibold">Welcome back — the hosted flow finished.</span> The
+            <span className="font-semibold">Welcome back — the verification finished.</span> The
             redirect is only a hint: read the authoritative result from your webhook or the
             decision endpoint (<code className="font-mono text-[12px]">GET /api/v2/session/&#123;id&#125;/decision</code>).
           </div>
@@ -147,7 +147,7 @@ export const VerifyPlayground = () => {
               autoComplete="off"
               value={accessToken}
               onChange={e => setAccessToken(e.target.value)}
-              placeholder="paste an access token from a Login with Valyd session"
+              placeholder="paste an access token from a Connect with Valyd session"
               className={inputCls}
             />
             <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
@@ -180,7 +180,7 @@ export const VerifyPlayground = () => {
           title={ready ? undefined : 'Paste your API key and workflow id first'}
         >
           <Play className="h-4 w-4" />
-          {busy ? 'Creating session…' : 'Go — open my hosted flow'}
+          {busy ? 'Creating session…' : 'Go — run my verification'}
         </button>
       </section>
 

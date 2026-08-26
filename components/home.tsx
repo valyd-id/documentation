@@ -5,11 +5,8 @@ import {
   ArrowRight,
   BookText,
   Braces,
-  Code2,
   Download,
   FileJson,
-  Globe,
-  KeyRound,
   ScanFace,
   Send,
   Terminal
@@ -157,73 +154,8 @@ export function Section({
   )
 }
 
-/* The two verification lanes — the real mental model, no code. Managed by Valyd (a signed-in
-   user's hosted session → ALL checks, proofs stay on their Valyd ID) vs Verify Fresh (no login →
-   only liveness + uniqueness, the result returns to you). Each card links to its canonical page. */
-const LANES = [
-  {
-    href: '/verifications/managed',
-    Icon: Globe,
-    tag: 'Signed-in user',
-    title: 'Managed by Valyd',
-    blurb:
-      'The user signs in; you run a hosted session with their token. ALL checks — ID/KYC, liveness, face match, age, professional license, uniqueness, location. Passed proofs save to their Valyd ID, and the raw identity data stays encrypted with Valyd.'
-  },
-  {
-    href: '/verifications/standalone',
-    Icon: Code2,
-    tag: 'No login',
-    title: 'Verify Fresh',
-    blurb:
-      'Non-account, no login — only liveness + uniqueness. Run it on a Valyd-hosted page or call the API directly from your backend. The full result returns to your system; nothing is saved to a Valyd account.'
-  }
-] as const
-
-export function Matrix() {
-  return (
-    <div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {LANES.map(({ href, Icon, tag, title, blurb }) => (
-          <a
-            key={href}
-            href={href}
-            className="group flex h-full flex-col rounded-(--vd-radius) border border-(--vd-border) bg-white/60 p-5 no-underline transition-all hover:border-(--vd-primary-border) hover:bg-(--vd-primary-soft) motion-safe:hover:-translate-y-0.5 dark:bg-slate-900/40"
-          >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-(--vd-primary-soft) text-(--vd-primary)">
-                <Icon className="h-5 w-5" aria-hidden />
-              </span>
-              <span className="rounded-full border border-(--vd-border) px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {tag}
-              </span>
-            </div>
-            <span className="flex items-center gap-1.5 text-base font-semibold">
-              {title}
-              <ArrowRight className="h-4 w-4 text-(--vd-primary) transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden />
-            </span>
-            <span className="mt-1.5 text-sm leading-snug text-slate-500 dark:text-slate-400">{blurb}</span>
-          </a>
-        ))}
-      </div>
-      {/* the reuse path: no new check — just read what the account already holds */}
-      <a
-        href="/docs"
-        className="group mt-3 flex items-center gap-3 rounded-(--vd-radius) border border-(--vd-primary-border) bg-(--vd-primary-soft) px-4 py-3 no-underline transition-colors"
-      >
-        <KeyRound className="h-4 w-4 shrink-0 text-(--vd-primary)" aria-hidden />
-        <span className="text-sm text-slate-600 dark:text-slate-300">
-          <b className="text-slate-800 dark:text-slate-100">Already verified elsewhere?</b> Add{' '}
-          <span className="font-semibold text-(--vd-primary)">Login with Valyd</span> and read the proofs a
-          signed-in user already holds — no new check.
-        </span>
-        <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-(--vd-primary) transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden />
-      </a>
-    </div>
-  )
-}
-
-/* Two-column capability panel: Login endpoints + Verification checks.
-   Every value comes from the docs (endpoints page / Standalone checks page / scopes). */
+/* Two-column capability panel: Connect endpoints + verification checks.
+   Every value comes from the docs (endpoints page / verification types page / scopes). */
 const ENDPOINTS = [
   ['GET', '/oidc/authorize', 'Standard OIDC authorization (code + state echo)'],
   ['POST', '/oidc/token', 'Exchange a code or refresh token for tokens'],
@@ -250,7 +182,7 @@ export function Capabilities() {
       <div className="rounded-(--vd-radius) border border-(--vd-border) bg-white/60 p-6 dark:bg-slate-900/40">
         <h3 className="m-0 flex items-center gap-2 text-base font-semibold">
           <Braces className="h-4 w-4 text-(--vd-primary)" aria-hidden />
-          Login with Valyd — the user's account
+          Connect with Valyd — the user's account
         </h3>
         <ul className="m-0 mt-4 list-none space-y-1 p-0">
           {ENDPOINTS.map(([method, path, desc]) => (
@@ -273,7 +205,7 @@ export function Capabilities() {
       <div className="rounded-(--vd-radius) border border-(--vd-border) bg-white/60 p-6 dark:bg-slate-900/40">
         <h3 className="m-0 flex items-center gap-2 text-base font-semibold">
           <ScanFace className="h-4 w-4 text-(--vd-primary)" aria-hidden />
-          Verification API — every check
+          Verification workflows — every check
         </h3>
         <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
           {CHECKS.map(c => (
@@ -286,28 +218,28 @@ export function Capabilities() {
           ))}
         </ul>
         <p className="mb-0 mt-4 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-          Authenticate your backend with an App API key — run them hosted or call REST directly.
-          Add the signed-in user's token and the passed proof saves to their account; without it,
-          the result and the person's identity data return to your system to manage yourself.
+          The Unique Human API needs only your App API key — the result returns to your system and
+          nothing is saved. Reusable Verification runs a configured workflow for a connected user,
+          and passed proofs save to their Valyd ID for reuse.
         </p>
       </div>
     </div>
   )
 }
 
-/* The three integration steps, copy from the original landing page. */
+/* The three integration steps. */
 const STEPS = [
   {
-    title: 'Create an app',
-    body: 'An app gives you both credentials: an API key for verification and OIDC client credentials for sign-in. Never want login? A verification-only project gives you just the key.'
+    title: 'Create an app & copy credentials',
+    body: 'An app in the developer portal gives you an API key for the Unique Human API and OIDC client credentials for Connect with Valyd.'
   },
   {
-    title: 'Pick what you need',
-    body: 'Recommended: sign the user in and verify into their account — you read proofs, Valyd holds their data. API-key-only checks also work; the raw result then lives in your system, yours to manage.'
+    title: 'Call the API or connect the user',
+    body: 'Call the Unique Human API with just your API key, or use Connect with Valyd and run a configured verification workflow for the user.'
   },
   {
-    title: 'Integrate and ship',
-    body: 'Copy the matching quickstart, test with your $100 welcome credit, and go live with the production checklist.'
+    title: 'Read the result or decision',
+    body: 'Unique Human API results return directly to your call. Workflow decisions arrive via statuses and webhooks, with passed proofs saved to the user’s Valyd ID.'
   }
 ] as const
 
@@ -330,7 +262,7 @@ export function Steps() {
 /* Developer resources: every target is a real, served asset or page. */
 const RESOURCES = [
   { href: '/openapi/valyd-id.json', icon: FileJson, label: 'OpenAPI — Valyd ID', desc: 'Machine-readable spec for OIDC + resource endpoints' },
-  { href: '/openapi/valyd-verify.json', icon: FileJson, label: 'OpenAPI — Verify', desc: 'Sessions, standalone checks, webhooks' },
+  { href: '/openapi/valyd-verify.json', icon: FileJson, label: 'OpenAPI — Verify', desc: 'Sessions, Unique Human API, webhooks' },
   { href: '/valyd-postman-collection.json', icon: Send, label: 'Postman collection', desc: 'Ready-to-run Valyd ID requests' },
   { href: '/downloads/valyd-sdk-starter.zip', icon: Download, label: 'SDK starter project', desc: 'Minimal Express app with @valyd/sdk' },
   { href: '/llms.txt', icon: BookText, label: 'llms.txt', desc: 'Agent-readable index of these docs' }

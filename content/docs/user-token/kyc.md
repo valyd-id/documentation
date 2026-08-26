@@ -1,10 +1,11 @@
 # KYC / ID verification
 
-> 🔑 **Auth:** the user's `valyd_access_token`, on a **hosted** session · ✅ Proves: government-ID identity → `id_verified: true` · 🔒 Hosted page only
+> 🔑 **Auth:** the user's `valyd_access_token`, on a verification session · ✅ Proves: government-ID identity → `id_verified: true` · 🔒 Valyd's verification page only
 
-Account-connected KYC runs **only on the hosted page** — the user's identity data is encrypted
-with a key that lives on their device and Valyd's own surface, so an API upload from your
-backend can't fill their vault. The hosted page can; your server never touches the documents:
+Account-connected KYC runs **only on Valyd's verification page** — the user's identity data is
+encrypted with a key that lives on their device and Valyd's own surface, so an API upload from
+your backend can't fill their vault. Valyd's verification page can; your server never touches
+the documents:
 
 ```typescript
 const session = await verify.sessions.create({
@@ -16,7 +17,7 @@ const session = await verify.sessions.create({
 // → webhook: id_verified + proofs — the documents stay with Valyd, encrypted
 ```
 
-**Simplest handoff.** If all you need is "make this signed-in user complete KYC," skip building a
+**Simplest handoff.** If all you need is "make this connected user complete KYC," skip building a
 session and use the redirect helper — it returns a URL to Valyd's account KYC page and brings the
 user back when they're done:
 
@@ -29,12 +30,12 @@ if (valyd.verify.kyc.isRequired(verifications)) {
 }
 ```
 
-> **The hosted handoffs are the only way to establish `id_verified`.** ID/KYC now runs exclusively
-> through **Managed by Valyd** (the hosted handoffs above) — there is no self-serve direct ID/KYC
-> call. The raw document stays encrypted with Valyd; your app receives the reusable `id_verified`
-> proof, never the raw fields.
+> **These handoffs are the only way to establish `id_verified`.** ID/KYC runs exclusively as a
+> **Reusable Verification** workflow check on Valyd's verification page — there is no direct
+> public ID/KYC API. The raw document stays encrypted with Valyd; your app receives the reusable
+> `id_verified` proof, never the raw fields.
 
 Steps their account has already passed are skipped automatically. Once done,
-`id_verified: true` is readable forever via [the account reads](/docs/user-token/account).
+`id_verified: true` is readable forever via [Read verified data](/docs/user-token/account).
 
-Full walkthrough: [Hosted verification](/verifications/hosted) · [Managed by Valyd](/verifications/managed).
+Full walkthrough: [Run a verification](/verifications/quickstart) · [Reusable Verification](/verifications).

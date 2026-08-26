@@ -1,4 +1,4 @@
-# Read the account
+# Read verified data
 
 > 🔑 **Auth:** the user's Bearer `valyd_access_token` · 💸 Free — reads never cost a check · 🔒 Proofs and public data only, never PII
 
@@ -27,8 +27,8 @@ Reads are only half of it — with the same token you can **re-prove who they ar
 match their face before a sensitive action, confirm their location, or re-check a live license.
 See [what the verification APIs let you build](/docs/how-valyd-works#what-the-verification-apis-let-you-build).
 
-Something missing? Run the check on a **[Managed by Valyd](/verifications/managed)** session with the
-user's token — [face match](/verifications/standalone/face-match),
-[liveness](/verifications/standalone/liveness), [license](/verifications/standalone/credential-verification),
-[age](/verifications/standalone/age-verification), [KYC](/docs/user-token/kyc) — or
-[let us host them all](/verifications/hosted). The passed proof saves back to their Valyd ID.
+Something missing? Run a configured **[workflow](/verifications/workflows)** on a
+[Reusable Verification](/verifications) session with the user's token — face match, liveness,
+license, age, location, and [KYC](/docs/user-token/kyc) are all available as workflow checks
+(see the [checks reference](/verifications/types)). The user completes them on Valyd's
+verification page, and the passed proofs save back to their Valyd ID.

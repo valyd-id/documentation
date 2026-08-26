@@ -1,26 +1,30 @@
-// SINGLE SOURCE OF TRUTH for the docs information architecture (second-audit IA).
-// The exact 9-section unified sidebar the owner specified. Every folder's _meta renders these
-// sections in this order (own-folder pages in full detail; other sections as flat href links),
-// so a reader sees the same 9 headings whichever route tree they're in.
+// SINGLE SOURCE OF TRUTH for the docs information architecture.
+// MODULE-SCOPED sidebars: each top-nav tab (Docs / Verify / AI) shows ONLY its own sections.
+// Sections carry a `tab` ('docs' | 'verify' | 'ai'); each folder's _meta renders just its tab's
+// sections. A page whose `home` differs from the tab is referenced by `href`.
 //
-// Consumed by: scripts/gen-nav.mjs (llms.txt index + sitemap), scripts/check-nav-consistency.mjs
-// (fails the build if a nav:true page is missing from a sidebar, or a capability's doc target
-// isn't a canonical page here). The _meta.tsx files stay hand-authored (owner chose a consistency
-// GATE over a generator); this manifest is what the gate validates them against.
+// PRODUCT MODEL (public): exactly TWO products —
+//   • Unique Human API      → API-key calls that answer "is this a live, unique human?"
+//   • Reusable Verification → Connect with Valyd (OIDC) + read verified data + workflows
+// There is no third lane; Connect with Valyd is part of Reusable Verification. The old
+// lane/hosted/standalone/account terminology is retired from the public docs.
 //
-// Fields: title (sidebar label), route, home ('docs'|'verifications'|'ai'|'ext'), icon (lucide),
-// group (optional sub-heading within a section), nav (in a sidebar), llms (in llms.txt index),
-// agentIndex (in the machine corpus), sitemap, noindex, canonical (a canonical content page),
-// status ('active'|'stub'|'draft'), aliases (old routes kept resolvable).
+// Consumed by: scripts/check-nav-consistency.mjs (fails the build if a nav page / stub / secondary
+// / capability doc doesn't resolve). The _meta.tsx files are hand-authored; this manifest is what
+// the gate validates them against.
+//
+// Fields: title, route, home ('docs'|'verifications'|'ai'|'ext'), icon (lucide name, metadata only),
+// group (sub-heading within a section), tab (which navbar tab owns the section).
 
 export const SECTIONS = [
+  // ================= DOCS tab — the platform =================
   {
-    id: 'get-started', label: 'GET STARTED',
+    id: 'get-started', label: 'GET STARTED', tab: 'docs',
     items: [
       { title: 'Overview', route: '/docs/introduction', home: 'docs', icon: 'BookOpen' },
       { title: 'How Valyd works', route: '/docs/how-valyd-works', home: 'docs', icon: 'Sparkles' },
-      { title: 'Choose your integration', route: '/docs/choose', home: 'docs', icon: 'Signpost' },
       { title: 'Create an account', route: '/docs/create-account', home: 'docs', icon: 'UserPlus' },
+      { title: 'Apps & API keys', route: '/docs/create-project', home: 'docs', icon: 'LayoutDashboard' },
       { title: 'Quickstarts', route: '/docs/quickstarts', home: 'docs', icon: 'Rocket' },
       { title: 'Node.js', route: '/docs/quickstart/node', home: 'docs', icon: 'Rocket', group: 'Quickstarts' },
       { title: 'Next.js', route: '/docs/quickstart/nextjs', home: 'docs', icon: 'Rocket', group: 'Quickstarts' },
@@ -30,46 +34,17 @@ export const SECTIONS = [
     ],
   },
   {
-    id: 'login', label: 'LOGIN',
+    id: 'connect', label: 'CONNECT WITH VALYD', tab: 'docs',
     items: [
       { title: 'Overview', route: '/docs', home: 'docs', icon: 'KeyRound' },
-      { title: 'Add Login with Valyd', route: '/docs/authentication', home: 'docs', icon: 'LogIn' },
+      { title: 'Add Connect with Valyd', route: '/docs/authentication', home: 'docs', icon: 'LogIn' },
       { title: 'OIDC integration', route: '/docs/oidc', home: 'docs', icon: 'Fingerprint' },
       { title: 'Scopes & claims', route: '/docs/scopes', home: 'docs', icon: 'Tags' },
-      { title: 'Tokens & login sessions', route: '/docs/tokens', home: 'docs', icon: 'KeyRound' },
+      { title: 'Tokens & sessions', route: '/docs/tokens', home: 'docs', icon: 'KeyRound' },
     ],
   },
   {
-    id: 'reusable', label: 'REUSABLE IDENTITY',
-    items: [
-      { title: 'Overview', route: '/docs/user-token', home: 'docs', icon: 'ShieldCheck' },
-      { title: 'Read proofs', route: '/docs/user-token/account', home: 'docs', icon: 'BookOpen' },
-      { title: 'Verify & save a proof', route: '/verifications/managed', home: 'verifications', icon: 'ShieldCheck' },
-      { title: 'Request raw data', route: '/docs/request-data', home: 'docs', icon: 'Lock' },
-      { title: 'Consent', route: '/verifications/data-sharing', home: 'verifications', icon: 'ShieldCheck' },
-    ],
-  },
-  {
-    id: 'verification', label: 'VERIFICATION',
-    items: [
-      { title: 'Overview', route: '/verifications', home: 'verifications', icon: 'ScanFace' },
-      { title: 'Setup', route: '/verifications/setup', home: 'verifications', icon: 'Settings' },
-      { title: 'Verification types', route: '/verifications/types', home: 'verifications', icon: 'Tags' },
-      { title: 'Hosted verification', route: '/verifications/hosted', home: 'verifications', icon: 'Globe', group: 'Managed by Valyd' },
-      { title: 'Quickstart', route: '/verifications/quickstart', home: 'verifications', icon: 'Rocket', group: 'Managed by Valyd' },
-      { title: 'Workflows', route: '/verifications/workflows', home: 'verifications', icon: 'Braces', group: 'Managed by Valyd' },
-      { title: 'Session lifecycle', route: '/verifications/session-lifecycle', home: 'verifications', icon: 'History', group: 'Managed by Valyd' },
-      { title: 'Results & decisions', route: '/verifications/statuses', home: 'verifications', icon: 'ShieldCheck', group: 'Managed by Valyd' },
-      { title: 'Webhooks', route: '/verifications/webhooks', home: 'verifications', icon: 'Braces', group: 'Managed by Valyd' },
-      // Verify Fresh — the only non-account direct checks (liveness & uniqueness family). Every
-      // other check runs through Managed by Valyd (hosted, all checks) — see STUBS below.
-      { title: 'Liveness', route: '/verifications/standalone/liveness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh (non account)' },
-      { title: 'Anti-spoof', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ShieldAlert', group: 'Verify Fresh (non account)' },
-      { title: 'Face uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'ScanFace', group: 'Verify Fresh (non account)' },
-    ],
-  },
-  {
-    id: 'organizations', label: 'ORGANIZATIONS',
+    id: 'organizations', label: 'ORGANIZATIONS', tab: 'docs',
     items: [
       { title: 'Overview', route: '/docs/organizations', home: 'docs', icon: 'Users' },
       { title: 'Members', route: '/docs/organizations/members', home: 'docs', icon: 'UserPlus' },
@@ -79,9 +54,8 @@ export const SECTIONS = [
     ],
   },
   {
-    id: 'develop', label: 'DEVELOP & OPERATE',
+    id: 'develop', label: 'BUILD & TEST', tab: 'docs',
     items: [
-      { title: 'Developer Portal', route: '/docs/create-project', home: 'docs', icon: 'LayoutDashboard' },
       { title: 'Developer accounts', route: '/docs/developer-accounts', home: 'docs', icon: 'UserCog' },
       { title: 'Environments & credentials', route: '/docs/environments', home: 'docs', icon: 'KeyRound' },
       { title: 'Testing', route: '/docs/testing', home: 'docs', icon: 'FlaskConical' },
@@ -89,31 +63,66 @@ export const SECTIONS = [
       { title: 'Errors', route: '/docs/errors', home: 'docs', icon: 'AlertTriangle' },
       { title: 'Rate limits', route: '/docs/rate-limits', home: 'docs', icon: 'Gauge' },
       { title: 'Idempotency', route: '/docs/idempotency', home: 'docs', icon: 'Braces' },
-      // Security & data and Status / reliability are section landing pages; their sub-pages are
-      // surfaced as on-page cards (not sidebar rows) to keep the sidebar short. They stay reachable,
-      // indexed, and in the corpus — see the `SECONDARY` list below for the nav-consistency gate.
+      // Security & data + Status/reliability are landing pages; their sub-pages are on-page cards
+      // (see SECONDARY) to keep the sidebar short.
       { title: 'Security & data', route: '/docs/data-and-trust', home: 'docs', icon: 'ShieldCheck' },
       { title: 'Go live', route: '/docs/go-live', home: 'docs', icon: 'Rocket' },
       { title: 'Status / reliability', route: '/docs/operations-sla', home: 'docs', icon: 'Timer' },
-      { title: 'Versioning', route: '/verifications/versioning', home: 'verifications', icon: 'History' },
       { title: 'Changelog', route: '/docs/changelog', home: 'docs', icon: 'History' },
       { title: 'Deprecations', route: '/docs/deprecations', home: 'docs', icon: 'History' },
     ],
   },
   {
-    id: 'reference', label: 'REFERENCE',
+    id: 'reference-docs', label: 'REFERENCE', tab: 'docs',
     items: [
-      { title: 'Login API', route: '/docs/endpoints', home: 'docs', icon: 'Code' },
-      { title: 'Verification API', route: '/verifications/api-reference', home: 'verifications', icon: 'Code' },
-      { title: 'Node SDK', route: '/verifications/sdk', home: 'verifications', icon: 'Braces' },
+      { title: 'Account API', route: '/docs/endpoints', home: 'docs', icon: 'Code' },
+      { title: 'OpenAPI', route: '/docs/api-reference', home: 'docs', icon: 'Braces' },
       { title: 'SDKs & tools', route: '/docs/sdks', home: 'docs', icon: 'Braces' },
-      { title: 'Login OpenAPI', route: '/docs/api-reference', home: 'docs', icon: 'Braces' },
-      { title: 'Verification OpenAPI', route: '/verifications/api', home: 'verifications', icon: 'Braces' },
-      { title: 'Raw HTTP', route: '/verifications/standalone/http', home: 'verifications', icon: 'Code' },
     ],
   },
   {
-    id: 'ai', label: 'AI & AGENTS',
+    id: 'playground', label: 'API PLAYGROUND', tab: 'docs',
+    items: [
+      { title: 'API Playground', route: '/docs/sandbox', home: 'docs', icon: 'Play' },
+    ],
+  },
+
+  // ================= VERIFY tab — the two products =================
+  {
+    id: 'unique-human', label: 'UNIQUE HUMAN API', tab: 'verify',
+    items: [
+      { title: 'Overview', route: '/verifications/standalone', home: 'verifications', icon: 'Zap' },
+      { title: 'Liveness', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ScanFace' },
+      { title: 'Uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'Fingerprint' },
+    ],
+  },
+  {
+    id: 'reusable', label: 'REUSABLE VERIFICATION', tab: 'verify',
+    items: [
+      { title: 'Overview', route: '/verifications', home: 'verifications', icon: 'ShieldCheck' },
+      { title: 'Connect with Valyd', route: '/docs/authentication', home: 'docs', icon: 'LogIn' },
+      { title: 'Read verified data', route: '/docs/user-token/account', home: 'docs', icon: 'BookOpen' },
+      { title: 'Consent & data access', route: '/verifications/data-sharing', home: 'verifications', icon: 'ShieldCheck' },
+      { title: 'Overview', route: '/verifications/workflows', home: 'verifications', icon: 'Braces', group: 'Workflows' },
+      { title: 'Create a workflow', route: '/verifications/setup', home: 'verifications', icon: 'Settings', group: 'Workflows' },
+      { title: 'Run a verification', route: '/verifications/quickstart', home: 'verifications', icon: 'Rocket', group: 'Workflows' },
+      { title: 'Checks reference', route: '/verifications/types', home: 'verifications', icon: 'Tags', group: 'Workflows' },
+      { title: 'Results & decisions', route: '/verifications/statuses', home: 'verifications', icon: 'ShieldCheck' },
+      { title: 'Session lifecycle', route: '/verifications/session-lifecycle', home: 'verifications', icon: 'History' },
+      { title: 'Webhooks', route: '/verifications/webhooks', home: 'verifications', icon: 'Braces' },
+    ],
+  },
+  {
+    id: 'verify-reference', label: 'REFERENCE', tab: 'verify',
+    items: [
+      { title: 'Node SDK', route: '/verifications/sdk', home: 'verifications', icon: 'Braces' },
+      { title: 'Versioning', route: '/verifications/versioning', home: 'verifications', icon: 'History' },
+    ],
+  },
+
+  // ================= AI & AGENTS tab =================
+  {
+    id: 'ai', label: 'AI & AGENTS', tab: 'ai',
     items: [
       { title: 'Overview', route: '/ai', home: 'ai', icon: 'Bot' },
       { title: 'Agent integration guide', route: '/ai/agent-guide', home: 'ai', icon: 'Bot' },
@@ -123,39 +132,37 @@ export const SECTIONS = [
       { title: 'Authentication', route: '/ai/mcp-auth', home: 'ai', icon: 'KeyRound', group: 'MCP' },
     ],
   },
-  {
-    id: 'playground', label: 'API PLAYGROUND',
-    items: [
-      { title: 'API Playground', route: '/docs/sandbox', home: 'docs', icon: 'Play' },
-    ],
-  },
 ]
 
-// Pages that stay reachable by URL but are hidden from nav + excluded from the machine corpus and
-// search, with a canonical target (SEO/agent hygiene for the second-audit "duplicate pages").
+// Pages reachable by URL but hidden from nav + excluded from the corpus/search, each pointing at a
+// canonical page (SEO/agent hygiene for duplicate/legacy routes).
 export const STUBS = [
   { route: '/docs/quick-start', canonical: '/docs/quickstart/node', status: 'stub' },
-  { route: '/docs/flows/account-connected', canonical: '/verifications/managed', status: 'stub' },
-  { route: '/docs/flows/hosted-verification', canonical: '/verifications/hosted', status: 'stub' },
+  { route: '/docs/flows/account-connected', canonical: '/verifications', status: 'stub' },
+  { route: '/docs/flows/hosted-verification', canonical: '/verifications/quickstart', status: 'stub' },
   { route: '/docs/login-sessions', canonical: '/docs/tokens', status: 'stub' },
-  { route: '/verifications/modes', canonical: '/docs/choose', status: 'stub' },
-  { route: '/docs/user-token/hosted', canonical: '/verifications/hosted', status: 'stub' },
-  { route: '/docs/user-token/face-match', canonical: '/verifications/standalone/face-match', status: 'stub' },
-  { route: '/docs/user-token/liveness', canonical: '/verifications/standalone/liveness', status: 'stub' },
-  { route: '/docs/user-token/license', canonical: '/verifications/standalone/credential-verification', status: 'stub' },
-  { route: '/docs/user-token/age', canonical: '/verifications/standalone/age-verification', status: 'stub' },
+  { route: '/verifications/modes', canonical: '/docs/introduction', status: 'stub' },
+  { route: '/docs/user-token/hosted', canonical: '/verifications/quickstart', status: 'stub' },
+  { route: '/docs/user-token/face-match', canonical: '/verifications/types', status: 'stub' },
+  { route: '/docs/user-token/liveness', canonical: '/verifications/standalone/antispoof', status: 'stub' },
+  { route: '/docs/user-token/license', canonical: '/verifications/types', status: 'stub' },
+  { route: '/docs/user-token/age', canonical: '/verifications/types', status: 'stub' },
   { route: '/docs/sessions', canonical: '/docs/tokens', status: 'stub' },
-  // Core/Direct APIs removed from self-serve — these checks now run only through Managed by Valyd
-  // (hosted, all checks). Pages kept as thin redirects so old URLs + the OpenAPI contract still work.
-  { route: '/verifications/standalone/id-verification', canonical: '/verifications/managed', status: 'stub' },
-  { route: '/verifications/standalone/face-match', canonical: '/verifications/managed', status: 'stub' },
-  { route: '/verifications/standalone/age-verification', canonical: '/verifications/managed', status: 'stub' },
-  { route: '/verifications/standalone/location', canonical: '/verifications/managed', status: 'stub' },
-  { route: '/verifications/standalone/credential-verification', canonical: '/verifications/managed', status: 'stub' },
-  { route: '/verifications/standalone/kyc-credential', canonical: '/verifications/managed', status: 'stub' },
+  // Retired concept pages (old product model) → their new homes.
+  { route: '/docs/choose', canonical: '/docs/introduction', status: 'stub' },
+  { route: '/verifications/managed', canonical: '/verifications', status: 'stub' },
+  { route: '/verifications/hosted', canonical: '/verifications/quickstart', status: 'stub' },
+  // Paused APIs — capabilities exist only as workflow checks; per-check API pages are withdrawn.
+  { route: '/verifications/standalone/id-verification', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/standalone/face-match', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/standalone/age-verification', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/standalone/credential-verification', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/standalone/kyc-credential', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/standalone/location', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/standalone/liveness', canonical: '/verifications/standalone/antispoof', status: 'stub' },
 ]
 
-export const ALL_NAV_ROUTES = SECTIONS.flatMap((s) => s.items.map((i) => i.route))
+export const ALL_NAV_ROUTES = [...new Set(SECTIONS.flatMap((s) => s.items.map((i) => i.route)))]
 
 // Reachable + indexed canonical pages that are intentionally NOT sidebar rows — surfaced as
 // on-page cards on their parent landing page instead, to keep the sidebar short. NOT stubs.
@@ -171,14 +178,7 @@ export const SECONDARY = [
 ]
 
 // ---- Page registry (rich metadata) -----------------------------------------------------------
-// The manifest is the canonical page registry, not just a sidebar. Every route carries enough
-// metadata for human nav AND machine indexing. Values are computed from SECTIONS + STUBS with a
-// small OVERRIDES map, so the 75 nav rows don't each need hand-authored flags.
-
-// Per-route overrides (only where the computed default is wrong).
-const OVERRIDES = {
-  // (reserved) e.g. a page that should be canonical + reachable but out of nav, or a draft page.
-}
+const OVERRIDES = {}
 
 const _sectionOf = (route) => (SECTIONS.find((s) => s.items.some((i) => i.route === route)) || {}).id || null
 const _titleOf = (route) => {
@@ -197,14 +197,14 @@ export function pageMeta(route) {
     route,
     title: _titleOf(route),
     section: _sectionOf(route),
-    canonical: !stub, // a stub is NOT canonical — it points at one
+    canonical: !stub,
     canonicalRoute: stub ? stub.canonical : route,
-    nav: inNav && !stub, // in a sidebar
-    llms: !stub, // in the llms.txt index
-    sitemap: !stub, // in the sitemap
-    agentIndex: !stub, // in the machine corpus (llms-full / agent bundle)
-    search: !stub, // in pagefind search
-    noindex: !!stub, // robots noindex
+    nav: inNav && !stub,
+    llms: !stub,
+    sitemap: !stub,
+    agentIndex: !stub,
+    search: !stub,
+    noindex: !!stub,
     status: stub ? stub.status || 'stub' : 'active',
     audience: ['human', 'agent'],
     aliases,
@@ -217,7 +217,7 @@ export function allRoutes() {
   return [...new Set([...ALL_NAV_ROUTES, ...STUBS.map((s) => s.route)])]
 }
 
-/** Canonical routes only (nav pages; stubs excluded). Used by capability→canonical checks. */
+/** Canonical routes only (nav pages; stubs excluded). */
 export function canonicalRoutes() {
   return ALL_NAV_ROUTES.filter((r) => pageMeta(r).canonical)
 }

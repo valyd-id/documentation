@@ -8,14 +8,14 @@ so no token ever touches the front end.
 
 ## When to use it
 
-- Any app with a backend (web app, SSR site, mobile app with a server) that wants **Login with
+- Any app with a backend (web app, SSR site, mobile app with a server) that wants **Connect with
   Valyd**.
 - You want the user's profile, `id_verified` status, licenses, or verification proofs after login.
 - You're using the [drop-in button](/docs/flows/button), the `@valyd/sdk`, or
   [your own OIDC library](/docs/oidc) — all of them run this exact flow underneath.
 
-Don't use it for [standalone checks](/verifications/standalone) on data you supply yourself —
-those need only the [hosted verification flow](/docs/flows/hosted-verification) or a direct call.
+Don't use it for the [Unique Human API](/verifications/standalone) — those API-key calls answer
+"is this a live, unique human?" with no user login involved at all.
 
 ## How it works
 
