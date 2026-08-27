@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.10.5 — Hosted flow only: standalone direct checks hidden (2026-08-27)
+
+- **Changed (SDK):** the public surface is now the hosted flow only — `valyd.auth`
+  (Connect with Valyd / OIDC), `verify.sessions.*` (hosted verification sessions), and the
+  Unique Human API anti-spoof (`verify.standalone.antispoof` / `antispoofIdentity`).
+- **Hidden (SDK):** the remaining standalone direct checks (`idVerification`, `faceMatch`,
+  `locationMatch`, `ageVerification`, `credential`, `kycCredential`) and the `kyc.redirectUrl`
+  helper are no longer exposed. Run these through a hosted workflow session instead; they return
+  if/when standalone direct calls ship as a confirmed public API.
+- **Docs:** install is now `npm install @valyd/sdk@^1.10.5`.
+
 ## v1.10.4 — Workflow CRUD & evvPresence removed from the SDK (2026-08-21)
 
 - **Removed (SDK):** `verify.workflows.*` CRUD — workflows are composed in the
@@ -71,7 +82,7 @@
 
 - **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).
 - **Added:** One unified package `@valyd/sdk` — `valyd.auth` (Login with Valyd) + `valyd.verify` (verification) + workforce members; one credential, one host.
-- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.4`.
+- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.5`.
 
 ---
 

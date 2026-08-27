@@ -11,7 +11,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const FALLBACK = '1.10.4'
+const FALLBACK = '1.10.5'
 
 function resolveVersion() {
   if (process.env.SDK_VERSION && /^\d+\.\d+\.\d+$/.test(process.env.SDK_VERSION)) return process.env.SDK_VERSION
