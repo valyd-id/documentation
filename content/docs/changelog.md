@@ -82,7 +82,7 @@
 
 - **Added:** Workforce Members API on `ValydClient` — `addMembers()` (single or bulk ≤ 500, `notify` flag), `getMembers()` (roster with `status` + `valyd_id`), `getBilling()` (seats, price, trial, balance, invoices).
 - **Added:** One unified package `@valyd/sdk` — `valyd.auth` (Login with Valyd) + `valyd.verify` (verification) + workforce members; one credential, one host.
-- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.5`.
+- **Docs:** The Organizations page lists every member operation; install is now `npm install @valyd/sdk@^1.10.4`.
 
 ---
 
