@@ -15,8 +15,7 @@ returns the first request's outcome instead of starting a new check.
 ## With the Node SDK
 
 Generate a unique key per logical operation (a UUID is ideal) and reuse it across retries of that
-same operation. Pass `idempotencyKey` on any billable check and the SDK carries it for you
-(available since `@valyd/sdk` v1.10.2):
+same operation. Pass `idempotencyKey` on any billable check and the SDK carries it for you:
 
 ```javascript
 const session = await verify.sessions.create({

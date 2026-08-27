@@ -105,7 +105,7 @@ involved, the result returns to you, and nothing is saved to one. See the
 > Valyd), never as their own public APIs. The SDK's other low-level `verify.standalone.*` methods
 > remain for compatibility and are not part of the public products.
 
-Every billable check also accepts an optional `idempotencyKey` (*v1.10.2+*) — sent as the
+Every billable check also accepts an optional `idempotencyKey` — sent as the
 `Idempotency-Key` header so a network retry can never double-charge or double-run.
 
 #### `verify.credentials`

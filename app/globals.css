@@ -314,6 +314,38 @@ article .nextra-card svg {
   padding-left: 0.6rem;
 }
 
+/* Navbar CTA -> developer portal. Solid brand blue with white text (>= 4.5:1 in both
+   themes), sits left of the Ask-AI button. */
+.vd-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  background: #0077cc;
+  color: #ffffff;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.vd-nav-cta:hover {
+  background: #0064ad;
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+.vd-nav-cta:active {
+  transform: translateY(0);
+}
+@media (max-width: 640px) {
+  /* Keep the navbar uncluttered on phones: show a shorter label. */
+  .vd-nav-cta {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.78rem;
+  }
+}
+
 @media (max-width: 640px) {
   /* Compact mark instead of the wide wordmark lockup. */
   .vd-logo-light,

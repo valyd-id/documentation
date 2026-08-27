@@ -55,6 +55,10 @@ const navbar = (
       </span>
     }
   >
+    {/* Primary CTA -> developer portal (env-driven: NEXT_PUBLIC_DEV_URL via SITE.devUrl). */}
+    <a href={SITE.devUrl} target="_blank" rel="noreferrer" className="vd-nav-cta">
+      Get credentials
+    </a>
     <NavbarAskAiButton />
     {/* Single-button light/dark toggle, immediately right of the project link */}
     <ThemeToggle />

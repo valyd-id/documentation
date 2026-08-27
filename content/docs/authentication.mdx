@@ -98,7 +98,7 @@
 <Tabs.Tab>
 
 ```javascript
-// Recommended: @valyd/sdk 1.10.1+
+// Recommended: @valyd/sdk
 import { ValydClient } from "@valyd/sdk";
 
 const valyd = new ValydClient({
@@ -285,7 +285,7 @@ app cannot be used by another. **Rotation is on:** every refresh returns a new
 rotated-away token is treated as theft and revokes every refresh token for that user and app.
 
 With the SDK this is one call — `const next = await valyd.auth.refreshToken(stored)` — then
-persist both `next.accessToken` and `next.refreshToken`. Requires `@valyd/sdk` **1.10.1 or newer**.
+persist both `next.accessToken` and `next.refreshToken`.
 
 
 

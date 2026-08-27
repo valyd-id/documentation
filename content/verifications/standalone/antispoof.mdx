@@ -1,6 +1,5 @@
 ---
 product: valyd-verify
-sdk_min_version: 1.10.3
 billable: true
 pii_mode: standalone
 human_setup_required: true

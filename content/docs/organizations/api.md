@@ -1,7 +1,6 @@
 ---
 product: valyd-id
 api_version: oidc
-sdk_min_version: 1.10.3
 auth: client-credentials
 billable: true
 pii_mode: proofs
