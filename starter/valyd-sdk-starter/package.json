@@ -16,7 +16,7 @@
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "@valyd/sdk": "^1.10.3"
+    "@valyd/sdk": "latest"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",

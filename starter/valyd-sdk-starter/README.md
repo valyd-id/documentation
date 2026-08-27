@@ -1,7 +1,7 @@
 # Valyd SDK Starter
 
 A minimal Express app that demonstrates the full **Valyd OpenID Connect** flow using
-`@valyd/sdk@^1.10.3`: state, nonce, S256 PKCE, one-time code exchange, RS256/JWKS
+`@valyd/sdk`: state, nonce, S256 PKCE, one-time code exchange, RS256/JWKS
 signature validation, and UserInfo.
 
 ## Why a server-side OIDC transaction?

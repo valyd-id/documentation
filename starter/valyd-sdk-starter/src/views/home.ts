@@ -13,7 +13,7 @@ function loggedOut(): string {
     `
     <div class="hero">
       <h1>Login with Valyd</h1>
-      <p>A one-click starter showing secure Valyd OIDC using <code>@valyd/sdk@^1.10.1</code>.</p>
+      <p>A one-click starter showing secure Valyd OIDC using <code>@valyd/sdk</code>.</p>
     </div>
 
     <div class="card center">
