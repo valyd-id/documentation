@@ -26,9 +26,9 @@ IF unsure which credentials you have:
 
 1. **Install the SDK.**
    ```bash
-   npm i @valyd/sdk@^1.10.5
+   npm i @valyd/sdk
    ```
-   **Expected output:** npm adds `@valyd/sdk` at `^1.10.5` to `dependencies` in `package.json`. This allows backwards-compatible patch and minor upgrades while keeping the documented minimum version.
+   **Expected output:** npm adds `@valyd/sdk` at its latest published version to `dependencies` in `package.json`, so a fresh install always pulls the newest release.
 
 2. **Set environment variables** (e.g. in a `.env` file or your process environment). Get each value from the Valyd Developer Portal: https://dev.valyd.work.
    ```bash
@@ -273,7 +273,7 @@ app.post(
   ```bash
   npm ls @valyd/sdk
   ```
-  **Expected output:** `@valyd/sdk@1.10.5` (or a newer compatible version allowed by `^1.10.5`).
+  **Expected output:** `@valyd/sdk` at its latest published version.
 - Confirm credentials are wired (only needs `VALYD_API_KEY`):
   ```javascript
   import { VerifyClient } from "@valyd/sdk";

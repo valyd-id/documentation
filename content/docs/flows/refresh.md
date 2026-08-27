@@ -27,7 +27,7 @@ sequenceDiagram
    `{ "grant_type": "refresh_token", "refresh_token": "…", "client_id": "…", "client_secret": "…" }`.
 2. Read the top-level response: a fresh `access_token` **and a new `refresh_token`**.
 3. **Persist the new refresh token, atomically replacing the old one.** With the SDK
-   (`@valyd/sdk@^1.10.5`): `const next = await valyd.auth.refreshToken(stored)` — store both
+   (`@valyd/sdk`): `const next = await valyd.auth.refreshToken(stored)` — store both
    `next.accessToken` and `next.refreshToken`.
 
 ## Rotation & theft detection

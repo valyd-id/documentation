@@ -36,7 +36,7 @@ flow:
 Install and initialize the SDK:
 
 ```bash
-npm i @valyd/sdk@^1.10.5
+npm i @valyd/sdk
 ```
 
 ```javascript

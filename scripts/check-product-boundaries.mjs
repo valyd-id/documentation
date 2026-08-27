@@ -27,7 +27,10 @@ const forbidden = [
   { pattern: /\btpsso\b/i, message: 'removed auth terminology', exempt: ['content/docs/errors.md', 'content/docs/deprecations.md'] },
   { pattern: /\/api\/auth\/tpsso/i, message: 'removed auth namespace', exempt: ['content/docs/deprecations.md'] },
   { pattern: /https:\/\/idp\.valyd\.work\/auth\?/i, message: 'non-canonical authorize URL' },
-  { pattern: /npm (?:i|install) @valyd\/sdk(?!@\^1\.10\.5)/, message: 'unpinned or stale SDK install command' },
+  // Docs policy: install commands are UNVERSIONED (`npm i @valyd/sdk`) so users always get the
+  // latest publish and the docs never need re-stamping. Flag any version-pinned install instead.
+  // changelog.md is release history and legitimately records the pinned install of older releases.
+  { pattern: /npm (?:i|install) @valyd\/sdk@/, message: 'SDK install must be unversioned (npm i @valyd/sdk)', exempt: ['content/docs/changelog.md'] },
   { pattern: /@valyd\/sdk (?:1\.10\.x|1\.11)\+?/i, message: 'stale SDK version guidance' },
   { pattern: /@valyd\/sdk@x\.y\.z/i, message: 'placeholder SDK version' },
   // Retired product model (2026-08 two-product restructure): the public docs teach ONLY
@@ -82,8 +85,6 @@ const required = [
   ['content/verifications/index.md', 'Reusable Verification'],
   ['content/verifications/index.md', 'valyd_access_token'],
   ['content/verifications/standalone/index.md', 'Unique Human API'],
-  // SDK version pin.
-  ['content/verifications/sdk.md', '@valyd/sdk@^1.10.5'],
 ]
 
 for (const [relative, phrase] of required) {

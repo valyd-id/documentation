@@ -41,7 +41,7 @@ are stable until we announce that major's deprecation with the window above.
 
 ## Recommended practices
 
-- Pin the SDK with a caret range — `npm i @valyd/sdk@^1.10.5` — so you get compatible patch and
+- Pin the SDK with a caret range — `npm i @valyd/sdk` — so you get compatible patch and
   minor updates without an unexpected major bump.
 - Subscribe to the [Changelog](/docs/changelog) for additive changes and any deprecation notices.
 - Handle unknown enum values and extra fields gracefully (see "build defensively" above).

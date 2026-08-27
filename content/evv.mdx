@@ -70,7 +70,7 @@ Server (Node 18+) and browser:
 
 ```bash
 # server: OAuth + Verify (auth, sessions, kyc.redirectUrl)
-npm i @valyd/sdk@^1.10.5
+npm i @valyd/sdk
 
 # browser: none — the face + GPS are captured on Valyd's verification page
 # No browser SDK — the verification session is a redirect to the session url
@@ -272,7 +272,7 @@ Reusable Verification (account) model — the clinician connects with Valyd once
 license are stored and reused on later visits.
 
 SDKs (install):
-- Server (Node 18+):  npm i @valyd/sdk@^1.10.5    // valyd.auth (OIDC) + valyd.verify (checks)
+- Server (Node 18+):  npm i @valyd/sdk    // valyd.auth (OIDC) + valyd.verify (checks)
 - Browser:            no SDK — redirect the user to the hosted session url (Valyd hosts the capture)
 
 Environment (IMPORTANT): you are on DEVELOPMENT — construct the SDK with env="development":

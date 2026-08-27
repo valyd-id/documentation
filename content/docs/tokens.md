@@ -115,7 +115,7 @@ in the system — treat it like a password.
 
 ## Validating tokens
 
-**Let a library do it.** The `@valyd/sdk` (`^1.10.5`) `handleCallback()` / `exchangeCode()`
+**Let a library do it.** The `@valyd/sdk` `handleCallback()` / `exchangeCode()`
 verify the ID token's RS256 signature against discovery/JWKS plus issuer, audience, expiry, and
 nonce before returning. Any standard OIDC library pointed at
 `https://idp.valyd.work/api/.well-known/openid-configuration` does the same.

@@ -9,7 +9,7 @@
   `locationMatch`, `ageVerification`, `credential`, `kycCredential`) and the `kyc.redirectUrl`
   helper are no longer exposed. Run these through a hosted workflow session instead; they return
   if/when standalone direct calls ship as a confirmed public API.
-- **Docs:** install is now `npm install @valyd/sdk@^1.10.5`.
+- **Docs:** install commands are now unversioned — `npm install @valyd/sdk` always pulls the latest published release.
 
 ## v1.10.4 — Workflow CRUD & evvPresence removed from the SDK (2026-08-21)
 
