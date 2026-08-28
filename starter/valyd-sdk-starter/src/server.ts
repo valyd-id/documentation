@@ -96,6 +96,63 @@ app.get("/callback", async (req, res) => {
   }
 });
 
+/* ------------------- Verify: start a workflow ------------- */
+// Create a HOSTED verification session bound to the logged-in Valyd account, then send the
+// browser to the hosted page. Needs VALYD_VERIFY_API_KEY + VALYD_WORKFLOW_ID in .env.
+app.post("/verify/start", async (req, res) => {
+  const session = sessions.get(req.cookies[config.appSessionCookie.name]);
+  if (!session) return res.redirect("/");
+  if (!config.verify.enabled) {
+    return res.status(400).type("html").send(
+      errorPage("Verification not configured", "Set VALYD_VERIFY_API_KEY and VALYD_WORKFLOW_ID in .env to test a workflow."),
+    );
+  }
+
+  try {
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const r = await fetch(`${config.verify.baseUrl}/session`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.verify.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workflow_id: config.verify.workflowId,
+        redirect_url: `${origin}/verify/return`,
+        // Binds the hosted flow to THIS logged-in Valyd user (selfie-only match, no re-KYC,
+        // and verified name/age/licenses come from their account). Never reaches the browser.
+        valyd_access_token: session.accessToken,
+      }),
+    });
+    const body = (await r.json()) as { success?: boolean; data?: any; error?: any };
+    if (!r.ok || !body?.data?.url) {
+      const msg = body?.error?.message || `Verify API returned ${r.status}`;
+      return res.status(400).type("html").send(errorPage("Couldn't start verification", msg, body));
+    }
+    // Remember the session id so /verify/return can fetch the outcome.
+    session.verifySessionId = body.data.session_id;
+    res.redirect(body.data.url);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).type("html").send(errorPage("Couldn't start verification", msg));
+  }
+});
+
+/* ------------------- Verify: return + result -------------- */
+// The hosted page sends the user back here. Fetch the session's current state and show it.
+app.get("/verify/return", async (req, res) => {
+  const session = sessions.get(req.cookies[config.appSessionCookie.name]);
+  if (!session || !session.verifySessionId) return res.redirect("/");
+
+  try {
+    const r = await fetch(`${config.verify.baseUrl}/session/${encodeURIComponent(session.verifySessionId)}`, {
+      headers: { Authorization: `Bearer ${config.verify.apiKey}` },
+    });
+    const body = (await r.json()) as { data?: unknown };
+    session.verifyResult = body?.data ?? body;
+  } catch (err) {
+    session.verifyResult = { error: err instanceof Error ? err.message : "Could not fetch result" };
+  }
+  res.redirect("/");
+});
+
 /* -------------------------- Logout ------------------------ */
 app.post("/logout", (req, res) => {
   sessions.destroy(req.cookies[config.appSessionCookie.name]);

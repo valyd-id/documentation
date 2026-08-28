@@ -9,7 +9,8 @@ The direct successor of the example that lived here is the
 **[Node.js (Express) quickstart](/docs/quickstart/node)** — the same single-file app, line by line.
 
 Prefer to clone it? [`valyd-sandbox-starter`](https://github.com/valyd-id/valyd-sandbox-starter)
-on GitHub (or [download the zip](/downloads/valyd-sdk-starter.zip)) — fill `.env`, `npm run dev`:
+on GitHub (or [download the zip](/downloads/valyd-sdk-starter.zip)) — fill `.env`, `npm run dev`.
+It can also test a verification workflow: set `VALYD_VERIFY_API_KEY` + `VALYD_WORKFLOW_ID` in `.env`.
 
 ```bash
 npm install @valyd/sdk express express-session dotenv

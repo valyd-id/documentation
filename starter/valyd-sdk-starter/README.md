@@ -30,18 +30,31 @@ Give it a **Domain** and a **Redirect URL** matching `VALYD_REDIRECT_URI`
 (default: `http://localhost:8080/callback`) — redirects are exact-match. Copy the project's
 **Client ID** and **Client Secret** into `.env`. The default scopes are `profile verifications`.
 
-> Verification for the signed-in user lives on the project's **Verification** tab (its API key +
-> workflows). For a quick no-account anti-spoof check, every organization also has a built-in
-> **Verify Fresh** key on the dashboard.
+## Optional: test a verification workflow after login
+
+Set **both** of these in `.env` to add a **Test a verification workflow** button to the signed-in
+page. It runs one of your Verify workflows against the logged-in Valyd account (hosted flow) and
+shows the result:
+
+```bash
+VALYD_VERIFY_API_KEY=   # from your project's Verification tab in the dev portal
+VALYD_WORKFLOW_ID=      # a workflow id from that same project
+```
+
+The account is bound automatically (the demo passes the login access token as `valyd_access_token`),
+so it's a selfie-only match and verified name / age / licenses come from the account. The Verify API
+base defaults to `<VALYD_BASE_URL>/api/v2`; override with `VALYD_VERIFY_BASE_URL` if needed.
 
 ## What's wired up
 
-| Route             | What it does                                                            |
-| ----------------- | ----------------------------------------------------------------------- |
-| `GET  /`          | Home — login button, or signed-in profile card                          |
-| `GET  /login`     | Create + store an OIDC transaction, then redirect to Valyd              |
-| `GET  /callback`  | Validate state/PKCE/nonce/signature, then fetch UserInfo                 |
-| `POST /logout`    | Destroys the in-memory app session and cookies                          |
+| Route                | What it does                                                         |
+| -------------------- | ------------------------------------------------------------------- |
+| `GET  /`             | Home — login button, or signed-in profile card                      |
+| `GET  /login`        | Create + store an OIDC transaction, then redirect to Valyd          |
+| `GET  /callback`     | Validate state/PKCE/nonce/signature, then fetch UserInfo             |
+| `POST /verify/start` | Create a hosted verification session for the workflow, then redirect |
+| `GET  /verify/return`| Fetch the session's outcome and show it on the home page            |
+| `POST /logout`       | Destroys the in-memory app session and cookies                      |
 
 To repoint at a different Valyd environment, edit `src/config.ts` (or set
 `VALYD_BASE_URL` in `.env`). No other file changes required.
@@ -54,7 +67,10 @@ src/
   server.ts        — Express routes + SDK calls
   sessions.ts      — tiny in-memory app session store (swap for Redis in prod)
   views/           — server-rendered HTML
-public/styles.css  — styling
+public/
+  styles.css       — Valyd-themed styling
+  valyd-logo.png   — brand logo
+  favicon.png      — favicon
 .env.example
 ```
 

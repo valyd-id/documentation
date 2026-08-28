@@ -9,6 +9,9 @@ export interface AppSession {
   accessToken: string;
   refreshToken?: string;
   createdAt: number;
+  // Populated when the demo runs a verification workflow (below).
+  verifySessionId?: string;
+  verifyResult?: unknown;
 }
 
 const store = new Map<string, AppSession>();
