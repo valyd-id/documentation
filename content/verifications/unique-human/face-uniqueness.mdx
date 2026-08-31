@@ -9,7 +9,7 @@ source_of_truth: sdk
 # Uniqueness
 
 One face = one identity — matches the captured face against the Valyd face registry for sybil and
-duplicate-account detection, as part of the [Unique Human API](/verifications/standalone).
+duplicate-account detection, as part of the [Unique Human API](/verifications/unique-human).
 
 > 🔑 **Auth:** App API key + a workflow with the face-uniqueness check · 👤 **User account:** none · 💾 **Result:** returned to your system; the face maps to a stable `valyd_uuid`
 
@@ -36,7 +36,7 @@ const session = await verify.sessions.create({
 // → redirect the person's browser to session.url
 ```
 
-Pair it with [Liveness](/verifications/standalone/antispoof) in the same workflow so only a
+Pair it with [Liveness](/verifications/unique-human/antispoof) in the same workflow so only a
 proven-live face is matched against the registry.
 
 ## Result
@@ -55,16 +55,14 @@ seen uuid is the same human — your policy decides what happens next.
 
 ## Deleting a face (GDPR)
 
-Unlink a face your project no longer needs:
-
-```javascript
-const res = await verify.standalone.faceUniquenessUnlink(valydUuid);
-// res.unlinked: true; res.deleted: true when no remaining project (and no Valyd account) knows the face
-```
+To unlink a face your project no longer needs (right to erasure), remove it from the unique-face
+registry by its `valyd_` uuid from the project's **Verification** settings in the
+[Developer Portal](https://dev.valyd.work). The face is unlinked from your project, and fully
+deleted once no remaining project — and no Valyd account — still knows it.
 
 ## Next
 
-- **[Liveness](/verifications/standalone/antispoof)** — the anti-spoof half of the Unique Human
+- **[Liveness](/verifications/unique-human/antispoof)** — the anti-spoof half of the Unique Human
   API.
 - Uniqueness bound to a connected user's account runs inside a
   [Reusable Verification](/verifications) workflow — see the

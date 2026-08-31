@@ -2,7 +2,7 @@
 
 Valyd is a verified-identity platform. It gives developers **two products**:
 
-- **[Unique Human API](/verifications/standalone)** — determine whether you're interacting with a
+- **[Unique Human API](/verifications/unique-human)** — determine whether you're interacting with a
   **live, unique human**. You create an app, copy its API key, start a session for a workflow with
   the liveness and/or uniqueness checks, and redirect the person to Valyd's verification page. The
   verdict returns to your system; no account is involved and nothing is saved to one.
@@ -14,7 +14,7 @@ Valyd is a verified-identity platform. It gives developers **two products**:
 
 | If you want to… | Use | Start here |
 | --- | --- | --- |
-| Know whether this person is live and unique | **Unique Human API** | [Overview](/verifications/standalone) |
+| Know whether this person is live and unique | **Unique Human API** | [Overview](/verifications/unique-human) |
 | Let users reuse verified identity — and verify what's missing | **Reusable Verification** | [Overview](/verifications) |
 
 > Connect with Valyd is built on OpenID Connect and can also serve as your app's sign-in — see

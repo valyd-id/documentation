@@ -433,14 +433,14 @@ npm run dev`}
                   method: 'POST',
                   path: 'verify.sessions.create → antispoof check',
                   desc: "A no-account workflow session on Valyd's verification page — live camera burst, human_score verdict back to you. API key + workflowId, nothing saved.",
-                  href: '/verifications/standalone/antispoof'
+                  href: '/verifications/unique-human/antispoof'
                 },
                 {
                   title: 'Uniqueness — one face, one user',
                   method: 'POST',
                   path: 'verify.sessions.create → face_uniqueness check',
                   desc: "Match the captured face against the Valyd registry and get a stable valyd_uuid — catch duplicate accounts. API key + workflowId, no login, nothing saved.",
-                  href: '/verifications/standalone/face-uniqueness'
+                  href: '/verifications/unique-human/face-uniqueness'
                 },
                 {
                   title: 'Run a verification workflow',

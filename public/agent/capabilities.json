@@ -55,7 +55,7 @@
    "billable": true,
    "pii_mode": "standalone",
    "saves_proof": false,
-   "doc": "/verify/standalone/antispoof.md"
+   "doc": "/verify/unique-human/antispoof.md"
   },
   {
    "id": "unique-human.uniqueness",
@@ -70,7 +70,7 @@
    "billable": true,
    "pii_mode": "standalone",
    "saves_proof": false,
-   "doc": "/verify/standalone/face-uniqueness.md"
+   "doc": "/verify/unique-human/face-uniqueness.md"
   },
   {
    "id": "organizations",

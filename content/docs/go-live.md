@@ -31,7 +31,7 @@ one place for the day you flip to production.
       policy), `ABANDONED` / `EXPIRED` (treat as not verified; offer a new session), and the
       non-terminal `IN_REVIEW` (wait — do not grant access).
 - [ ] **Send `Idempotency-Key`** on billable `POST /api/v2/*` calls so retries can't double-run
-      or double-charge ([idempotency](/verifications/standalone#idempotency)).
+      or double-charge ([idempotency](/verifications/unique-human#idempotency)).
 
 ## Webhooks
 

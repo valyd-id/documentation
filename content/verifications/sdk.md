@@ -95,7 +95,7 @@ The **Unique Human API** is the same `verify.sessions` surface with **no user to
 session for a workflow containing the anti-spoof and/or face-uniqueness checks, redirect the
 person to `session.url`, and read the verdict from `verify.sessions.decision()`. No account is
 involved, the result returns to you, and nothing is saved to one. See the
-[Unique Human API](/verifications/standalone) reference.
+[Unique Human API](/verifications/unique-human) reference.
 
 - `faceUniquenessUnlink(valydUuid)` — GDPR: forget this project's link to a face id (deletes the
   face entirely when no remaining project or Valyd account knows it).

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Build gate: fail if a FOREIGN environment host leaked into this build.
 //
-// Each environment must only reference its own hosts (docs/idp/dev.valyd.<tld>).
+// Each environment must only reference its own hosts (docs/idp/dev/mcp.valyd.<tld>).
 // A .work build that ships a docs.valyd.vip URL — the DOCS-000 bug — is a hard
 // error here, so it can never reach production again.
 //
@@ -28,8 +28,8 @@ const ownTld = docsUrl.replace(/^https?:\/\/[^.]+\.valyd\./, '').replace(/\/.*$/
 
 const ALL_TLDS = ['work', 'vip', 'id']
 const foreign = ALL_TLDS.filter(t => t !== ownTld)
-// Match a real HOST prefix only (docs/idp/dev), so emails (support@valyd.id) are safe.
-const re = new RegExp(`(?:docs|idp|dev)\\.valyd\\.(?:${foreign.join('|')})\\b`)
+// Match a real HOST prefix only (docs/idp/dev/mcp), so emails (support@valyd.id) are safe.
+const re = new RegExp(`(?:docs|idp|dev|mcp)\\.valyd\\.(?:${foreign.join('|')})\\b`)
 
 async function* walk(dir) {
   let entries

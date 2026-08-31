@@ -28,6 +28,10 @@ export function AskAiProvider({ children }: { children: ReactNode }) {
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // The docs-agent keeps conversation memory server-side, keyed by an id it mints
+  // on the first answer. We store it here and echo it back so follow-up questions
+  // continue the same conversation. Cleared on refresh (in-memory only).
+  const conversationIdRef = useRef<string | null>(null)
   // React state updates aren't synchronous, so a fast double-submit (e.g.
   // Enter then an immediate click) can read a stale `isStreaming` and slip
   // through before a re-render disables the input. A ref is checked/set
@@ -41,7 +45,12 @@ export function AskAiProvider({ children }: { children: ReactNode }) {
       isSendingRef.current = true
 
       setError(null)
-      const history = [...messages, { role: 'user', content: trimmed } satisfies AskAiMessage]
+      // Only send real turns. A previous answer that came back empty (or a turn that
+      // failed) can leave a blank assistant message in state; including it would make the
+      // API reject the whole request ("messages must be non-empty"). Drop any blanks, and
+      // keep the tail within the server's per-request limits (20 messages / 32k chars).
+      const priorTurns = messages.filter(message => message.content.trim().length > 0)
+      const history = [...priorTurns, { role: 'user', content: trimmed } satisfies AskAiMessage].slice(-18)
       setMessages([...history, { role: 'assistant', content: '' }])
       setIsStreaming(true)
 
@@ -52,13 +61,17 @@ export function AskAiProvider({ children }: { children: ReactNode }) {
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({ messages: history, conversation_id: conversationIdRef.current ?? undefined }),
           signal: controller.signal
         })
 
         if (!response.ok || !response.body) {
           throw new Error((await response.text()) || 'Ask AI is unavailable right now.')
         }
+
+        // The server threads the docs-agent conversation id back on a header.
+        const cid = response.headers.get('X-Conversation-Id')
+        if (cid) conversationIdRef.current = cid
 
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
@@ -74,10 +87,19 @@ export function AskAiProvider({ children }: { children: ReactNode }) {
             return next
           })
         }
+
+        // A 200 that streamed nothing must not leave a blank assistant bubble in state —
+        // it would be sent on the next turn and get the whole request rejected. Drop it
+        // and surface a plain message instead.
+        if (!accumulated.trim()) {
+          setMessages(prev => prev.slice(0, -1))
+          setError('No answer came back. Please try again.')
+        }
       } catch (err) {
+        // Never leave the blank assistant placeholder behind, on any failure (abort included).
+        setMessages(prev => (prev.at(-1)?.content ? prev : prev.slice(0, -1)))
         if (err instanceof Error && err.name === 'AbortError') return
         setError(err instanceof Error ? err.message : 'Something went wrong.')
-        setMessages(prev => prev.slice(0, -1))
       } finally {
         setIsStreaming(false)
         abortRef.current = null

@@ -89,4 +89,4 @@ const session = await verify.sessions.create({
 ---
 
 Just need to know whether someone is a live, unique human — no user account involved? That's the
-**[Unique Human API](/verifications/standalone)**.
+**[Unique Human API](/verifications/unique-human)**.

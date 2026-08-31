@@ -20,7 +20,7 @@ import { MetaTitle } from '@/components/meta-title'
 // Connect/Organizations plumbing lives in the Docs tab; agents in the AI tab.
 export default {
   '--unique-human': { type: 'separator', title: 'UNIQUE HUMAN API' },
-  standalone: { title: <MetaTitle icon={Zap}>Unique Human</MetaTitle> },
+  'unique-human': { title: <MetaTitle icon={Zap}>Unique Human</MetaTitle> },
 
   '--reusable': { type: 'separator', title: 'REUSABLE VERIFICATION' },
   index: { title: <MetaTitle icon={ShieldCheck}>Overview</MetaTitle> },

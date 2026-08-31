@@ -27,7 +27,7 @@ try {
 1. **Invalid or missing API key.**
    - Cause: the `apiKey` passed to `VerifyClient` is absent, wrong, or revoked.
    - Fix: set `apiKey` on the client from a valid key. Obtain one from the Developer Portal — open a
-     project's **Verification** tab, or use your organization's built-in **Verify Fresh** key on the
+     project's **Verification** tab, or use your organization's built-in **Unique Human API** key on the
      dashboard: https://dev.valyd.work
 
 2. **Missing or invalid `workflowId`.**
@@ -40,7 +40,7 @@ try {
    - Fix: back off and retry with jitter.
 
 A spoof verdict is not an error — the session completes and the decision's antispoof check data
-carries the failure `signal`. See [Liveness](/verifications/standalone/antispoof) for the signals.
+carries the failure `signal`. See [Liveness](/verifications/unique-human/antispoof) for the signals.
 
 ---
 

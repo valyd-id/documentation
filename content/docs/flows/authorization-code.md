@@ -14,7 +14,7 @@ so no token ever touches the front end.
 - You're using the [drop-in button](/docs/flows/button), the `@valyd/sdk`, or
   [your own OIDC library](/docs/oidc) — all of them run this exact flow underneath.
 
-Don't use it for the [Unique Human API](/verifications/standalone) — those API-key calls answer
+Don't use it for the [Unique Human API](/verifications/unique-human) — those API-key calls answer
 "is this a live, unique human?" with no user login involved at all.
 
 ## How it works

@@ -9,7 +9,7 @@ The two products share very different data with your application:
   proofs** (a pseudonym, `id_verified`, verified license badges, age bands) — raw identity data is
   shared only with the user's explicit consent. The raw identity data (documents, DOB, face images)
   stays **encrypted with Valyd** under the user's per-user key.
-- **[Unique Human API](/verifications/standalone)** — no login, no Valyd account. This is the one
+- **[Unique Human API](/verifications/unique-human)** — no login, no Valyd account. This is the one
   place where check data flows **to you**: you supply the input (the images for an anti-spoof
   check), Valyd processes them, and the result is returned to your system. Nothing is written to a
   Valyd account, and there is no proof to reuse later; the data, and the duty of care that comes

@@ -29,6 +29,7 @@ const MAP: Array<[RegExp, string]> = [
   [/docs\.valyd\.work/g, bareHost(SITE.docsUrl)],
   [/idp\.valyd\.work/g, bareHost(SITE.idpUrl)],
   [/dev\.valyd\.work/g, bareHost(SITE.devUrl)],
+  [/mcp\.valyd\.work/g, bareHost(SITE.mcpUrl)],
 ]
 
 export function substituteHosts(value: string): string {

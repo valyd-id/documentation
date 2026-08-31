@@ -84,7 +84,7 @@ const required = [
   // The two products.
   ['content/verifications/index.md', 'Reusable Verification'],
   ['content/verifications/index.md', 'valyd_access_token'],
-  ['content/verifications/standalone/index.md', 'Unique Human API'],
+  ['content/verifications/unique-human/index.md', 'Unique Human API'],
 ]
 
 for (const [relative, phrase] of required) {

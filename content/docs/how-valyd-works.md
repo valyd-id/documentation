@@ -37,10 +37,10 @@ Connect with Valyd, your app [reads the verified data](/docs/user-token/account)
 and [runs a verification](/verifications/quickstart) through a configured
 [workflow](/verifications/workflows) for anything missing.
 
-There is one deliberately separate product: the **[Unique Human API](/verifications/standalone)**.
+There is one deliberately separate product: the **[Unique Human API](/verifications/unique-human)**.
 It answers a single question — *is this a live, unique human?* — with nothing but your API key:
-[Liveness](/verifications/standalone/antispoof) stops a photo or replay standing in for a real
-person, and [Uniqueness](/verifications/standalone/face-uniqueness) catches the same face opening
+[Liveness](/verifications/unique-human/antispoof) stops a photo or replay standing in for a real
+person, and [Uniqueness](/verifications/unique-human/face-uniqueness) catches the same face opening
 a second account. No user login is involved, the result returns straight to your caller, and
 storing and protecting the person's data is your responsibility.
 

@@ -20,10 +20,10 @@ done. The result returns to your system — nothing is saved to any Valyd accoun
 
 1. In the [Developer Portal](https://dev.valyd.work) create a **project** and open its
    **Verification** tab. Build a **workflow** with the checks you need —
-   [Liveness](/verifications/standalone/antispoof),
-   [Uniqueness](/verifications/standalone/face-uniqueness), or both — then copy the project's API key
+   [Liveness](/verifications/unique-human/antispoof),
+   [Uniqueness](/verifications/unique-human/face-uniqueness), or both — then copy the project's API key
    (shown once) and the `workflowId`. (For a quick, no-account anti-spoof check, every organization
-   also has a built-in **Verify Fresh** key on the dashboard.)
+   also has a built-in **Unique Human API** key on the dashboard.)
 2. Create a session from your backend — **no user token**:
 
    ```javascript
@@ -55,9 +55,9 @@ yours to act on.
 
 ## The two checks
 
-- **[Liveness](/verifications/standalone/antispoof)** — is this a live human in front of the
+- **[Liveness](/verifications/unique-human/antispoof)** — is this a live human in front of the
   camera, not a printout, screen replay, or mask?
-- **[Uniqueness](/verifications/standalone/face-uniqueness)** — one face = one identity: the same
+- **[Uniqueness](/verifications/unique-human/face-uniqueness)** — one face = one identity: the same
   face always resolves to the same stable `valyd_uuid`, so a person opening a second account is
   caught.
 

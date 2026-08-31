@@ -58,14 +58,14 @@ Create a session with **no user token** for a workflow containing the checks, re
 to Valyd's verification page, and read the decision:
 
 - **Liveness** (anti-spoof — flags photos, masks, replays, deepfakes): the `antispoof` check —
-  see [Liveness](/verifications/standalone/antispoof).
+  see [Liveness](/verifications/unique-human/antispoof).
 - **Uniqueness** (one-person-one-account dedup — a stable `valyd_` uuid per face): the
-  `face_uniqueness` check — see [Uniqueness](/verifications/standalone/face-uniqueness).
+  `face_uniqueness` check — see [Uniqueness](/verifications/unique-human/face-uniqueness).
 
 `verify.sessions.create({ workflowId, redirectUrl })` → `session.url` →
 `verify.sessions.decision(sessionId)`.
 
-→ Credential: SDK App key + `workflow_id`. → Fetch [**Unique Human API**](/verifications/standalone).
+→ Credential: SDK App key + `workflow_id`. → Fetch [**Unique Human API**](/verifications/unique-human).
 
 ### 4. Do you need reusable verified identity — KYC, ID, face match, age, license, location?
 
@@ -138,7 +138,7 @@ Once the product is set, ask whichever of these apply and fetch the named page:
 **Agents scaffolding in a tool like Lovable/Cursor: ASK these questions before writing code; then
 fetch the named page's `.md` and follow it.** The exact `.md` fetch URL for each page is listed in
 [`llms.txt`](https://docs.valyd.work/llms.txt) (e.g. `.../docs/organizations.md`,
-`.../docs/user-token.md`, `.../verifications/standalone.md`, `.../verifications/quickstart.md`) —
+`.../docs/user-token.md`, `.../verifications/unique-human.md`, `.../verifications/quickstart.md`) —
 see Step 1.
 
 ## Step 1 — Read `llms.txt` first
@@ -163,7 +163,7 @@ create a session with no user token for a workflow containing the liveness / uni
 (`verify.sessions.create({ workflowId, redirectUrl })`), redirect the person to Valyd's
 verification page, and read the verdict from `verify.sessions.decision()`. Nothing is saved to a
 Valyd account, and the result is yours to manage and protect. Start at the
-[Unique Human API](/verifications/standalone).
+[Unique Human API](/verifications/unique-human).
 
 **Reusable Verification (a connected user's token).** The user connects with Valyd (OAuth 2.0 /
 OIDC); your agent acts with their access token. Read the proofs their Valyd ID already holds

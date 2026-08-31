@@ -28,7 +28,7 @@ verification page, the passed proofs save to their Valyd ID, and next time
 [the read](/docs/user-token/account) answers yes. ID/KYC, face match, age, and professional
 license all run this way — as workflow checks on the connected user's session, never as direct
 public API calls. (Need only Liveness or Uniqueness, with no login and nothing saved? That's the
-[Unique Human API](/verifications/standalone).)
+[Unique Human API](/verifications/unique-human).)
 
 ## Run a workflow
 

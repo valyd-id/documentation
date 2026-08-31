@@ -16,6 +16,7 @@
 //   NEXT_PUBLIC_DOCS_URL   docs site        (default https://docs.valyd.work)
 //   NEXT_PUBLIC_IDP_URL    API host (idp)   (default https://idp.valyd.work)
 //   NEXT_PUBLIC_DEV_URL    developer portal (default https://dev.valyd.work)
+//   NEXT_PUBLIC_MCP_URL    MCP server       (default https://mcp.valyd.work)
 //
 // Environments: dev = *.valyd.work, testing = *.valyd.vip, prod = *.valyd.id.
 // Set the three vars for the target env before `next build` (prebuild runs this).
@@ -62,7 +63,8 @@ for (const file of ['.env', '.env.local']) {
 const HOSTS = [
   { canonical: 'docs.valyd.work', url: process.env.NEXT_PUBLIC_DOCS_URL || 'https://docs.valyd.work' },
   { canonical: 'idp.valyd.work', url: process.env.NEXT_PUBLIC_IDP_URL || 'https://idp.valyd.work' },
-  { canonical: 'dev.valyd.work', url: process.env.NEXT_PUBLIC_DEV_URL || 'https://dev.valyd.work' }
+  { canonical: 'dev.valyd.work', url: process.env.NEXT_PUBLIC_DEV_URL || 'https://dev.valyd.work' },
+  { canonical: 'mcp.valyd.work', url: process.env.NEXT_PUBLIC_MCP_URL || 'https://mcp.valyd.work' }
 ]
 
 const hostOf = url => url.replace(/^https?:\/\//, '').replace(/\/+$/, '')

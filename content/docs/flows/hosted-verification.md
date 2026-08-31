@@ -16,4 +16,4 @@ passed proofs save to the connected user's Valyd ID — reusable next time.
 - The full journey around it: [Reusable Verification](/verifications)
 - Pick the checks a session runs: [Workflows](/verifications/workflows)
 - What each status means: [Decisions & statuses](/verifications/statuses)
-- Liveness / uniqueness with an API key alone: [Unique Human API](/verifications/standalone)
+- Liveness / uniqueness with an API key alone: [Unique Human API](/verifications/unique-human)

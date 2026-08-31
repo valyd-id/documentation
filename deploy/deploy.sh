@@ -11,8 +11,8 @@ set -euo pipefail
 #   PM2_APP       pm2 app name (e.g. docs-nextra)
 #   DOCS_HOST     this env's docs URL (e.g. https://docs.valyd.vip)
 #
-# All three NEXT_PUBLIC_* hosts are DERIVED from DOCS_HOST's TLD (work/vip/id):
-#   docs.valyd.<tld> / idp.valyd.<tld> / dev.valyd.<tld>
+# All four NEXT_PUBLIC_* hosts are DERIVED from DOCS_HOST's TLD (work/vip/id):
+#   docs.valyd.<tld> / idp.valyd.<tld> / dev.valyd.<tld> / mcp.valyd.<tld>
 # Set NEXT_PUBLIC_* explicitly to override the derivation.
 set -euo pipefail
 
@@ -26,7 +26,8 @@ TLD="${DOCS_HOST##*valyd.}"; TLD="${TLD%%/*}"
 : "${NEXT_PUBLIC_DOCS_URL:=$DOCS_HOST}"
 : "${NEXT_PUBLIC_IDP_URL:=https://idp.valyd.$TLD}"
 : "${NEXT_PUBLIC_DEV_URL:=https://dev.valyd.$TLD}"
-export NEXT_PUBLIC_DOCS_URL NEXT_PUBLIC_IDP_URL NEXT_PUBLIC_DEV_URL
+: "${NEXT_PUBLIC_MCP_URL:=https://mcp.valyd.$TLD}"
+export NEXT_PUBLIC_DOCS_URL NEXT_PUBLIC_IDP_URL NEXT_PUBLIC_DEV_URL NEXT_PUBLIC_MCP_URL
 
 cd "$DOCS_PATH"
 
@@ -41,6 +42,7 @@ cat > .env <<EOF
 NEXT_PUBLIC_DOCS_URL=${NEXT_PUBLIC_DOCS_URL:-https://docs.valyd.work}
 NEXT_PUBLIC_IDP_URL=${NEXT_PUBLIC_IDP_URL:-https://idp.valyd.work}
 NEXT_PUBLIC_DEV_URL=${NEXT_PUBLIC_DEV_URL:-https://dev.valyd.work}
+NEXT_PUBLIC_MCP_URL=${NEXT_PUBLIC_MCP_URL:-https://mcp.valyd.work}
 EOF
 # Preserve any secret-bearing lines (e.g. OPENROUTER_API_KEY) from a sidecar file
 # the box keeps out of git, so CI never has to hold the chat key.

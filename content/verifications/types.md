@@ -5,7 +5,7 @@
 Every check Valyd can run, in one place: what it verifies, what the user provides, what comes
 back, and where it's available — inside a **[Reusable Verification](/verifications)**
 [workflow](/verifications/workflows) (a connected user's session, where every check runs) and/or
-as a direct **[Unique Human API](/verifications/standalone)** call (API key only, no user login).
+as a direct **[Unique Human API](/verifications/unique-human)** call (API key only, no user login).
 
 ## ID verification — `id_verification`
 
@@ -28,7 +28,7 @@ user provides a single image (score capped at 85) or a 3–8 frame burst capture
 adds motion and same-person consistency analysis. A workflow session captures a live camera burst
 with a random on-screen action for the strongest assurance (`assurance: "captured"`).
 Use it when presentation attacks (photos of photos, replays) are a real threat.
-**Available:** [Unique Human API — Liveness](/verifications/standalone/antispoof) (no-account workflow session) · [Reusable Verification](/verifications) workflow
+**Available:** [Unique Human API — Liveness](/verifications/unique-human/antispoof) (no-account workflow session) · [Reusable Verification](/verifications) workflow
 
 ## Anti-spoof + identity — `antispoof/identity`
 
@@ -37,14 +37,14 @@ stable `valyd_` uuid from the global face gallery. You get the `human_score` plu
 `identity: { valyd_uuid, registered }` — the same face resolves to the same uuid whenever the
 gallery match clears its similarity threshold. Use it for duplicate-account / sybil detection with
 liveness assurance built in.
-**Available:** [Unique Human API](/verifications/standalone/face-uniqueness) (no-account workflow session) · [Reusable Verification](/verifications) workflow
+**Available:** [Unique Human API](/verifications/unique-human/face-uniqueness) (no-account workflow session) · [Reusable Verification](/verifications) workflow
 
 ## Face uniqueness — `face-uniqueness`
 
 One face = one Valyd uuid. Enrolls or matches a selfie against the global gallery and returns the
 stable `valyd_uuid` plus whether it was newly registered. Use it to stop one person opening many
 accounts.
-**Available:** [Unique Human API — Uniqueness](/verifications/standalone/face-uniqueness) (no-account workflow session) · [Reusable Verification](/verifications) workflow
+**Available:** [Unique Human API — Uniqueness](/verifications/unique-human/face-uniqueness) (no-account workflow session) · [Reusable Verification](/verifications) workflow
 
 ## Face match — `face_match`
 
@@ -91,4 +91,4 @@ visit verification) to prove where a check happened.
 > that request — not a stored account photo. [Full scoping →](/docs/data-and-trust)
 
 Next: bundle checks into a [workflow](/verifications/workflows), or — for the direct liveness and
-uniqueness calls — see the [Unique Human API](/verifications/standalone).
+uniqueness calls — see the [Unique Human API](/verifications/unique-human).

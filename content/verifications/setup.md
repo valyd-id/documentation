@@ -14,8 +14,8 @@ Verification is configured **inside your app** — the same app whose OIDC crede
 
 ![The Verification tab inside an app in the Developer Portal](/images/screenshots/portal-app-verification.png)
 
-(Building only with the [Unique Human API](/verifications/standalone)? No project needed — every
-organization has a built-in **Verify Fresh** key on the dashboard for no-account anti-spoof checks;
+(Building only with the [Unique Human API](/verifications/unique-human)? No project needed — every
+organization has a built-in **Unique Human API** key on the dashboard for no-account anti-spoof checks;
 see that page's setup section.)
 
 ## Get your API key (shown once)

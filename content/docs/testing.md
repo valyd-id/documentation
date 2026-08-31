@@ -30,7 +30,7 @@ administrator and show up in your Transactions ledger.
 ## Verification checks are real (and billed)
 
 There are no simulated verification results. When you call a
-[Unique Human API](/verifications/standalone) endpoint, or a workflow runs a license lookup or
+[Unique Human API](/verifications/unique-human) endpoint, or a workflow runs a license lookup or
 any other check, the real
 pipeline runs — against the real face models and the real license registries — and the call is
 [billed against your app](/verifications/api-reference). That's deliberate: a decision you can
@@ -42,7 +42,7 @@ Practical consequences:
   balance returns [`402 Payment required`](/docs/errors); top up in the console.
 - **Use the `Idempotency-Key` header** on every billable `POST /api/v2/*` so a network retry can
   never double-run or double-charge a check — see
-  [Idempotency](/verifications/standalone#idempotency).
+  [Idempotency](/verifications/unique-human#idempotency).
 - **Test with real inputs**: your own ID and selfie, or a real license number. A failed check is
   a real failure worth reading — inspect `check.error` and the
   [decision breakdown](/verifications/statuses).

@@ -40,9 +40,9 @@ guess them.
     data carries a stable `valyd_uuid` + `registered: "new" | "existing"` (one-person-one-account
     dedup).
     Credential: App key (via the SDK) + `workflow_id`.
-    Fetch: https://docs.valyd.work/verify/standalone.md
-    (Liveness: https://docs.valyd.work/verify/standalone/antispoof.md ·
-    Uniqueness: https://docs.valyd.work/verify/standalone/face-uniqueness.md)
+    Fetch: https://docs.valyd.work/verify/unique-human.md
+    (Liveness: https://docs.valyd.work/verify/unique-human/antispoof.md ·
+    Uniqueness: https://docs.valyd.work/verify/unique-human/face-uniqueness.md)
 - Q3 — Need reusable verified identity — KYC, ID, face match, age, professional license, location —
   or want to read/write proofs on the user's own Valyd account?
   → **Reusable Verification**. The journey is: **Connect with Valyd** (standard OIDC) → read the
@@ -153,7 +153,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 - [Run a verification (quickstart)](https://docs.valyd.work/verify/quickstart.md): Get an App key, connect the user, and run `verify.sessions.create({ workflowId, valydAccessToken, redirectUrl })`.
 - [Create a workflow (setup)](https://docs.valyd.work/verify/setup.md): Developer Portal setup — the App API key (shown once), a `workflow_id`, and the webhook secret. (Human-only UI steps.)
 - [Workflows](https://docs.valyd.work/verify/workflows.md): Configure which checks a verification session runs, in the Developer Portal, and get the `workflow_id`.
-- [Unique Human API](https://docs.valyd.work/verify/standalone.md): API-key-only, no user account — a workflow session (no user token) on Valyd's verification page running the Liveness and/or Uniqueness checks; verdict returned to you, nothing saved to an account. See [Liveness](https://docs.valyd.work/verify/standalone/antispoof.md), [Uniqueness](https://docs.valyd.work/verify/standalone/face-uniqueness.md), and [Common errors](https://docs.valyd.work/verify/standalone/errors.md). (ID/KYC, face match, age, professional license, and location run only as workflow checks in a Reusable Verification session.)
+- [Unique Human API](https://docs.valyd.work/verify/unique-human.md): API-key-only, no user account — a workflow session (no user token) on Valyd's verification page running the Liveness and/or Uniqueness checks; verdict returned to you, nothing saved to an account. See [Liveness](https://docs.valyd.work/verify/unique-human/antispoof.md), [Uniqueness](https://docs.valyd.work/verify/unique-human/face-uniqueness.md), and [Common errors](https://docs.valyd.work/verify/unique-human/errors.md). (ID/KYC, face match, age, professional license, and location run only as workflow checks in a Reusable Verification session.)
 - [Developer Portal](https://docs.valyd.work/verify/console.md): Apps, API keys, workflows, webhooks, SSO. (Human-only UI steps.)
 - [Node SDK](https://docs.valyd.work/verify/sdk.md): Install/init @valyd/sdk, resources, types, error handling, Express webhook handler.
 - [Webhooks](https://docs.valyd.work/verify/webhooks.md): Register a callback URL and verify HMAC-SHA256 signatures over the raw request body.

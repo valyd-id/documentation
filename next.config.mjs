@@ -20,7 +20,7 @@ const VERIFY_SECTIONS = [
   'console',
   'modes',
   'hosted',
-  'standalone',
+  'unique-human',
   'managed',
   'sdk',
   'webhooks',
@@ -52,12 +52,19 @@ export default withNextra({
       { source: '/docs/choose', destination: '/docs/introduction', permanent: true },
       { source: '/verifications/managed', destination: '/verifications', permanent: true },
       { source: '/verifications/hosted', destination: '/verifications/quickstart', permanent: true },
-      { source: '/verifications/standalone/liveness', destination: '/verifications/standalone/antispoof', permanent: true },
-      ...['id-verification', 'face-match', 'age-verification', 'credential-verification', 'kyc-credential', 'location'].map(s => ({
-        source: `/verifications/standalone/${s}`,
-        destination: '/verifications/types',
-        permanent: true
-      })),
+      // The `standalone/` folder was renamed → `unique-human/`. Retired direct-check pages 301 to
+      // the checks reference (both old and new URLs); liveness folds into anti-spoof. The retired
+      // per-check redirects must precede the catch-all so they win.
+      ...['id-verification', 'face-match', 'age-verification', 'credential-verification', 'kyc-credential', 'location'].flatMap(s => [
+        { source: `/verifications/standalone/${s}`, destination: '/verifications/types', permanent: true },
+        { source: `/verifications/unique-human/${s}`, destination: '/verifications/types', permanent: true }
+      ]),
+      { source: '/verifications/standalone/liveness', destination: '/verifications/unique-human/antispoof', permanent: true },
+      { source: '/verifications/unique-human/liveness', destination: '/verifications/unique-human/antispoof', permanent: true },
+      // Old standalone/* URLs → new unique-human/* (index, anti-spoof, uniqueness, errors).
+      { source: '/verify/standalone', destination: '/verifications/unique-human', permanent: true },
+      { source: '/verifications/standalone', destination: '/verifications/unique-human', permanent: true },
+      { source: '/verifications/standalone/:slug*', destination: '/verifications/unique-human/:slug*', permanent: true },
       // The API Playground moved into the Docs tree so it gets the docs sidebar.
       { source: '/sandbox', destination: '/docs/sandbox', permanent: true }
     ]

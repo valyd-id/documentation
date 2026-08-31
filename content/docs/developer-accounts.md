@@ -57,7 +57,7 @@ signing in again.
 
 Everything you build lives inside an **organization** — there is no separate "personal vs
 organization app" split. On first sign-in Valyd creates your **personal organization**
-automatically: an org of one that can't be deleted. Every project (a "Login with Valyd" app with its
+automatically: an org of one that can't be deleted. Every project (a "Connect with Valyd" app with its
 own verification) belongs to whichever organization is **active in the sidebar switcher**:
 
 - **Your personal organization** — your solo workspace. Its projects and its bill are yours.

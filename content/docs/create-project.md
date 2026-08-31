@@ -124,7 +124,7 @@ For the Unique Human API (liveness and face uniqueness, API key only):
 
 1. Store `VALYD_API_KEY` on your backend.
 2. Do not build an OIDC login route — these calls involve no user account.
-3. Follow the [Unique Human API](/verifications/standalone) guide.
+3. Follow the [Unique Human API](/verifications/unique-human) guide.
 
 ## Verification
 

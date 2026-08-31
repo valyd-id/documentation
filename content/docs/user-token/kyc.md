@@ -17,16 +17,20 @@ const session = await verify.sessions.create({
 // → webhook: id_verified + proofs — the documents stay with Valyd, encrypted
 ```
 
-**Simplest handoff.** If all you need is "make this connected user complete KYC," skip building a
-session and use the redirect helper — it returns a URL to Valyd's account KYC page and brings the
-user back when they're done:
+**Simplest handoff.** If all you need is "make this connected user complete KYC," gate on the proof
+they already hold, then run a workflow session with their token — Valyd hosts the KYC page and
+brings the user back when they're done:
 
 ```typescript
-// Gate first: only send them if they aren't already verified
+// Gate first: only run KYC if it isn't already on the account
 const verifications = await valyd.auth.getVerifications(accessToken);
-if (valyd.verify.kyc.isRequired(verifications)) {
-  const url = valyd.verify.kyc.redirectUrl({ returnTo: "https://yourapp.com/verified" });
-  return res.redirect(url);          // user completes KYC on Valyd, then returns
+if (!verifications.id_verified) {
+  const session = await verify.sessions.create({
+    workflowId,                      // a workflow that includes the ID / KYC check
+    valydAccessToken: accessToken,   // ties the run to the connected user
+    redirectUrl: "https://yourapp.com/verified",
+  });
+  return res.redirect(session.url);  // user completes KYC on Valyd, then returns
 }
 ```
 

@@ -36,7 +36,7 @@
   also accept `challengeId` on `faceUniqueness()`).
 - **Added (SDK):** optional `idempotencyKey` on every billable standalone check — sent as the
   `Idempotency-Key` header so a network retry can never double-charge or double-run a check.
-- **Docs:** [Standalone checks](/verifications/standalone) split into per-check pages, SDK call
+- **Docs:** [Standalone checks](/verifications/unique-human) split into per-check pages, SDK call
   first.
 
 ## v1.10.1 — Secure OIDC transaction (2026-08-18)
@@ -58,7 +58,7 @@
 - **Added (API docs):** `POST /api/v2/antispoof` (single image or live burst → `human_score`),
   `POST /api/v2/antispoof/identity` (liveness + stable `valyd_` uuid for duplicate detection),
   `POST /api/v2/face-uniqueness` (+ unlink), and `POST /api/v2/location` are now in the
-  [Standalone checks reference](/verifications/standalone).
+  [Standalone checks reference](/verifications/unique-human).
 - **Added (page):** [Developer accounts & sign-in](/docs/developer-accounts) — passwordless
   sign-in (magic link or face), connecting a Valyd ID to an email-only account, and one identity
   owning several console accounts with account switching.

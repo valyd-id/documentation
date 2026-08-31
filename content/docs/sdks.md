@@ -32,7 +32,7 @@ cookies, and starts the standard flow. Environment follows the script host.
 ## Starter project
 
 A minimal Express app wired with `@valyd/sdk` — clone, fill `.env`, `npm run dev`. It shows the full
-**Login with Valyd** (OIDC + PKCE) flow, and — if you set `VALYD_VERIFY_API_KEY` + `VALYD_WORKFLOW_ID`
+**Connect with Valyd** (OIDC + PKCE) flow, and — if you set `VALYD_VERIFY_API_KEY` + `VALYD_WORKFLOW_ID`
 in `.env` — adds a **Test a verification workflow** button that runs one of your Verify workflows
 against the signed-in account.
 

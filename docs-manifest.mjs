@@ -91,9 +91,9 @@ export const SECTIONS = [
   {
     id: 'unique-human', label: 'UNIQUE HUMAN API', tab: 'verify',
     items: [
-      { title: 'Overview', route: '/verifications/standalone', home: 'verifications', icon: 'Zap' },
-      { title: 'Liveness', route: '/verifications/standalone/antispoof', home: 'verifications', icon: 'ScanFace' },
-      { title: 'Uniqueness', route: '/verifications/standalone/face-uniqueness', home: 'verifications', icon: 'Fingerprint' },
+      { title: 'Overview', route: '/verifications/unique-human', home: 'verifications', icon: 'Zap' },
+      { title: 'Liveness', route: '/verifications/unique-human/antispoof', home: 'verifications', icon: 'ScanFace' },
+      { title: 'Uniqueness', route: '/verifications/unique-human/face-uniqueness', home: 'verifications', icon: 'Fingerprint' },
     ],
   },
   {
@@ -144,7 +144,7 @@ export const STUBS = [
   { route: '/verifications/modes', canonical: '/docs/introduction', status: 'stub' },
   { route: '/docs/user-token/hosted', canonical: '/verifications/quickstart', status: 'stub' },
   { route: '/docs/user-token/face-match', canonical: '/verifications/types', status: 'stub' },
-  { route: '/docs/user-token/liveness', canonical: '/verifications/standalone/antispoof', status: 'stub' },
+  { route: '/docs/user-token/liveness', canonical: '/verifications/unique-human/antispoof', status: 'stub' },
   { route: '/docs/user-token/license', canonical: '/verifications/types', status: 'stub' },
   { route: '/docs/user-token/age', canonical: '/verifications/types', status: 'stub' },
   { route: '/docs/sessions', canonical: '/docs/tokens', status: 'stub' },
@@ -153,13 +153,13 @@ export const STUBS = [
   { route: '/verifications/managed', canonical: '/verifications', status: 'stub' },
   { route: '/verifications/hosted', canonical: '/verifications/quickstart', status: 'stub' },
   // Paused APIs — capabilities exist only as workflow checks; per-check API pages are withdrawn.
-  { route: '/verifications/standalone/id-verification', canonical: '/verifications/types', status: 'stub' },
-  { route: '/verifications/standalone/face-match', canonical: '/verifications/types', status: 'stub' },
-  { route: '/verifications/standalone/age-verification', canonical: '/verifications/types', status: 'stub' },
-  { route: '/verifications/standalone/credential-verification', canonical: '/verifications/types', status: 'stub' },
-  { route: '/verifications/standalone/kyc-credential', canonical: '/verifications/types', status: 'stub' },
-  { route: '/verifications/standalone/location', canonical: '/verifications/types', status: 'stub' },
-  { route: '/verifications/standalone/liveness', canonical: '/verifications/standalone/antispoof', status: 'stub' },
+  { route: '/verifications/unique-human/id-verification', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/unique-human/face-match', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/unique-human/age-verification', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/unique-human/credential-verification', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/unique-human/kyc-credential', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/unique-human/location', canonical: '/verifications/types', status: 'stub' },
+  { route: '/verifications/unique-human/liveness', canonical: '/verifications/unique-human/antispoof', status: 'stub' },
 ]
 
 export const ALL_NAV_ROUTES = [...new Set(SECTIONS.flatMap((s) => s.items.map((i) => i.route)))]

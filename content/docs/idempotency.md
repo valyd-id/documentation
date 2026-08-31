@@ -26,7 +26,7 @@ const session = await verify.sessions.create({
 ```
 
 Applies to every billable verification the SDK runs — session creation for both the
-[Unique Human API](/verifications/standalone) and
+[Unique Human API](/verifications/unique-human) and
 [Reusable Verification](/verifications). (All checks — liveness, uniqueness, ID/KYC, face match,
 age, professional license, location — run as [workflow checks](/verifications/types) on a
 session, not as direct calls.)
@@ -46,4 +46,4 @@ See the [Node SDK reference](/verifications/sdk) for the full list of checks tha
 
 - [Testing your integration](/docs/testing) — why checks are always real and billed.
 - [Rate limits](/docs/rate-limits) — retry/backoff behaviour on `429`.
-- [Liveness (anti-spoof)](/verifications/standalone/antispoof) — the Unique Human API's anti-spoof check.
+- [Liveness (anti-spoof)](/verifications/unique-human/antispoof) — the Unique Human API's anti-spoof check.

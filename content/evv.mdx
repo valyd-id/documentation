@@ -69,7 +69,7 @@ Keep `client_secret` and the `API key` server-side only.
 Server (Node 18+) and browser:
 
 ```bash
-# server: OAuth + Verify (auth, sessions, kyc.redirectUrl)
+# server: OAuth + Verify (auth, sessions)
 npm i @valyd/sdk
 
 # browser: none — the face + GPS are captured on Valyd's verification page
@@ -157,8 +157,10 @@ app.get("/evv/callback", async (req, res) => {
   // 2) Onboarding gate — read the account. If KYC or license is missing, send the clinician to
   //    Valyd to complete it (ID/KYC + license run on Valyd's hosted page, never as direct calls).
   const v = await valyd.auth.getVerifications(accessToken);
-  if (valyd.verify.kyc.isRequired(v))
-    return res.redirect(valyd.verify.kyc.redirectUrl({ returnTo: "https://app/evv" }));
+  if (!v.id_verified) {                                  // missing KYC → run it on Valyd's hosted page
+    const s = await valyd.verify.sessions.create({ workflowId: KYC_WORKFLOW_ID, valydAccessToken: accessToken, redirectUrl: "https://app/evv" });
+    return res.redirect(s.url);
+  }
 
   // 3) The visit — a verification session bound to the token runs the face + location checks on
   //    Valyd's verification page. ID/KYC + license are reused from the account, so a returning clinician does
@@ -291,8 +293,9 @@ Rules:
 - Get the Valyd token with valyd.auth.exchangeCode(code) AFTER the user logs in.
 - Pass that token to sessions.create({ valydAccessToken }) — it goes in the SESSION, not the workflow;
   it identifies the person (valyd_id) and unlocks KYC/license reuse.
-- KYC is NOT an API: if valyd.verify.kyc.isRequired(verifications) -> redirect to
-  valyd.verify.kyc.redirectUrl({ returnTo }). The user completes KYC on Valyd and returns.
+- KYC is NOT a self-serve call: if the account is missing id_verified, run a KYC workflow session
+  (sessions.create({ workflowId, valydAccessToken, redirectUrl })) and redirect to session.url.
+  The user completes KYC on Valyd's hosted page and returns.
 - Expected (patient-home) location is passed PER SESSION via metadata.expected_lat / expected_lng (+ radius_m).
 - Face + GPS are captured on Valyd's HOSTED session page — there is no browser SDK and no direct check calls.
 - LOCATION SEMANTICS: a real GPS fix is ALWAYS mandatory — it can never be skipped, and a blocked
@@ -322,8 +325,9 @@ Flow A — One hosted session (Valyd hosts the whole workflow):
 
 Flow B — Onboard once, then a lean per-visit session (still all Reusable Verification):
 1. Same Connect-Valyd login/callback to get accessToken.
-2. Onboarding gate: if (valyd.verify.kyc.isRequired(await valyd.auth.getVerifications(accessToken))) redirect to
-     kyc.redirectUrl. ID/KYC and license are completed on Valyd's hosted page — never as direct calls.
+2. Onboarding gate: if the account is missing id_verified (await valyd.auth.getVerifications(accessToken)),
+     run a KYC workflow session and redirect to session.url. ID/KYC and license are completed on Valyd's
+     hosted page — never as direct calls.
 3. Each visit: create a lean verification session (face + location only; id/license reused from the account):
      const s = await valyd.verify.sessions.create({ workflowId: EVV_VISIT_WORKFLOW_ID, valydAccessToken: accessToken,
        vendorData: user.valyd_id, metadata: { expected_lat, expected_lng, radius_m: 200 } })

@@ -13,4 +13,4 @@ user to Valyd's verification page, and returns the decision and reusable proofs.
 - **How the flow works** — [Reusable Verification](/verifications)
 - **Reading results** — [Results & decisions](/verifications/statuses) and [Webhooks](/verifications/webhooks)
 
-For the API-key-only liveness check, see [Unique Human API → Anti-spoof](/verifications/standalone/antispoof).
+For the API-key-only liveness check, see [Unique Human API → Anti-spoof](/verifications/unique-human/antispoof).

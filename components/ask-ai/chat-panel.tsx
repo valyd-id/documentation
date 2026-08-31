@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import Link from 'next/link'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Bot, Send, User, X } from 'lucide-react'
+import { Bot, Send, Sparkles, User, X } from 'lucide-react'
 import { useAskAi } from './ask-ai-provider'
 
 // Answers include headings, tables, and code blocks (GFM), not just prose —
@@ -47,8 +47,22 @@ export function AskAiChatPanel() {
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`
   }, [draft])
 
-  if (!isOpen) return null
+  // Focus the input when the drawer opens, and close on Escape — the two things a
+  // keyboard user expects from a panel that slides in over the page.
+  useEffect(() => {
+    if (!isOpen) return
+    const id = window.setTimeout(() => textareaRef.current?.focus(), 220)
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') close()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.clearTimeout(id)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [isOpen, close])
 
+  // Kept mounted (not `return null`) so it can animate OUT to the right on close.
   const submitDraft = () => {
     if (!draft.trim() || isStreaming) return
     void sendMessage(draft)
@@ -68,10 +82,22 @@ export function AskAiChatPanel() {
   }
 
   return (
-    <div className="vd-ask-ai-panel" role="dialog" aria-label="Ask AI about these docs">
+    <div
+      className="vd-ask-ai-panel"
+      data-open={isOpen ? '' : undefined}
+      role="dialog"
+      aria-label="Ask AI about these docs"
+      aria-hidden={!isOpen}
+    >
       <div className="vd-ask-ai-panel-header">
         <span className="vd-ask-ai-panel-title">
-          <Bot className="h-4 w-4" aria-hidden /> Ask AI
+          <span className="vd-ask-ai-panel-mark" aria-hidden>
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <span className="vd-ask-ai-panel-titletext">
+            Ask AI
+            <small>Answers from the Valyd docs</small>
+          </span>
         </span>
         <button type="button" aria-label="Close Ask AI" onClick={close} className="vd-ask-ai-panel-close">
           <X className="h-4 w-4" aria-hidden />

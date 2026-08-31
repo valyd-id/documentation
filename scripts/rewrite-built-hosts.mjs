@@ -30,7 +30,8 @@ for (const file of ['.env', '.env.local']) {
 const HOSTS = [
   { canonical: 'docs.valyd.work', url: process.env.NEXT_PUBLIC_DOCS_URL || 'https://docs.valyd.work' },
   { canonical: 'idp.valyd.work', url: process.env.NEXT_PUBLIC_IDP_URL || 'https://idp.valyd.work' },
-  { canonical: 'dev.valyd.work', url: process.env.NEXT_PUBLIC_DEV_URL || 'https://dev.valyd.work' }
+  { canonical: 'dev.valyd.work', url: process.env.NEXT_PUBLIC_DEV_URL || 'https://dev.valyd.work' },
+  { canonical: 'mcp.valyd.work', url: process.env.NEXT_PUBLIC_MCP_URL || 'https://mcp.valyd.work' }
 ].map(h => ({ ...h, host: h.url.replace(/^https?:\/\//, '').replace(/\/+$/, '') }))
 
 const NEEDS_SUB = HOSTS.some(h => h.host !== h.canonical)
