@@ -348,10 +348,10 @@ export const TryApisContent = () => {
             where "no OIDC needed" is the whole point. */}
         {lane !== 'verify' && (
         <section
-          className="vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-white p-6 sm:p-8 dark:bg-slate-950"
+          className="@container vd-rise relative overflow-hidden rounded-2xl border border-(--vd-border) bg-white p-6 sm:p-8 dark:bg-slate-950"
           style={{ '--i': 4 } as React.CSSProperties}
         >
-          <div className="grid items-center gap-6 lg:grid-cols-[1fr_auto]">
+          <div className="grid items-center gap-6 @min-[560px]:grid-cols-[1fr_auto]">
             <div className="max-w-2xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-(--vd-primary-soft) px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-(--vd-primary)">
                 <Terminal className="h-3.5 w-3.5" />
@@ -482,7 +482,7 @@ npm run dev`}
             </div>
           </div>
         ) : (
-          <div key="oauth2" className="vd-rise space-y-6">
+          <div key="oauth2" className="@container vd-rise space-y-6">
             {/* TOP: Credentials banner */}
             <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
               <div className="flex items-center gap-2 border-b border-(--vd-border) bg-slate-50 px-5 py-3 dark:bg-slate-900">
@@ -499,9 +499,9 @@ npm run dev`}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)_300px]">
+            <div className="grid grid-cols-1 items-start gap-6 @min-[880px]:grid-cols-[240px_minmax(0,1fr)_300px]">
               {/* LEFT: Endpoint list */}
-              <aside className="overflow-hidden rounded-xl border border-(--vd-border) bg-white/80 shadow-sm backdrop-blur-sm lg:sticky lg:top-20 dark:bg-slate-950/80">
+              <aside className="overflow-hidden rounded-xl border border-(--vd-border) bg-white/80 shadow-sm backdrop-blur-sm @min-[880px]:sticky @min-[880px]:top-20 dark:bg-slate-950/80">
                 <div className="border-b border-(--vd-border) px-4 py-3">
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Endpoints
@@ -555,12 +555,12 @@ npm run dev`}
               </aside>
 
               {/* CENTER: Request + Response */}
-              <section className="min-w-0 space-y-5">
+              <section className="@container min-w-0 space-y-5">
                 {/* Header card */}
                 <div className="overflow-hidden rounded-xl border border-(--vd-border) bg-white shadow-sm dark:bg-slate-950">
                   <div className="border-b border-(--vd-border) bg-white px-6 py-5 dark:bg-slate-900">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-4 @lg:flex-row @lg:items-start @lg:justify-between">
+                      <div className="min-w-0 @lg:flex-1">
                         <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                           <span className="font-mono">
                             Step {activeIndex + 1} of {ENDPOINTS.length}
@@ -698,7 +698,7 @@ npm run dev`}
               </section>
 
               {/* RIGHT: Configuration */}
-              <aside className="space-y-4 lg:sticky lg:top-20">
+              <aside className="space-y-4 @min-[880px]:sticky @min-[880px]:top-20">
                 <DemoUserPicker value={demoUser} onChange={setDemoUser} />
                 <ScopePicker selected={scopes} onChange={setScopes} />
                 <div className="space-y-1.5 rounded-lg border border-(--vd-primary-border) bg-(--vd-primary-soft) px-3 py-2.5 text-[11px] text-gray-700 dark:text-gray-300">
