@@ -12,9 +12,9 @@ source_of_truth: manual
 
 Let a locked-out member of your organization regain access by **re-verifying their identity with
 Valyd** — **without Valyd ever storing or resetting your passwords**. Valyd verifies the person
-(liveness + a face match against the face they enrolled, optionally a document/KYC check) and returns
-a **pass/fail** decision on your Verify webhook. On a pass, you permit the reset in **your own**
-system.
+(liveness + a face match against the face they enrolled, plus a fresh document/KYC check when you
+ask for it) and returns a **pass/fail** decision on your Verify webhook. On a pass, you permit the
+reset in **your own** system.
 
 This is the right tool when your app uses **email/password** (or any credential you own) and a user
 forgets it: instead of a knowledge-based reset, you get a **biometric identity proof** that the
@@ -30,17 +30,18 @@ person asking is the same Valyd account.
   face** on file. Members onboarded through [Workforce onboarding](/docs/organizations/onboarding)
   qualify; so does anyone you register with [`bindMember`](#bindmember) after they connect Valyd.
   Never-claimed or faceless members are **not** recoverable (fail-closed).
-- You have your app's `clientId` / `clientSecret` and a Verify **project + webhook** configured.
+- You have your app's `clientId` / `clientSecret` and a Verify **project with a webhook** configured
+  (the recovery result is delivered to that webhook).
 
 ## Flow
 
 ```
-1. User can't sign in → your "Forgot password" (or an admin action) collects their email.
-2. Your server calls  startAccountRecovery({ email })  → Valyd starts a hosted session and
-   (with deliverEmail) emails the member a verification link.
-3. The member opens the link → completes liveness + face match (and document/KYC if you use
-   the with_id variant) against their on-file Valyd identity.
-4. Valyd sends a signed webhook to your callback → verify.approved  or  verify.declined.
+1. User can't sign in → your "Forgot password" (or an admin action) resolves their valyd_id.
+2. Your server calls  startAccountRecovery({ valydId })  → Valyd starts a session and ALWAYS
+   emails the member a verification link at their on-file address.
+3. The member opens the link → completes liveness + a face match against their on-file Valyd
+   face (and a fresh document/KYC scan when variant is "with_id").
+4. Valyd sends a signed webhook to your PROJECT webhook → verify.approved  or  verify.declined.
 5. On approved, YOUR app lets the user set a new password. Valyd sets nothing.
 ```
 
@@ -80,13 +81,9 @@ const client = new ValydClient({
 });
 
 const rec = await client.startAccountRecovery({
-  email: "jane@acme.com",          // or: valydId, or memberUid
-  variant: "with_id",              // "without_id" = liveness + face; "with_id" also runs document/KYC
-  deliverEmail: true,              // Valyd emails the link to the member's on-file address
-  appName: "Acme",                 // shown in the email subject/body
-  callback: "https://acme.com/valyd/webhook",   // your Verify webhook
-  redirectUrl: "https://acme.com/reset",        // where the user lands after verifying
-  vendorData: "reset-req-123",     // echoed back on the webhook
+  valydId: "valyd_…",                       // the member's Valyd id
+  variant: "with_id",                        // "with_id" (default) or "without_id" — see below
+  redirectUrl: "https://acme.com/reset",     // where the user lands after verifying
 });
 
 if (!rec.eligible) {
@@ -95,17 +92,19 @@ if (!rec.eligible) {
   return;
 }
 
-// With deliverEmail:true the member already has the link. Otherwise deliver rec.recoveryUrl yourself.
+// Valyd has emailed the member their verification link. Wait for the webhook (or poll the
+// session) to learn the outcome.
 ```
 
-`POST /api/sdk/recovery/session` accepts one identifier (`valydId`, `email`, or `memberUid`) and
-returns `{ eligible, recoveryUrl, emailed, sessionId, status, expiresAt }`.
+`POST /api/sdk/recovery/session` takes the member's `valydId` and returns
+`{ eligible, emailed, sessionId, status, expiresAt }`. The verification link is **always emailed** to
+the member's on-file address — it is never returned to the caller (anti-enumeration). The app name in
+that email is your **organization's name**, derived from your client credentials.
 
 | Field | Meaning |
 |---|---|
 | `eligible` | `false` when no claimed, active, face-enrolled member matched — no session was started. |
-| `recoveryUrl` | URL of the verification page where the member completes recovery (null when not eligible). |
-| `emailed` | `true` when `deliverEmail` was set and Valyd emailed the member the link. |
+| `emailed` | `true` when Valyd emailed the member the verification link. |
 | `sessionId` | The Verify session id — correlate it to the webhook. |
 | `status` | Initial session status (`NOT_STARTED`). |
 | `expiresAt` | When the session/link expires. |
@@ -114,15 +113,17 @@ returns `{ eligible, recoveryUrl, emailed, sessionId, status, expiresAt }`.
 
 | Variant | Steps the member completes |
 |---|---|
-| `without_id` | **Liveness** + **face match** against their on-file Valyd face. |
-| `with_id` | **Liveness** + **document verification (KYC)** + **face match**. **Managed by Valyd**: if the account is **already KYC-verified**, the document step is **reused and skipped** — the member only does liveness + face. |
+| `with_id` *(default)* | **Fresh document verification (KYC)** + **liveness** + **face match** against their on-file Valyd face. The government ID is re-scanned **every time** — prior KYC is **not** reused. |
+| `without_id` | **Liveness** + **face match** against their on-file Valyd face. **No ID** is collected — even for a member who was never KYC-verified. |
 
-Use `with_id` when you want a government-ID-backed recovery; the managed reuse means verified members
-aren't asked to re-scan an ID they've already verified.
+Both variants match the live face against the **account's enrolled face**, never against a
+self-supplied document. Use `with_id` when you want a government-ID-backed recovery each time; use
+`without_id` for a lighter biometric-only proof that the person is the account holder.
 
 ## Handle the outcome
 
-Same webhook you already use for verifications — verify the signature with your Verify client:
+The result is delivered to your **Verify project's configured webhook** (the same one you use for
+verifications) — verify the signature with your Verify client:
 
 ```ts
 import { VerifyClient } from "@valyd/sdk";
@@ -134,7 +135,7 @@ const verify = new VerifyClient({
 
 const event = verify.webhooks.constructEvent(rawBody, req.headers);
 
-// event.vendorData === "reset-req-123"
+// Correlate by the sessionId you got from startAccountRecovery.
 if (event.status === "APPROVED") {
   // Identity re-verified → permit the user to set a new password in YOUR system.
 } else {
@@ -150,9 +151,9 @@ agree on the same decision.
 
 - **Fail closed** everywhere: no claimed/face-enrolled match → no session; no face match → `DECLINED`.
 - Valyd stores/sets **no** passwords — it only returns the pass/fail decision.
-- **Delivering the link to the right person** is safest via `deliverEmail: true`: Valyd emails the
-  link to the address already **on file**, never to the caller, which closes the enumeration gap.
+- The verification link is **always emailed** to the address already **on file**, never returned to
+  the caller — this closes the enumeration gap by design.
 - The start endpoint is **rate-limited**. Return a **generic** response whether or not an account
-  exists, so this can't be used to probe which emails are registered.
+  exists, so this can't be used to probe which members are registered.
 - `bindMember` and `startAccountRecovery` are **server-to-server** — the client secret must never
   reach a browser.
