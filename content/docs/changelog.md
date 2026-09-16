@@ -1,5 +1,20 @@
 # Changelog
 
+## Platform update — recovery email, liveness reliability & auth (2026-09-16)
+
+- **Changed (Account Recovery):** `startAccountRecovery` now **always emails** the recovery link to
+  the member's on-file address — email is the primary channel for a locked-out user, so it no longer
+  depends on an opt-in. The `deliverEmail` flag is deprecated and ignored; the hosted `recoveryUrl`
+  is still returned so you can additionally deliver it via your own channel (SMS / in-app).
+- **Improved (Liveness):** more reliable liveness capture — head-turn challenges are now verified by
+  yaw *movement* (offset-invariant across cameras), the spoof threshold is calibrated per deployment,
+  and the capture screen coaches distance and centering ("move closer", "center your face in the
+  oval") before starting, cutting false "spoof detected" / "action not detected" rejections.
+- **Changed (Auth):** login refresh tokens now last **24 hours**.
+- **Improved (Auth):** when face login or registration is temporarily locked after too many
+  attempts, the screen shows a **countdown timer** until you can try again, instead of a retry button
+  that would only re-lock.
+
 ## v1.10.5 — Hosted flow only: standalone direct checks hidden (2026-08-27)
 
 - **Changed (SDK):** the public surface is now the hosted flow only — `valyd.auth`

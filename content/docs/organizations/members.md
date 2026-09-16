@@ -74,9 +74,10 @@ member outright (permanent, same as the API's `permanent: true`).
 If a member is locked out of **your app** — they forgot the email/password they sign in with — you
 don't delete the seat or its history. You start an **identity-backed recovery**: Valyd re-verifies
 the person (liveness + a face match against their enrolled face, plus a fresh document/KYC scan on
-the `with_id` variant) and returns a **pass/fail** to your Verify project's webhook. Valyd always
-emails the verification link to the member's on-file address. On a pass, **your** app lets them set a
-new password — Valyd stores and sets nothing.
+the `with_id` variant) and returns a **pass/fail** to your Verify project's webhook. `startAccountRecovery`
+returns a hosted `recoveryUrl` for **you to deliver** (pass `deliverEmail:true` to also have Valyd
+email it to the member's on-file address). On a pass, **your** app lets them set a new password —
+Valyd stores and sets nothing.
 
 ```ts
 await client.startAccountRecovery({ valydId: "valyd_…", variant: "with_id" });
