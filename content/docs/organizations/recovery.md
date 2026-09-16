@@ -37,8 +37,9 @@ person asking is the same Valyd account.
 
 ```
 1. User can't sign in → your "Forgot password" (or an admin action) resolves their valyd_id.
-2. Your server calls  startAccountRecovery({ valydId })  → Valyd starts a session and ALWAYS
-   emails the member a verification link at their on-file address.
+2. Your server calls  startAccountRecovery({ valydId })  → Valyd starts a session and returns a
+   hosted recoveryUrl. YOU deliver it to the member (your email / SMS / in-app). Optionally pass
+   deliverEmail:true to also have Valyd email it to the member's on-file address.
 3. The member opens the link → completes liveness + a face match against their on-file Valyd
    face (and a fresh document/KYC scan when variant is "with_id").
 4. Valyd sends a signed webhook to your PROJECT webhook → verify.approved  or  verify.declined.
@@ -84,27 +85,32 @@ const rec = await client.startAccountRecovery({
   valydId: "valyd_…",                       // the member's Valyd id
   variant: "with_id",                        // "with_id" (default) or "without_id" — see below
   redirectUrl: "https://acme.com/reset",     // where the user lands after verifying
+  // deliverEmail: true,                      // OPTIONAL — also have Valyd email the link
 });
 
 if (!rec.eligible) {
   // Fail-closed: unknown / inactive / unclaimed member. Show a GENERIC
-  // "if an account exists, we've emailed you" message (avoid enumeration).
+  // "if an account exists, we've started recovery" message (avoid enumeration).
   return;
 }
 
-// Valyd has emailed the member their verification link. Wait for the webhook (or poll the
-// session) to learn the outcome.
+// Deliver the hosted link yourself (your email / SMS / in-app):
+await sendYourOwnEmail(memberEmail, rec.recoveryUrl);
+// …or pass deliverEmail:true above and Valyd emails the member's on-file address for you.
+// Then wait for the webhook (or poll the session) to learn the outcome.
 ```
 
 `POST /api/sdk/recovery/session` takes the member's `valydId` and returns
-`{ eligible, emailed, sessionId, status, expiresAt }`. The verification link is **always emailed** to
-the member's on-file address — it is never returned to the caller (anti-enumeration). The app name in
-that email is your **organization's name**, derived from your client credentials.
+`{ eligible, recoveryUrl, emailed, sessionId, status, expiresAt }`. `recoveryUrl` is returned only to
+your **authenticated server** (client-credentials) — you own the user relationship, so you own
+delivery. Pass `deliverEmail:true` to also have Valyd email it to the member's on-file address; the
+app name in that email is your **organization's name**, derived from your client credentials.
 
 | Field | Meaning |
 |---|---|
 | `eligible` | `false` when no claimed, active, face-enrolled member matched — no session was started. |
-| `emailed` | `true` when Valyd emailed the member the verification link. |
+| `recoveryUrl` | The verification link — deliver it to the member yourself. Never expose it to an unauthenticated end user. |
+| `emailed` | `true` only when you passed `deliverEmail:true` and Valyd emailed the member the link. |
 | `sessionId` | The Verify session id — correlate it to the webhook. |
 | `status` | Initial session status (`NOT_STARTED`). |
 | `expiresAt` | When the session/link expires. |
@@ -151,8 +157,9 @@ agree on the same decision.
 
 - **Fail closed** everywhere: no claimed/face-enrolled match → no session; no face match → `DECLINED`.
 - Valyd stores/sets **no** passwords — it only returns the pass/fail decision.
-- The verification link is **always emailed** to the address already **on file**, never returned to
-  the caller — this closes the enumeration gap by design.
+- `recoveryUrl` is only ever returned to your **authenticated server** (client-credentials) — never
+  expose it to an unauthenticated end user. When you pass `deliverEmail:true`, Valyd emails the link
+  only to the address already **on file**, never to a caller-supplied one.
 - The start endpoint is **rate-limited**. Return a **generic** response whether or not an account
   exists, so this can't be used to probe which members are registered.
 - `bindMember` and `startAccountRecovery` are **server-to-server** — the client secret must never
