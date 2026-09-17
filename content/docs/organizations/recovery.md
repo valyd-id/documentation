@@ -52,6 +52,12 @@ If your users sign in with email/password first and **connect Valyd afterwards**
 that binding once so they become recoverable. Call `bindMember` when the OIDC callback returns the
 member's `valyd_id`:
 
+> **You often don't need `bindMember`.** A member who connects through a **face-activation link** — a
+> Workforce invite, or [`resendMemberInvite`](/docs/organizations/api#re-send-invite) with
+> `notify: false` behind an in-app "Connect with Valyd" button — is bound **automatically** when they
+> scan their face, and is recoverable immediately. Use `bindMember` only when **you** obtained the
+> `valyd_id` yourself (e.g. an OIDC login on your own site) and need to record the binding.
+
 ### `bindMember`
 
 ```ts

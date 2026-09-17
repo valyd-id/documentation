@@ -45,6 +45,17 @@ A membership moves through exactly four states:
 Only the `active` state is billable — a seat turns on the moment the member **scans their face**.
 See [Pricing & billing](/docs/organizations/billing).
 
+## One face = one member
+
+A person's **face is their identity**, so the same face can hold **at most one active membership** in
+your org. If someone is invited under a **second email** and scans the **same face** that is already
+an active member, Valyd does **not** create a duplicate seat: the activation is refused with
+`already_member` ("you're already a member — sign in with your existing account"), and that second
+invite row is left **`deactivated`** with **no `valyd_id`**. A face therefore can never become two
+billed seats, and nobody is double-counted. The person keeps working through their existing
+membership. If a second email genuinely needs its own access under a **different** face, an admin
+reactivates the row and re-sends the invite.
+
 ## Deactivate, remove, reactivate
 
 - **Deactivate** — [`deactivateMember(memberId)`](/docs/organizations/api#deactivate) stops billing
@@ -56,9 +67,11 @@ See [Pricing & billing](/docs/organizations/billing).
   deactivated member to `active` if their Valyd identity still exists, or back to `invited` (they
   must re-activate by face) if it doesn't.
 - **Re-send an invite** — if a member's invite expired before they connected their Valyd ID,
-  [`resendMemberInvite(memberId)`](/docs/organizations/api#re-send-invite) issues and emails a fresh
-  face-activation link (and returns it), superseding the old one. It refuses for already-active or
-  deactivated members.
+  [`resendMemberInvite(memberId)`](/docs/organizations/api#re-send-invite) issues a fresh
+  face-activation link, superseding the old one. By default it **emails** the link and also returns
+  it; pass **`notify: false`** to get the link back **without** emailing, so you can deliver it
+  yourself (e.g. an in-app "Connect with Valyd" button that opens the link directly). It refuses for
+  already-active or deactivated members.
 
 None of these ever touch the person's Valyd identity or their membership in any other organization.
 Only `member`-role people appear on the roster — use
