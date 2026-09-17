@@ -376,8 +376,10 @@ The path takes the `vmem_…` `member_id` (the member's email or `valyd_id` is a
 
 ## Re-send invite
 
-Re-issues the member's **face-activation** link — it supersedes the old one, is emailed, and is also
-returned in the response. Throttled to **10 requests / minute**.
+Re-issues the member's **face-activation** link — it supersedes the old one and is returned in the
+response. By default the link is also **emailed**; send **`{ "notify": false }`** in the body to get
+it back **without** an email, so you can deliver it yourself (e.g. an in-app "Connect with Valyd"
+button that opens the link directly). Throttled to **10 requests / minute**.
 
 ```ts
 const { member, activation_link } = await client.resendMemberInvite("vmem_1a2b3c4d5e6f7a8b9c0d1e2f");
