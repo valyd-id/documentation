@@ -124,4 +124,7 @@ for exactly what each role can do.
   APIs — an organization governs **who owns the app**, **who may log into it**, and gives you the
   **[Members API](/docs/organizations/api)** for workforce onboarding.
 - For a **private** org app, a user who is not an assigned member is refused at the OAuth authorize
-  step. Public apps behave exactly as before.
+  step: Valyd redirects back to your `redirect_uri` with
+  `?error=access_denied&error_description=The+user+is+not+assigned+to+this+application&state=…&iss=…`
+  (a standard OAuth error — before 2026-09-18 this was a 403 JSON response). Handle it on your
+  callback like any other `error`. Public apps behave exactly as before.

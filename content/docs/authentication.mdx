@@ -19,11 +19,13 @@
 
 ### Steps
 
-1. **Construct the authorization URL.** Redirect users to the OIDC authorization endpoint with your client id, redirect URI, scopes, and a freshly generated random `state` (and `nonce`):
+1. **Construct the authorization URL.** Redirect users to the OIDC authorization endpoint with your client id, redirect URI, scopes, a PKCE `code_challenge`, and a freshly generated random `state` (and `nonce`). **PKCE (S256) is required for every client**, including confidential ones: generate a random `code_verifier` (43–128 chars), keep it server-side, and send `code_challenge = BASE64URL(SHA256(code_verifier))`:
 
    ```text
-   https://idp.valyd.work/api/auth/oidc/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scopes}&state={state}&nonce={nonce}
+   https://idp.valyd.work/api/auth/oidc/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scopes}&state={state}&nonce={nonce}&code_challenge={code_challenge}&code_challenge_method=S256
    ```
+
+   The endpoint accepts `GET` (query string) or `POST` (`application/x-www-form-urlencoded` form).
 
    Parameters:
 
@@ -33,13 +35,29 @@
    | `redirect_uri` | Yes | The URL to redirect to after authentication. Must match the URL registered on your application. |
    | `response_type` | Yes | Must be `code`. |
    | `scope` | Yes | Space-separated list of scopes, URL-encoded. **MUST include `openid`.** Example: `openid%20profile%20verifications`. |
-   | `state` | Yes | A random value you generate and store. Echoed back unchanged on the callback — compare it there (CSRF protection). |
-   | `nonce` | Recommended | A random value bound into the `id_token`. Verify the `nonce` claim after the exchange (replay protection). |
+   | `code_challenge` | Yes | `BASE64URL(SHA256(code_verifier))` — 43–128 base64url characters. Missing → your callback receives `error=invalid_request`. |
+   | `code_challenge_method` | Yes | Must be `S256` (`plain` is not supported). |
+   | `state` | Recommended | A random value you generate and store. Echoed back unchanged on the callback (only if you sent one) — compare it there (CSRF protection). |
+   | `nonce` | Recommended | A random value bound into the `id_token`. The ID token carries `nonce` **only if you sent one** — verify it after the exchange (replay protection). |
+   | `prompt` | No | Space-separated: `none`, `login`, `consent`, `select_account` (`none` can't be combined). `none` = silent check — returns `error=login_required` (no/stale session) or `consent_required` (third-party app without a prior grant for these scopes). `login` / `select_account` force re-authentication; `consent` always shows the consent screen, even for first-party apps. |
+   | `max_age` | No | Seconds. If the user's last real sign-in is older, they must re-authenticate. The ID token always carries `auth_time`. |
+   | `id_token_hint` | No | A previously issued ID token. With `prompt=none`, a different signed-in user returns `login_required`. |
+   | `login_hint` | No | Passed through to the sign-in screen. |
+
+   `response_type` must be `code` and `response_mode` (if sent) must be `query`. `request` and `request_uri` are not supported (`request_not_supported` / `request_uri_not_supported`).
 
    **Expected output:** A fully-formed URL string. Example with encoded scopes `openid profile verifications`:
 
    ```text
-   https://idp.valyd.work/api/auth/oidc/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://yourapp.com/callback&response_type=code&scope=openid%20profile%20verifications&state=RANDOM_STATE&nonce=RANDOM_NONCE
+   https://idp.valyd.work/api/auth/oidc/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://yourapp.com/callback&response_type=code&scope=openid%20profile%20verifications&state=RANDOM_STATE&nonce=RANDOM_NONCE&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256
+   ```
+
+   Generating the PKCE pair without the SDK:
+
+   ```javascript
+   import crypto from "node:crypto";
+   const codeVerifier = crypto.randomBytes(32).toString("base64url");               // keep server-side
+   const codeChallenge = crypto.createHash("sha256").update(codeVerifier).digest("base64url");
    ```
 
 2. **Create and store one secure transaction (recommended: SDK).** The SDK generates strong `state`, `nonce`, and S256 PKCE values together. Store the returned object in a server-side session:
@@ -69,8 +87,16 @@
 4. **Receive the callback on your server.** The user is redirected to your registered callback URL with the authorization code and your original state:
 
    ```text
-   https://yourapp.com/callback?code=AUTH_CODE_HERE&state=RANDOM_STATE
+   https://yourapp.com/callback?code=AUTH_CODE_HERE&state=RANDOM_STATE&iss=https%3A%2F%2Fidp.valyd.work
    ```
+
+   If the request failed after your `client_id` and `redirect_uri` were verified (user pressed **Cancel**, missing PKCE, `prompt=none` couldn't be satisfied, private org app the user isn't assigned to, …) the callback carries an error instead of a code:
+
+   ```text
+   https://yourapp.com/callback?error=access_denied&error_description=The+user+denied+the+request&state=RANDOM_STATE&iss=https%3A%2F%2Fidp.valyd.work
+   ```
+
+   Only an unknown `client_id` or an unregistered `redirect_uri` shows an error page on Valyd and never redirects.
 
    Callback query parameters:
 
@@ -78,15 +104,23 @@
    | --- | --- |
    | `code` | The one-time authorization code. Single-use; exchange immediately. |
    | `state` | The **exact `state` value you sent** on `/authorize`, echoed back unchanged. Compare it to your stored value. |
+   | `iss` | Always `https://idp.valyd.work` (RFC 9207). Reject the callback if it differs (mix-up defence). |
+   | `error`, `error_description` | Present instead of `code` when the authorization failed — e.g. `access_denied`, `login_required`, `consent_required`, `invalid_request`, `invalid_scope`. |
 
    **Expected output:** Your `/callback` route is invoked with `code` and `state` (and possibly `error`) present in the query string.
 
-5. **CSRF check — compare the `state`.** The callback `state` must strictly equal the value you stored in step 2. Reject the request on any mismatch, before touching the code.
+5. **Handle `error`, then the CSRF + issuer check.** If the callback carries `error`, stop and show/log it. Otherwise the callback `state` must strictly equal the value you stored in step 2 and `iss` must equal the issuer. Reject the request on any mismatch, before touching the code.
 
    ```javascript
+   if (req.query.error) {
+     return res.status(400).send(`${req.query.error}: ${req.query.error_description ?? ""}`);
+   }
    const stored = readStoredOAuthValues(req); // your cookie/session read
    if (!stored?.state || req.query.state !== stored.state) {
      return res.status(400).send("state mismatch");
+   }
+   if (req.query.iss && req.query.iss !== "https://idp.valyd.work") {
+     return res.status(400).send("issuer mismatch");
    }
    ```
 
@@ -113,12 +147,17 @@ app.get("/callback", async (req, res) => {
   delete req.session.valydOidc;
 
   const callbackUrl = new URL(req.originalUrl, process.env.VALYD_REDIRECT_URI).toString();
-  const { tokens, user } = await valyd.handleCallback(callbackUrl, { transaction });
-  // ...set your own app session, then redirect to /dashboard
+  try {
+    const { tokens, user } = await valyd.handleCallback(callbackUrl, { transaction });
+    // ...set your own app session, then redirect to /dashboard
+  } catch (err) {
+    // ValydError: err.code is "access_denied", "invalid_grant", "issuer_mismatch", ...
+    return res.status(400).send(err.code);
+  }
 });
 ```
 
-`handleCallback()` compares state, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
+`handleCallback()` surfaces a callback `error`, compares state, checks the RFC 9207 `iss`, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
 
 </Tabs.Tab>
 <Tabs.Tab>
@@ -131,24 +170,32 @@ app = Flask(__name__)
 
 @app.route("/callback")
 def callback():
+    if request.args.get("error"):  # e.g. access_denied, login_required
+        return f"{request.args['error']}: {request.args.get('error_description', '')}", 400
     code = request.args.get("code")
     state = request.args.get("state")
     if not code:
         return "missing code", 400
     if not state or state != session.pop("valyd_state", None):
         return "state mismatch", 400
+    if request.args.get("iss", "https://idp.valyd.work") != "https://idp.valyd.work":
+        return "issuer mismatch", 400
+    code_verifier = session.pop("valyd_code_verifier")  # stored by your /login route
 
     response = requests.post(
         "https://idp.valyd.work/api/auth/oidc/token",
-        json={
+        data={  # form-encoded (application/x-www-form-urlencoded)
             "grant_type": "authorization_code",
             "client_id": "YOUR_CLIENT_ID",
             "client_secret": "YOUR_CLIENT_SECRET",
             "code": code,
             "redirect_uri": "https://yourapp.com/callback",
+            "code_verifier": code_verifier,
         },
     )
     tokens = response.json()  # top-level: access_token, refresh_token, id_token, ...
+    if response.status_code != 200:  # RFC 6749: {"error": "invalid_grant", "error_description": "..."}
+        return f"{tokens['error']}: {tokens.get('error_description', '')}", 400
     session["access_token"] = tokens["access_token"]
     return redirect("/dashboard")
 ```
@@ -159,29 +206,39 @@ def callback():
 ```php
 <?php
 session_start();
+if (isset($_GET['error'])) { // e.g. access_denied, login_required
+    http_response_code(400); exit(htmlspecialchars($_GET['error'] . ': ' . ($_GET['error_description'] ?? '')));
+}
 $code = $_GET['code'] ?? null;
 $state = $_GET['state'] ?? null;
 if (!$code) { http_response_code(400); exit('missing code'); }
 if (!$state || !hash_equals($_SESSION['valyd_state'] ?? '', $state)) {
     http_response_code(400); exit('state mismatch');
 }
-unset($_SESSION['valyd_state']);
+if (($_GET['iss'] ?? 'https://idp.valyd.work') !== 'https://idp.valyd.work') {
+    http_response_code(400); exit('issuer mismatch');
+}
+$codeVerifier = $_SESSION['valyd_code_verifier']; // stored by your login route
+unset($_SESSION['valyd_state'], $_SESSION['valyd_code_verifier']);
 
 $ch = curl_init();
 curl_setopt_array($ch, [
     CURLOPT_URL => 'https://idp.valyd.work/api/auth/oidc/token',
     CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode([
+    CURLOPT_POSTFIELDS => http_build_query([ // form-encoded
         'grant_type' => 'authorization_code',
         'client_id' => 'YOUR_CLIENT_ID',
         'client_secret' => 'YOUR_CLIENT_SECRET',
         'code' => $code,
-        'redirect_uri' => 'https://yourapp.com/callback'
+        'redirect_uri' => 'https://yourapp.com/callback',
+        'code_verifier' => $codeVerifier,
     ]),
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
     CURLOPT_RETURNTRANSFER => true,
 ]);
 $tokens = json_decode(curl_exec($ch), true); // top-level token JSON
+if (isset($tokens['error'])) { // RFC 6749: {"error": "invalid_grant", "error_description": "..."}
+    http_response_code(400); exit($tokens['error'] . ': ' . ($tokens['error_description'] ?? ''));
+}
 $_SESSION['access_token'] = $tokens['access_token'];
 header('Location: /dashboard');
 ```
@@ -191,25 +248,32 @@ header('Location: /dashboard');
 
 ```java
 @GetMapping("/callback")
-public ResponseEntity<?> callback(@RequestParam String code,
-                                  @RequestParam String state,
+public ResponseEntity<?> callback(@RequestParam(required = false) String code,
+                                  @RequestParam(required = false) String state,
+                                  @RequestParam(required = false) String error,
                                   HttpSession session) {
+    if (error != null) { // e.g. access_denied, login_required
+        return ResponseEntity.badRequest().body(error);
+    }
     String expected = (String) session.getAttribute("valyd_state");
-    if (expected == null || !expected.equals(state)) {
+    if (code == null || expected == null || !expected.equals(state)) {
         return ResponseEntity.badRequest().body("state mismatch");
     }
+    String codeVerifier = (String) session.getAttribute("valyd_code_verifier");
     session.removeAttribute("valyd_state");
+    session.removeAttribute("valyd_code_verifier");
 
     RestTemplate rt = new RestTemplate();
-    Map<String, String> body = Map.of(
-        "grant_type", "authorization_code",
-        "client_id", "YOUR_CLIENT_ID",
-        "client_secret", "YOUR_CLIENT_SECRET",
-        "code", code,
-        "redirect_uri", "https://yourapp.com/callback"
-    );
+    MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+    body.add("grant_type", "authorization_code");
+    body.add("client_id", "YOUR_CLIENT_ID");
+    body.add("client_secret", "YOUR_CLIENT_SECRET");
+    body.add("code", code);
+    body.add("redirect_uri", "https://yourapp.com/callback");
+    body.add("code_verifier", codeVerifier);
     HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+    // A 4xx throws HttpClientErrorException; its body is {"error": "...", "error_description": "..."}
     rt.postForEntity("https://idp.valyd.work/api/auth/oidc/token",
         new HttpEntity<>(body, headers), String.class);
     return ResponseEntity.status(302).header("Location", "/dashboard").build();
@@ -223,29 +287,30 @@ public ResponseEntity<?> callback(@RequestParam String code,
 
 #### Token exchange without the SDK (raw HTTP)
 
-The token endpoint is `POST https://idp.valyd.work/api/auth/oidc/token` with a JSON body. The
-response is a **standard top-level token JSON** — `access_token`, `refresh_token`, `id_token`,
-`expires_in`, `scope`, `token_type` at the root (no `data` wrapper).
+The token endpoint is `POST https://idp.valyd.work/api/auth/oidc/token` with a standard
+`application/x-www-form-urlencoded` body (a JSON body is also accepted). The response is a
+**standard top-level token JSON** — `access_token`, `refresh_token`, `id_token`, `expires_in`,
+`scope`, `token_type` at the root (no `data` wrapper).
 
 Request shape:
 
 ```http
 POST /api/auth/oidc/token HTTP/1.1
 Host: idp.valyd.work
-Content-Type: application/json
+Content-Type: application/x-www-form-urlencoded
 
-{
-  "grant_type": "authorization_code",
-  "client_id": "YOUR_CLIENT_ID",
-  "client_secret": "YOUR_CLIENT_SECRET",
-  "code": "AUTH_CODE_HERE",
-  "redirect_uri": "https://yourapp.com/callback"
-}
+grant_type=authorization_code&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&code=AUTH_CODE_HERE&redirect_uri=https%3A%2F%2Fyourapp.com%2Fcallback&code_verifier=YOUR_CODE_VERIFIER
 ```
 
-Send the **same** `redirect_uri` you used at `/authorize` — Valyd validates it against the code.
-Authorization codes are bound to the client they were issued to and are **single-use** — exchange
-them as soon as your callback fires.
+Authenticate the client with **either** `client_secret_post` (as above) **or**
+`client_secret_basic` (`Authorization: Basic base64(urlencode(client_id):urlencode(client_secret))`,
+RFC 6749 §2.3.1) — sending both is rejected with `invalid_request`. Public first-party clients
+send only `client_id` (auth method `none`) and rely on PKCE.
+
+Send the **same** `redirect_uri` you used at `/authorize` — Valyd validates it against the code —
+and the `code_verifier` whose S256 hash you sent as `code_challenge`. Authorization codes are
+bound to the client they were issued to and are **single-use** — exchange them as soon as your
+callback fires. Replaying a code is rejected **and revokes every token it already produced**.
 
 **Expected output:** HTTP 200 with a top-level JSON body:
 
@@ -261,8 +326,22 @@ them as soon as your callback fires.
 ```
 
 The `id_token` is an RS256-signed JWT — validate its signature against the JWKS at
-`https://idp.valyd.work/api/auth/oidc/jwks.json` and check that its `nonce` claim equals the
-nonce you sent on `/authorize`.
+`https://idp.valyd.work/api/auth/oidc/jwks.json` and, if you sent a `nonce` on `/authorize`,
+check that its `nonce` claim equals it.
+
+**Errors** follow RFC 6749 §5.2 — a flat JSON object (no `success`/`data` envelope) with
+`Cache-Control: no-store`:
+
+```json
+{
+  "error": "invalid_grant",
+  "error_description": "Invalid or expired authorization code"
+}
+```
+
+`error` is one of `invalid_request`, `invalid_client` (HTTP 401; plus `WWW-Authenticate: Basic`
+when you used HTTP Basic), `invalid_grant`, `invalid_scope`, `unsupported_grant_type`. See
+[Errors](/docs/errors#oidc-protocol-errors).
 
 #### Renewing an access token
 
@@ -270,14 +349,12 @@ Access tokens are short-lived (`expires_in` ≈ 900 seconds). Exchange the `refr
 same token endpoint — `POST https://idp.valyd.work/api/auth/oidc/token` — from your **backend**,
 with your client credentials:
 
-```json
-{
-  "grant_type": "refresh_token",
-  "refresh_token": "rfrsh_abc123...",
-  "client_id": "YOUR_CLIENT_ID",
-  "client_secret": "YOUR_CLIENT_SECRET"
-}
+```text
+grant_type=refresh_token&refresh_token=rfrsh_abc123...&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET
 ```
+
+Add an optional `scope` to **narrow** the new access token to a subset of the granted scopes
+(asking for more returns `invalid_scope`).
 
 The refresh token is validated against the client it was issued to, so a token leaked from one
 app cannot be used by another. **Rotation is on:** every refresh returns a new
@@ -296,46 +373,56 @@ In all raw-HTTP examples, replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with
 
 ```text
 IF the request just hit your login/start route:
-    → generate random state + nonce (crypto.randomBytes), store them
-      (httpOnly cookie / server session),
-      build the URL with valyd.auth.getAuthorizationUrl({ state, nonce, scope }),
-      and res.redirect(url).
+    → const txn = valyd.auth.createAuthorizationRequest({ scope })
+      (random state + nonce + S256 PKCE verifier/challenge),
+      store txn server-side (httpOnly cookie / server session),
+      and res.redirect(txn.url).
+      (getAuthorizationUrl() without a codeChallenge throws "pkce_required".)
 
 IF the request hit your /callback route:
-    → read code, state, error from the query string
-    IF error is set OR code is missing:  → return HTTP 400 (error ?? "missing code"). STOP.
+    → read code, state, iss, error from the query string
+    IF error is set (access_denied, login_required, consent_required, invalid_request, ...):
+                                         → return HTTP 400 (error + error_description). STOP.
+    IF code is missing:                  → return HTTP 400 "missing code". STOP.
     IF code is present:                  → continue to the CSRF check below.
 
-CSRF check (do this on every callback):
+CSRF + issuer check (do this on every callback):
     → compare req.query.state to the state you stored before the redirect
     IF they differ (or the stored value is missing):  → return HTTP 400 "state mismatch". STOP.
+    IF iss is present and != "https://idp.valyd.work": → return HTTP 400 "issuer mismatch". STOP.
     IF they match:                                    → proceed to token exchange.
 
 Token exchange:
-    → const tokens = await valyd.auth.exchangeCode(code)   // must run server-side; codes are single-use
-    IF the exchange returns invalid_grant:  → the code expired or was already used; restart from the login route.
+    → const tokens = await valyd.auth.exchangeCode(code, { codeVerifier: txn.codeVerifier })   // server-side; codes are single-use
+      (or simply: await valyd.auth.handleCallback(callbackUrl, { transaction: txn }) — does all of the above)
+    IF the exchange fails with error "invalid_grant":  → the code expired or was already used; restart from the login route.
     → verify tokens.idToken's `nonce` claim equals the nonce you stored
     → const user = await valyd.auth.getUserInfo(tokens.accessToken)
-    → clear the stored state/nonce, set your own app session, redirect to /dashboard.
+    → clear the stored transaction, set your own app session, redirect to /dashboard.
 
 IF you are not using Node / the SDK:
-    → POST https://idp.valyd.work/api/auth/oidc/token with JSON
-      { grant_type: "authorization_code", client_id, client_secret, code, redirect_uri }
+    → POST https://idp.valyd.work/api/auth/oidc/token (form-encoded)
+      grant_type=authorization_code, client_id, client_secret, code, redirect_uri, code_verifier
       and read the token from the TOP-LEVEL response field access_token.
+      On failure the body is { "error": "...", "error_description": "..." }.
 ```
 
 ### Verification
-- Confirm the redirect: opening your login route returns HTTP 302 with a `Location` header beginning `https://idp.valyd.work/api/auth/oidc/authorize?client_id=...&redirect_uri=...&response_type=code&scope=openid...&state=...`.
-- After consenting, confirm your `/callback` route receives `code` and `state` query parameters, and that `state` equals the value you sent.
+- Confirm the redirect: opening your login route returns HTTP 302 with a `Location` header beginning `https://idp.valyd.work/api/auth/oidc/authorize?client_id=...&redirect_uri=...&response_type=code&scope=openid...&state=...` and containing `code_challenge=...&code_challenge_method=S256`.
+- After consenting, confirm your `/callback` route receives `code`, `state` and `iss` query parameters, and that `state` equals the value you sent.
 - Confirm the token exchange succeeds:
 
   ```bash
   curl -i -X POST https://idp.valyd.work/api/auth/oidc/token \
-    -H "Content-Type: application/json" \
-    -d '{"grant_type":"authorization_code","client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_CLIENT_SECRET","code":"AUTH_CODE_HERE","redirect_uri":"https://yourapp.com/callback"}'
+    -d grant_type=authorization_code \
+    -d client_id=YOUR_CLIENT_ID \
+    -d client_secret=YOUR_CLIENT_SECRET \
+    -d code=AUTH_CODE_HERE \
+    --data-urlencode redirect_uri=https://yourapp.com/callback \
+    -d code_verifier=YOUR_CODE_VERIFIER
   ```
 
-  Expected: HTTP 200 and a JSON body containing top-level `access_token`, `refresh_token`, and `id_token`.
+  Expected: HTTP 200 and a JSON body containing top-level `access_token`, `refresh_token`, and `id_token`. On failure: HTTP 400/401 and `{"error":"invalid_grant","error_description":"..."}`.
 
 ### Common errors
 
@@ -343,14 +430,18 @@ IF you are not using Node / the SDK:
    - Cause: The stored `state` was lost before the callback — cookie not set, blocked by the browser, expired, or overwritten by a second parallel login attempt.
    - Fix: Store `state` in an `httpOnly`, `sameSite: "lax"` cookie (or server session) on the login route and compare strictly on the callback: `req.query.state === storedState`. This comparison IS the CSRF protection — do not remove it.
 
-2. **"missing code" / `invalid_grant` (HTTP 400 on callback or 4xx from /token).**
-   - Cause: No `code` in the callback (user denied or an `error` was returned), the code was already exchanged (single-use), or the `redirect_uri` in the token request differs from the authorize request.
-   - Fix: When the callback carries `error` or no `code`, return HTTP 400 and restart the flow. Exchange the code immediately, exactly once, with the same `redirect_uri`.
+2. **`error=access_denied` / "missing code" / `invalid_grant` (HTTP 400 on callback or 4xx from /token).**
+   - Cause: No `code` in the callback (the user pressed Cancel → `access_denied`, the user isn't assigned to a private org app → `access_denied`, or another `error` was returned), the code was already exchanged (single-use), the `code_verifier` doesn't match the `code_challenge`, or the `redirect_uri` in the token request differs from the authorize request.
+   - Fix: When the callback carries `error` or no `code`, return HTTP 400 and restart the flow. Exchange the code immediately, exactly once, with the same `redirect_uri` and the stored `code_verifier`.
 
 3. **`redirect_uri` mismatch (authorization rejected by Valyd).**
    - Cause: The `redirect_uri` sent on the authorization request does not exactly match the URL registered for your application.
    - Fix: Set `VALYD_REDIRECT_URI` (and the SDK `redirectUri`) to the exact callback URL registered in the Developer Portal (https://dev.valyd.work), matching scheme, host, and path.
 
-4. **`invalid_scope` / missing `openid`.**
+4. **`error=invalid_request` on the callback ("code_challenge is required").**
+   - Cause: The authorization request had no PKCE `code_challenge` (or used `plain`). PKCE S256 is required for every client since 2026-09-18.
+   - Fix: Use `valyd.auth.createAuthorizationRequest()` or send `code_challenge` + `code_challenge_method=S256`, and the matching `code_verifier` at the token endpoint.
+
+5. **`invalid_scope` / missing `openid`.**
    - Cause: The `scope` parameter omitted `openid`, or a requested scope is not enabled on your app in the Developer Portal.
    - Fix: Always include `openid` (the SDK adds it automatically) and enable every requested scope on the app before requesting it.

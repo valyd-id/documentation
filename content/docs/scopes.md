@@ -37,7 +37,7 @@ requested scopes, state, nonce, and an S256 PKCE challenge.
 
 - Scopes are verified against your app's settings in the Developer Portal.
 - If you request a scope not enabled for your app, authorization will fail.
-- If your access token doesn't have a required scope, the endpoint returns `403 Forbidden`.
+- If your access token doesn't have a required scope, a resource endpoint (`/licenses`, `/verifications`, …) returns `403 Forbidden` with `insufficient_scope` in the Valyd envelope. `/userinfo` instead omits the claims of scopes you weren't granted, and returns the RFC 6750 form `{"error":"insufficient_scope","error_description":"..."}` only when the token lacks `openid`.
 
 Decision tree when authorization or a scoped request fails:
 
@@ -70,15 +70,16 @@ User profile: legal name, username, country, and verification status. No photo i
 | `id_verified` | Whether ID is verified (boolean) |
 | `created_at` | Account creation timestamp |
 
-### Missing scope error (403 Forbidden)
+### Without this scope
+
+`/userinfo` does not fail when `profile` is missing — it simply omits the profile claims. The only
+scope error `/userinfo` returns is for a token without `openid` — a standard RFC 6750 error
+(no `success`/`data` envelope) with a `WWW-Authenticate: Bearer realm="valyd", error="insufficient_scope", scope="openid"` header:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "insufficient_scope",
-    "message": "The request requires the profile scope"
-  }
+  "error": "insufficient_scope",
+  "error_description": "The access token does not have the openid scope"
 }
 ```
 
@@ -99,17 +100,18 @@ hidden); trusted first-party apps receive the real address. Request `email` as i
 | Field | Description |
 | --- | --- |
 | `email` | The user's email address (relay address unless your app is a trusted first party) |
-| `email_verified` | Whether the email/identity is verified (boolean) |
+| `email_verified` | Always `false` — Valyd does not verify email ownership (identity verification is `id_verified`, under `profile`) |
 
-### Missing scope error (403 Forbidden)
+### Without this scope
+
+`/userinfo` does not fail when `email` is missing — it simply omits `email` / `email_verified`. The only
+scope error `/userinfo` returns is for a token without `openid` — a standard RFC 6750 error
+(no `success`/`data` envelope) with a `WWW-Authenticate: Bearer realm="valyd", error="insufficient_scope", scope="openid"` header:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "insufficient_scope",
-    "message": "The request requires the email scope"
-  }
+  "error": "insufficient_scope",
+  "error_description": "The access token does not have the openid scope"
 }
 ```
 
@@ -132,15 +134,16 @@ hidden); trusted first-party apps receive the real number. Request `phone` as it
 | `phone_number` | The user's phone number (relay number unless your app is a trusted first party) |
 | `phone_number_verified` | Always `false` — Valyd does not verify phone numbers |
 
-### Missing scope error (403 Forbidden)
+### Without this scope
+
+`/userinfo` does not fail when `phone` is missing — it simply omits `phone_number` / `phone_number_verified`. The only
+scope error `/userinfo` returns is for a token without `openid` — a standard RFC 6750 error
+(no `success`/`data` envelope) with a `WWW-Authenticate: Bearer realm="valyd", error="insufficient_scope", scope="openid"` header:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "insufficient_scope",
-    "message": "The request requires the phone scope"
-  }
+  "error": "insufficient_scope",
+  "error_description": "The access token does not have the openid scope"
 }
 ```
 

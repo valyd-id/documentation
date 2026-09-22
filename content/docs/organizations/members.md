@@ -97,4 +97,4 @@ await client.startAccountRecovery({ valydId: "valyd_…", variant: "with_id" });
 ```
 
 See **[Account recovery](/docs/organizations/recovery)** for the full flow, the
-`startAccountRecovery` / `bindMember` functions, their responses, and the webhook contract.
+`startAccountRecovery` function, its responses, and the webhook contract.

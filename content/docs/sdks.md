@@ -18,7 +18,7 @@ npm install @valyd/sdk
 
 ## Sign-in button (browser)
 
-A two-line drop-in "Sign in with Valyd" button — generates `state`/`nonce`, sets first-party
+A two-line drop-in "Sign in with Valyd" button — generates `state`/`nonce` and the required PKCE verifier, sets first-party
 cookies, and starts the standard flow. Environment follows the script host.
 
 ```html

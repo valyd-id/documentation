@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("valyd_txn"); // one transaction, one callback
     return response;
   } catch (error: any) {
+    // ValydError.code: access_denied (user cancelled), invalid_grant, issuer_mismatch, ...
     return NextResponse.json(
       { error: error.code ?? "login_failed", message: error.message },
       { status: 400 },
@@ -153,6 +154,11 @@ lands on `/dashboard` and the cookie is gone. Replaying the callback URL fails w
 - **`invalid_grant`** — React strict-mode double-fetches or a prefetched callback URL can consume
   the single-use code; make sure nothing prefetches `/auth/callback`. See
   [Errors & troubleshooting](/docs/errors).
+- **`access_denied`** — the user pressed **Cancel** on the consent screen (or isn't assigned to
+  a private org app); Valyd redirects back with `?error=access_denied` and `handleCallback()`
+  throws it.
+- **`pkce_required`** — `getAuthorizationUrl()` was called without a `codeChallenge`; keep using
+  `createAuthorizationRequest()` (PKCE S256 is required, `@valyd/sdk` ≥ 1.12).
 
 ## Next steps
 

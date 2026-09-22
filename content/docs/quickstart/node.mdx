@@ -108,6 +108,8 @@ app.get("/callback", async (req, res, next) => {
 });
 
 app.use((error, _req, res, _next) => {
+  // ValydError.code carries the OAuth error: access_denied (user cancelled), invalid_grant,
+  // issuer_mismatch, state_mismatch, ...
   console.error(error.code ?? error.name, error.message);
   res.status(400).json({ error: error.code ?? "login_failed", message: error.message });
 });
@@ -127,8 +129,8 @@ user's pseudonymous `valydId`, verification proof, and granted scopes.
 <Callout type="info" emoji="✅">
 **Checkpoint:** `GET /login` returns a `302` to `/api/auth/oidc/authorize` whose URL contains
 `state`, `nonce`, `code_challenge`, and `code_challenge_method=S256`; the callback succeeds only
-with the stored server-side transaction; `handleCallback()` verifies state, PKCE, RS256/JWKS,
-issuer, audience, expiry, and nonce; and the `client_secret`, PKCE verifier, and tokens never
+with the stored server-side transaction; `handleCallback()` verifies state, the callback `iss`,
+PKCE, RS256/JWKS, issuer, audience, expiry, and nonce; and the `client_secret`, PKCE verifier, and tokens never
 enter browser JavaScript or local storage.
 </Callout>
 
@@ -145,6 +147,11 @@ proxy handling correctly, and use your HTTPS callback URI.
 - **`invalid_grant` on the exchange** — the code is single-use and short-lived; a double-fired
   callback or a slow retry consumes it. Restart from `/login`. See
   [Errors & troubleshooting](/docs/errors).
+- **`access_denied`** — the user pressed **Cancel** on the consent screen (or isn't assigned to
+  a private org app). Valyd sends it back to your callback as `?error=access_denied`;
+  `handleCallback()` throws it as a `ValydError`.
+- **`pkce_required`** — you called `getAuthorizationUrl()` without a `codeChallenge`. PKCE (S256)
+  is required for every client; use `createAuthorizationRequest()` as above (`@valyd/sdk` ≥ 1.12).
 
 ## Next steps
 

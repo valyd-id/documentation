@@ -12,16 +12,50 @@ will never ask for them.
 
 ## 1. Error shapes
 
-**Login / account APIs** (`/api/auth/...`) return the envelope:
+Valyd uses two error shapes: the **OIDC protocol endpoints** speak standard OAuth 2.0 / OpenID
+Connect errors, and **every other Valyd API** uses the Valyd envelope.
+
+### OIDC protocol errors
+
+Since 2026-09-18 the OIDC protocol endpoints return standard errors (RFC 6749 §5.2, RFC 6750 §3,
+RFC 7591 §3.2.2) — **`error` is a string**, there is no `success`/`data` wrapper, and responses
+carry `Cache-Control: no-store`:
+
+**Token** (`POST /api/auth/oidc/token`), **UserInfo** (`/api/auth/oidc/userinfo`) and **Dynamic
+Client Registration** (`POST /api/auth/oidc/register`):
 
 ```json
-{ "success": false, "error": { "code": "invalid_token", "message": "Session expired. Please login again." } }
+{ "error": "invalid_grant", "error_description": "Invalid or expired authorization code" }
 ```
 
-**OIDC token endpoint** (`/api/auth/oidc/token`) returns standard top-level OAuth errors:
+| Endpoint | `error` values |
+| --- | --- |
+| Token | `invalid_request`, `invalid_client` (401; `WWW-Authenticate: Basic` if you used HTTP Basic), `invalid_grant`, `invalid_scope`, `unsupported_grant_type` |
+| UserInfo | `invalid_token` (401, `WWW-Authenticate: Bearer realm="valyd", error="invalid_token", …`), `insufficient_scope` (403 — token lacks `openid`), `invalid_request` (token sent in both header and body) |
+| Registration | `invalid_redirect_uri`, `invalid_client_metadata`, `invalid_token`, `access_denied` |
+
+**Authorization** (`/api/auth/oidc/authorize`): once your `client_id` and `redirect_uri` are
+verified, every error is **sent back to your `redirect_uri`** (RFC 6749 §4.1.2.1 + RFC 9207):
+
+```text
+https://yourapp.com/callback?error=access_denied&error_description=The+user+denied+the+request&state=YOUR_STATE&iss=https%3A%2F%2Fidp.valyd.work
+```
+
+`error` is one of `invalid_request` (e.g. missing PKCE `code_challenge`), `unsupported_response_type`,
+`invalid_scope`, `invalid_target` (RFC 8707 `resource` not allowed), `access_denied` (user pressed Cancel, or a private org app the user isn't
+assigned to), `login_required` / `consent_required` (`prompt=none` couldn't be satisfied),
+`request_not_supported`, `request_uri_not_supported`, or `server_error`. An **unknown
+`client_id` or an unregistered `redirect_uri`** is the only case that shows an HTML error page
+on Valyd instead of redirecting (redirecting there would be an open redirect).
+
+### Valyd envelope (all other APIs)
+
+**Login / account APIs** (`/api/auth/...` outside `/api/auth/oidc/*`), the Verify API
+(`/api/v2/...`), the hosted-flow, verifications, agent and internal endpoints keep the
+envelope:
 
 ```json
-{ "success": false, "error": { "code": "invalid_grant", "message": "Invalid or expired authorization code" } }
+{ "success": false, "data": [], "error": { "code": "invalid_token", "message": "Session expired. Please login again." } }
 ```
 
 **Verification API** (`/api/v2/...`) errors carry the code in `error` with check context where
@@ -45,61 +79,72 @@ relevant.
 ## 3. Complete code catalog
 
 <!-- ERROR-CATALOG:START -->
-_Generated from the API source — 147 codes. Do not edit by hand; run `node scripts/gen-error-catalog.mjs`._
+_Generated from the API source — 177 codes. Do not edit by hand; run `node scripts/gen-error-catalog.mjs`._
 
 | Code | HTTP | Meaning / fix |
 | --- | --- | --- |
-| `access_denied` | 403 | The user declined, or the app is not permitted for this account. |
+| `access_denied` | 403, redirect | The user declined, or the app is not permitted for this account (OIDC: sent to your redirect_uri as ?error=access_denied). |
 | `account_dob_unavailable` | 422 | This Valyd account has no verified date of birth. |
-| `account_not_found` | 404 | No Valyd account matches that token. |
+| `account_not_found` | 404 | No Valyd account for this valyd_id |
 | `activation_failed` | 500, 503 | Activation failed. |
 | `already_exists` | 409 | E2E encryption is already active for this device |
 | `already_paired` | 409 | This device is already paired and has E2E keys |
 | `app_default_protected` | 422 | The default app cannot be deleted. Set another app as default first. |
 | `back_image_not_found` | 404 | Back image not found |
+| `back_required` | 400, 422 | Please also capture the BACK of your  |
 | `cache_clear_failed` | 400 | Failed to clear caches:  |
 | `callback_not_allowed` | 422 | callback must exactly match an active, approved HTTPS webhook destination for this project. |
 | `challenge_expired` | 400 | The liveness instruction expired — please try again. |
 | `challenge_required` | 400 | This device must complete challenge flow before login. Call POST /api/auth/face/challenge, then send c, d, s, and face_image. |
 | `client_not_found` | 404 | Client not found |
 | `code_expired` | 410 | The one-time code has expired |
+| `consent_required` | redirect | prompt=none but this app has no prior grant for these scopes — redirect again without prompt=none. |
 | `database_error` | 500 | Failed to store device keys |
 | `decrypt_failed` | 500 | Could not open the managed payload |
 | `deletion_failed` | 500 | Could not delete your account. Please try again. |
 | `denied` | 403 | User denied the request |
 | `device_already_paired` | 409 | This device is already paired |
 | `device_key_unknown` | 410 | This browser's device key is no longer registered. Please register this device again. |
+| `device_locked` | 403 | This device is linked with another account. |
 | `device_mismatch` | 400 | device_id does not match |
 | `device_not_found` | 404 | Device not registered or not linked to a user |
-| `empty_face_feature` | 400 | Empty face feature from SDK |
+| `device_revoked` | 401 | This device has been removed. Please sign in again. |
+| `dob_unreadable` | — |  |
+| `document_not_authentic` | — |  |
+| `document_type_required` | 422 | Please select your document type first. |
+| `duplicate_image` | 422 | This is the same photo you used for the front. Please flip the card over and capture the BACK. |
+| `e2e_already_initialized` | 409 | This account already has encryption set up on another device. Pair or recover this device to get the same keys. |
 | `endpoint_not_found` | — |  |
 | `endpoint_removed` | 410 | You are calling a removed legacy TPSSO endpoint — migrate to /api/auth/oidc/*. |
 | `engine_unreachable` | 503 | Verification engine did not respond. Please retry. |
+| `enroll_failed` | 422, 502 | Could not enrol the face |
 | `expired` | 410 | Request expired |
-| `face_feature_extraction_failed` | 400 | Failed to extract face features |
+| `face_feature_extraction_failed` | 400 | Could not read your face clearly. Please try again. |
 | `face_match_failed` | 500 | Face match failed |
 | `face_match_unavailable` | 502 | Could not verify your selfie right now. Please try again. |
 | `face_mismatch` | 403 | Face did not match |
 | `face_not_enrolled` | 409 | No face is enrolled on this account |
-| `face_not_matched` | 403 | Face does not match logged-in user |
+| `face_not_matched` | 403, 422 | Face does not match logged-in user |
 | `face_not_verified` | 403 | Face was not verified for this tracking ID |
+| `face_reenroll_required` | — |  |
 | `face_required` | 409 | A face check is required to release identity data |
 | `face_rescan_required` | 422 | We could not confidently recognize you. Please rescan your face. |
 | `failed_to_extract_id_portrait_feature` | — |  |
-| `feature_extraction_failed` | 400 | Feature extraction failed |
 | `feature_failed` | 502 | Feature extraction failed |
 | `feature_size_mismatch` | — |  |
+| `fields_required` | 422 | The engine could not read a name and date of birth — provide fields.full_name and fields.dob (YYYY-MM-DD) to approve. |
 | `forbidden` | 403 | Invalid internal auth |
 | `frames_required` | 400 | The demo needs a 3-8 frame live burst from your camera. |
 | `front_image_id_required` | 400 | front_image_id is required |
 | `front_image_not_found` | 404 | Front image not found |
+| `front_not_readable` | — |  |
 | `idempotency_in_progress` | 409 | A request with this Idempotency-Key is still being processed. Retry shortly. |
 | `idempotency_key_reused` | 422 | This Idempotency-Key was already used with a different request body. |
 | `identity_locked` | 403 | Your identity is verified. Only your email and phone number can be changed. Contact support if something else is wrong. |
 | `image_not_found` | 404 | Image not found |
 | `image_too_large` | 413 | That photo is too large to upload. Please use a smaller image (under 20 MB). |
 | `insufficient_scope` | 403 | The access token lacks a required scope (openid is required for OIDC resource calls). |
-| `invalid_activation` | 404 | This activation link is invalid or has expired. |
+| `invalid_activation` | 400, 404 | This activation link is invalid or has expired. |
 | `invalid_api_key` | 401 | Invalid verification API key. |
 | `invalid_audience` | — |  |
 | `invalid_challenge` | 403 | Invalid or expired challenge, or signature verification failed |
@@ -108,6 +153,7 @@ _Generated from the API source — 147 codes. Do not edit by hand; run `node scr
 | `invalid_client_metadata` | 400 | client_name must be between 1 and 120 characters |
 | `invalid_config` | 500 | AGENT_API_KEY not configured |
 | `invalid_date` | 400 | Invalid expire_at format |
+| `invalid_document_type` | 400 | document_type must be one of:  |
 | `invalid_feature` | 400 | Invalid face vector |
 | `invalid_frames` | 400 | Live verification needs at least 3 frames; send one `selfie` for single-click mode. |
 | `invalid_grant` | 400, 401 | Code/refresh token expired, already used, or issued to another client — restart the flow. |
@@ -115,31 +161,44 @@ _Generated from the API source — 147 codes. Do not edit by hand; run `node scr
 | `invalid_image` | 400, 422 | A selfie is required. |
 | `invalid_recovery_phrases` | 403 | Invalid recovery phrases |
 | `invalid_redirect_uri` | 400 | redirect_uris (non-empty array) is required |
-| `invalid_request` | 400, 401, 404, 422 | A required parameter is missing or malformed — compare against the reference. |
-| `invalid_scope` | 400 | Enable the scope for your app in the Developer Portal before requesting it. |
+| `invalid_request` | 400, 401, 404, 422, redirect | A required parameter is missing or malformed — compare against the reference. |
+| `invalid_scope` | 400, redirect | Enable the scope for your app in the Developer Portal before requesting it. |
 | `invalid_session` | 400 | Session has no user_ref (pollus_id) |
 | `invalid_state` | 409 | Share request already decided |
 | `invalid_status` | 400 | Invalid status |
+| `invalid_target` | redirect | The requested resource is not allowed |
 | `invalid_token` | 401, 403 | Token missing/expired — refresh it or sign the user in again. |
+| `kyc_already_completed` | 409 | Your identity is already verified. To verify again, request a re-verification from support or your administrator. |
+| `kyc_processing` | 409 | Your document is still being verified — this usually takes a few moments. |
 | `kyc_required` | 400 | Complete ID verification before verifying the license. |
+| `kyc_under_review` | 409 | Your previous submission is being reviewed by our team. We'll notify you when it's done. |
 | `legacy_ocr_failed` | — |  |
 | `license_not_found` | 400, 404 | CPR license not found |
 | `limit_reached` | 422 | Vault item limit reached |
+| `liveness_required` | 400 | Complete the liveness check before enrolling your face. |
 | `liveness_unavailable` | 502 | Could not check your selfie right now. Please try again. |
+| `login_required` | 400, redirect | prompt=none (or id_token_hint) could not be satisfied silently — redirect again without prompt=none. |
 | `logo_invalid` | 422 | Logo must be an image data URL. |
 | `logo_too_large` | 422 | Logo image is too large. Please use a smaller file. |
 | `misconfigured` | 500 | Invalid signing key |
 | `misconfigured_oidc_endpoints` | — |  |
 | `missing_dob` | 400 | A date of birth is required (provide `dob` or run id-verification first). |
-| `missing_document` | 400 | Upload a selfie before running liveness. |
+| `missing_document` | 400 | A selfie is required for face-match. |
 | `missing_parameter` | 400 | Provide valyd_id or vendor_data. |
+| `no_containers` | — |  |
 | `no_existing_e2e` | 400 | User has no existing E2E keys. Use bootstrap/complete for first device setup. |
 | `no_face` | 422 | No usable face detected in the selfie |
+| `no_face_in_first_image` | — |  |
+| `no_face_in_second_image` | — |  |
+| `no_face_on_file` | 422 | This account has no enrolled face — recovery cannot verify it |
+| `no_face_pair` | — |  |
+| `no_images` | — |  |
 | `no_images_provided` | 400 | At least one image (front or back) is required |
 | `no_reusable_record` | 400 | No reusable verification found — please verify fully. |
 | `no_verification` | 404 | This app has no verification set up yet. Open Verification in the dev console once to provision it. |
 | `not_found` | 404 | User not found |
 | `not_linked` | 400 | Sign in with Valyd before reusing your identity. |
+| `not_managed` | 400 | This session is not bound to a Valyd account. |
 | `otp_expired` | 410 | This OTP has expired |
 | `otp_invalid` | 400 | Invalid OTP |
 | `otp_not_found` | 404 | Invalid OTP |
@@ -151,9 +210,13 @@ _Generated from the API source — 147 codes. Do not edit by hand; run `node scr
 | `pairing_not_fulfilled` | 400 | Pairing is not yet complete. Status:  |
 | `portrait_invalid` | — |  |
 | `portrait_not_found` | — |  |
+| `project_not_found` | 404 | Verification project not found |
+| `protected_account` | 403 | This is a Valyd service account and cannot be deleted. |
 | `rate_limited` | 429 | Back off and retry after the window resets. |
 | `recovery_phrases_not_set` | 404 | Recovery phrases not set for this user |
 | `registration_failed` | 500 | Registration failed. Please try again. |
+| `request_not_supported` | redirect | The request (JWT request object) parameter is not supported — send plain query/form parameters. |
+| `request_uri_not_supported` | redirect | The request_uri parameter is not supported — send plain query/form parameters. |
 | `required_face_checks_incomplete` | 409 | Approval requires passed ID verification, liveness, and face match checks. |
 | `requires_login` | 401 | User must authenticate first |
 | `reuse_not_available` | 400 | Your Valyd account is no longer verified — please complete the full verification. |
@@ -183,8 +246,8 @@ _Generated from the API source — 147 codes. Do not edit by hand; run `node scr
 | `unauthorized_client` | 403 | This app is not active. |
 | `unauthorized_domain` | 403 | Unauthorized domain |
 | `unknown_band` | — |  |
-| `unsupported_grant_type` | 400 | only authorization_code supported |
-| `unsupported_response_type` | 400 | Only response_type=code is supported |
+| `unsupported_grant_type` | 400 | Only authorization_code and refresh_token are supported |
+| `unsupported_response_type` | redirect | Only response_type=code is supported |
 | `user_deleted` | 410 | This device was linked to a deleted account. Please clear your local data and register again. |
 | `user_has_no_face_reference` | — |  |
 | `user_not_found` | 400, 404 | User not found |
@@ -196,6 +259,7 @@ _Generated from the API source — 147 codes. Do not edit by hand; run `node scr
 | `workflow_not_found` | 404 | The workflow id does not belong to this project — copy it from the portal. |
 | `wrapped_ku_recovery_not_set` | 404 | WrappedKuRecovery not set for this user |
 | `wrong_endpoint` | 400 | This endpoint expects image IDs, not file uploads. Use the file upload endpoint instead. |
+| `wrong_side` | 422 | That looks like the FRONT of your ID. Please capture the BACK of the card. |
 <!-- ERROR-CATALOG:END -->
 
 ## 4. Troubleshooting the common integration mistakes
@@ -206,14 +270,28 @@ carries it). If it differs, the login is forged or expired — restart the flow.
 check.
 
 **`invalid_grant` on token exchange.** Authorization codes are single-use and expire in ~2
-minutes, and are bound to your client and `redirect_uri`. Exchange immediately, exactly once,
-with the same `redirect_uri` you authorized with.
+minutes, and are bound to your client, `redirect_uri`, and PKCE `code_challenge`. Exchange
+immediately, exactly once, with the same `redirect_uri` you authorized with and the matching
+`code_verifier`. Replaying a used code also revokes every token it already produced.
+
+**`error=invalid_request` on the callback.** Usually a missing PKCE `code_challenge` (or
+`code_challenge_method=plain`). PKCE S256 is required for every client — use the SDK's
+`createAuthorizationRequest()` or send `code_challenge` + `code_challenge_method=S256`.
+
+**`error=access_denied` on the callback.** The user pressed **Cancel** on the consent screen, or
+the app is a private organization app and the user isn't assigned to it. Show a friendly
+"sign-in was cancelled" message and offer to retry.
+
+**`invalid_client` with both Basic and body credentials.** Authenticate with **one** method:
+`client_secret_basic` (HTTP Basic) **or** `client_secret_post` (`client_id` + `client_secret`
+in the form body). Sending both returns `invalid_request`.
 
 **Redirect URI mismatch.** URIs are matched **exactly** — scheme, host, port, and path. Register
 every environment's callback in the Developer Portal.
 
 **`insufficient_scope` on userinfo.** OIDC resource calls require the `openid` scope in the
-token. The SDK and button add it automatically; raw integrations must include it in `scope`.
+token (HTTP 403, `{"error":"insufficient_scope",...}` plus a `WWW-Authenticate: Bearer` header).
+The SDK and button add it automatically; raw integrations must include it in `scope`.
 
 **Wrong environment host.** Each environment has its own IdP host (this documentation's is
 `idp.valyd.work`). A token from one environment never works on another — and the Sign-in button

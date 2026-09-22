@@ -18,16 +18,19 @@ do not start any check. To run a check, use a configured workflow — see
 Recommended Connect entry point. Generates strong `state`, `nonce`, and an S256 PKCE verifier/challenge together. Store the returned transaction server-side and redirect to `transaction.url`.
 
 ### `valyd.auth.getAuthorizationUrl({ state, nonce, codeChallenge, scope, redirectUri? })`
-Low-level URL builder. `state` is required. Prefer `createAuthorizationRequest()` so PKCE and nonce cannot be forgotten.
+Low-level URL builder. `state` is required, and so is `codeChallenge` — without it the SDK (≥ 1.12) throws `ValydError("pkce_required")`. Prefer `createAuthorizationRequest()` so PKCE and nonce cannot be forgotten.
 
-### `valyd.auth.exchangeCode(code)`
+### `valyd.auth.exchangeCode(code, { codeVerifier, redirectUri? })`
 Exchanges the authorization code at `POST /api/auth/oidc/token`. The SDK verifies the ID token against discovery/JWKS before returning `{ accessToken, refreshToken, idToken, claims, expiresIn, scope, tokenType }`.
 
 ### `valyd.auth.handleCallback(url, { transaction })`
-One callback call: compares state, sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
+One callback call: surfaces a callback `error` (e.g. `access_denied`) as a `ValydError`, compares state, checks the RFC 9207 `iss` (`issuer_mismatch`), sends the PKCE verifier, exchanges the code, verifies RS256/JWKS plus issuer/audience/expiry/nonce, and fetches UserInfo.
 
 ### `valyd.auth.refreshToken(refreshToken)`
 Refreshes at `POST /api/auth/oidc/token` with `grant_type: "refresh_token"`. Rotation is on — persist the returned `refreshToken` every time.
+
+### `valyd.auth.getEndSessionUrl({ idTokenHint, postLogoutRedirectUri, state })`
+Builds the RP-initiated logout URL (`/api/auth/oidc/logout`) with your `client_id`. Redirect the browser to it to end the user's Valyd session and revoke your app's tokens.
 
 ## OIDC endpoints (current — use these)
 
@@ -37,29 +40,49 @@ Refreshes at `POST /api/auth/oidc/token` with `grant_type: "refresh_token"`. Rot
 - **Full URL:** `https://idp.valyd.work/api/.well-known/openid-configuration`
 - **Auth:** none
 
-Standard OIDC discovery document: issuer, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `jwks_uri`, supported scopes/grants/algorithms. Point any OIDC-capable framework at this URL to auto-configure. See the [OIDC integration guide](/docs/oidc) for the full response.
+Standard OIDC discovery document: issuer, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `jwks_uri`, `end_session_endpoint`, supported scopes/grants/algorithms, `code_challenge_methods_supported: ["S256"]`, `response_modes_supported: ["query"]`, `prompt_values_supported`, `claim_types_supported: ["normal"]`, `authorization_response_iss_parameter_supported: true`, and explicit `false` for `request_parameter_supported`, `request_uri_parameter_supported`, `claims_parameter_supported`, `frontchannel_logout_supported`, and `backchannel_logout_supported`. Point any OIDC-capable framework at this URL to auto-configure. See the [OIDC integration guide](/docs/oidc) for the full response.
 
 ### GET /api/auth/oidc/authorize — Authorization
 
-- **Method:** GET (browser redirect)
+- **Method:** GET (browser redirect) or POST (`application/x-www-form-urlencoded` form, OIDC Core §3.1.2.1)
 - **Full URL:** `https://idp.valyd.work/api/auth/oidc/authorize`
 - **Auth:** none (user authenticates interactively)
 
-Query parameters: `client_id`, `redirect_uri`, `response_type=code`, `scope` (space-separated, **must include `openid`**), `state` (required — echoed back unchanged on the callback), `nonce` (recommended — bound into the `id_token`). On consent, Valyd redirects to your `redirect_uri` with `?code=...&state=<your original state>`.
+Parameters:
+
+| Parameter | Required | Notes |
+| --- | --- | --- |
+| `client_id` | Yes | |
+| `redirect_uri` | Yes | Exact match with a registered redirect URI. |
+| `response_type` | Yes | `code` only. |
+| `scope` | Yes | Space-separated, **must include `openid`**. |
+| `code_challenge` | Yes | PKCE, 43–128 base64url characters — **required for every client**, public and confidential. |
+| `code_challenge_method` | Yes | `S256` (`plain` is not supported). |
+| `state` | Recommended | Echoed back verbatim — only if you sent it. No minimum length. |
+| `nonce` | Recommended | Copied into the `id_token` — only if you sent it. |
+| `prompt` | No | Space-separated `none` / `login` / `consent` / `select_account` (`none` can't be combined). `none` → `login_required` or `consent_required` instead of UI; `login` / `select_account` force re-authentication; `consent` forces the consent screen, even for first-party apps. |
+| `max_age` | No | Seconds; forces re-authentication if the last real sign-in is older. The `id_token` always has `auth_time`. |
+| `id_token_hint` | No | With `prompt=none`, a different signed-in user → `login_required`. |
+| `login_hint` | No | Passed through to the sign-in screen. |
+| `resource` | No | RFC 8707 resource indicator — becomes the access token `aud`. |
+| `response_mode` | No | `query` only. |
+| `request` / `request_uri` | — | Not supported (`request_not_supported` / `request_uri_not_supported`). |
+
+On success, Valyd redirects to your `redirect_uri` with `?code=...&state=<your state>&iss=https://idp.valyd.work` (RFC 9207 — verify `iss` equals the issuer). Once `client_id` and `redirect_uri` are verified, **every error is also redirected**: `?error=...&error_description=...&state=...&iss=...` (e.g. `access_denied` when the user presses Cancel or isn't assigned to a private org app). Only an unknown client or an unregistered `redirect_uri` shows an HTML error page instead. See [Errors](/docs/errors#oidc-protocol-errors).
 
 ### POST /api/auth/oidc/token — Token (exchange + refresh)
 
 - **Method:** POST
 - **Full URL:** `https://idp.valyd.work/api/auth/oidc/token`
-- **Auth:** client credentials in the body (`client_secret_post`) or HTTP Basic (`client_secret_basic`)
-- **Required headers:** `Content-Type: application/json`
+- **Auth:** client credentials in the body (`client_secret_post`) **or** HTTP Basic (`client_secret_basic`, credentials form-urlencoded per RFC 6749 §2.3.1) — never both (`invalid_request`). Public first-party clients use `none` + PKCE.
+- **Required headers:** `Content-Type: application/x-www-form-urlencoded` (JSON is also accepted)
 
 Two grants:
 
 | `grant_type` | Body fields |
 |---|---|
-| `authorization_code` | `client_id`, `client_secret`, `code`, `redirect_uri` (exact match), `code_verifier` when PKCE was used |
-| `refresh_token` | `client_id`, `client_secret`, `refresh_token` |
+| `authorization_code` | `client_id`, `client_secret`, `code`, `redirect_uri` (exact match), `code_verifier` (**required**) |
+| `refresh_token` | `client_id`, `client_secret`, `refresh_token`, optional `scope` (narrow only — widening → `invalid_scope`) |
 
 Returns a **standard top-level token JSON** (no `data` wrapper):
 
@@ -74,25 +97,40 @@ Returns a **standard top-level token JSON** (no `data` wrapper):
 }
 ```
 
+Errors are RFC 6749 §5.2 JSON with `Cache-Control: no-store` — `error` is a string:
+
+```json
+{ "error": "invalid_grant", "error_description": "Invalid or expired authorization code" }
+```
+
+`invalid_request` / `invalid_grant` / `invalid_scope` / `unsupported_grant_type` → 400;
+`invalid_client` → 401 (with `WWW-Authenticate: Basic` when you used HTTP Basic).
+
 Notes:
-- Authorization codes are single-use and client-bound — exchange immediately.
-- The `id_token` is an RS256 JWT; validate it against the JWKS below and check its `nonce` claim.
+- Authorization codes are single-use and client-bound — exchange immediately. Replaying a code is rejected **and revokes every token it already produced**.
+- The `id_token` is an RS256 JWT; validate it against the JWKS below and check its `nonce` claim (present only if you sent one).
+- The `access_token` is an RFC 9068 JWT (`typ: at+jwt`) whose `sub` is the user's `valyd_…` id — the same as the ID token and UserInfo.
 - Refresh **rotation is on for every refresh**: the `refresh_token` you sent is revoked and a new one is returned — always persist the new value. Replaying a rotated-away token revokes every refresh token for that user and client.
 - The returned `access_token` works on all resource endpoints below (`/userinfo`, `/licenses`, `/verifications`).
 - What each of the three tokens is for, with decoded examples: [Tokens](/docs/tokens).
 
 ### GET /api/auth/oidc/logout — RP-initiated logout
 
-- **Method:** GET (browser redirect)
+- **Method:** GET (browser redirect) or POST (form)
 - **Full URL:** `https://idp.valyd.work/api/auth/oidc/logout`
 - **Auth:** none (identity proven by `id_token_hint`)
 
-Query parameters: `id_token_hint` (the id_token you received at login — an expired one is
-accepted, its signature still proves the user/client), `post_logout_redirect_uri` (must
-**exactly match** one of your registered redirect URIs — register your post-logout URL as an
-additional redirect URI), `state` (optional, echoed back). Revokes the user's refresh tokens and
-access tokens **for your client**, then redirects. Advertised in discovery as
-`end_session_endpoint`.
+Parameters: `id_token_hint` (recommended — the id_token you received at login; an expired one is
+accepted, its signature still proves the user/client), `client_id` (optional), 
+`post_logout_redirect_uri` (must be **registered** for your client — first-party clients use
+their post-logout URI list; developer-portal apps may, transitionally until 2026-12-01, use one
+of their registered redirect URIs; an unregistered value shows an error page), `state`
+(optional, appended to the post-logout redirect).
+
+**Ends the user's Valyd session in that browser** (Valyd cookies cleared, refresh token revoked,
+IdP web app storage cleared) and revokes the user's refresh and access tokens **for your
+client**, then redirects. Without a valid `id_token_hint` the user first sees a
+**"Sign out of Valyd?"** confirmation page. Advertised in discovery as `end_session_endpoint`.
 
 ### GET /api/auth/oidc/jwks.json — Signing keys
 
@@ -104,11 +142,15 @@ Public RSA keys (JWK set) for validating `id_token` signatures (RS256).
 
 ### GET /api/auth/oidc/userinfo — Standard OIDC userinfo
 
-- **Method:** GET
+- **Method:** GET or POST
 - **Full URL:** `https://idp.valyd.work/api/auth/oidc/userinfo`
-- **Auth:** `Authorization: Bearer YOUR_ACCESS_TOKEN`
+- **Auth:** `Authorization: Bearer YOUR_ACCESS_TOKEN`, or (POST only) a form-body `access_token` — not both (`invalid_request`)
 
-Returns top-level standard OIDC claims such as `sub`, `valyd_id`, `preferred_username`, `email`, `name`, and `id_verified` according to the granted scopes.
+Returns top-level standard OIDC claims such as `sub`, `valyd_id`, `preferred_username`, `email`, `name`, and `id_verified` according to the granted scopes. `email_verified` is always `false` — Valyd does not verify email ownership; identity verification is the separate `id_verified` claim.
+
+Errors follow RFC 6750: `401 {"error":"invalid_token","error_description":"..."}` with
+`WWW-Authenticate: Bearer realm="valyd", error="invalid_token", ...`, or
+`403 insufficient_scope` when the token lacks `openid`.
 
 ---
 

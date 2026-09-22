@@ -34,18 +34,26 @@ Verification API as `valyd_access_token` for
 [account-connected checks](/docs/flows/account-connected). It's scope-gated: it can only reach
 what the user approved on the consent screen.
 
-Decoded example payload (illustrative):
+It's a signed JWT in the RFC 9068 profile — header `typ: "at+jwt"`, so it can never be confused
+with an ID token. Decoded example payload (illustrative):
 
 ```json
 {
   "iss": "https://idp.valyd.work",
   "sub": "valyd_f895da61d5174b81b8dd6a4e3b417339",
-  "aud": "YOUR_CLIENT_ID",
+  "aud": "vc-api",
+  "client_id": "YOUR_CLIENT_ID",
   "iat": 1755600000,
   "exp": 1755600900,
+  "jti": "5b0e6c1e-2f4a-4d3b-9a51-0c8f3f1e7a22",
+  "valyd_id": "valyd_f895da61d5174b81b8dd6a4e3b417339",
   "scope": "openid profile verifications"
 }
 ```
+
+`sub` is the user's `valyd_…` id — the same subject as the ID token and UserInfo (before
+2026-09-18 it was an internal numeric id). `aud` is the RFC 8707 `resource` you requested, or
+`vc-api` by default; the app is identified by `client_id`.
 
 **Use it for:** calling Valyd APIs on the user's behalf; attaching to a verification session so
 the proof saves to their account.
@@ -70,6 +78,7 @@ Decoded example payload (illustrative):
   "aud": "YOUR_CLIENT_ID",
   "iat": 1755600000,
   "exp": 1755600900,
+  "auth_time": 1755599990,
   "nonce": "RANDOM_NONCE_FROM_AUTHORIZE",
   "name": "John Doe",
   "preferred_username": "john.doe",
@@ -78,8 +87,9 @@ Decoded example payload (illustrative):
 ```
 
 Claim notes: `sub` is the **stable `valyd_…` id — use it as your primary key**; `aud` must equal
-your `client_id`; `nonce` must equal the value you sent on `/authorize` (replay protection);
-`id_verified` tells you the account passed identity verification.
+your `client_id`; `nonce` is present **only if you sent one** on `/authorize` and must then equal
+it (replay protection); `auth_time` is when the user last actually signed in (use it with
+`max_age`); `id_verified` tells you the account passed identity verification.
 
 **Use it for:** establishing the login on your backend, keying the user by `sub`, and later as
 the `id_token_hint` on [logout](/docs/flows/refresh#logout--revocation).
@@ -103,7 +113,8 @@ An opaque string (`rfrsh_…` — not a JWT, nothing to decode) held **only on y
 ```
 
 **Use it for:** minting a new access token at the token endpoint with
-`grant_type: "refresh_token"`, from your backend, with your client credentials.
+`grant_type: "refresh_token"`, from your backend, with your client credentials. Add an optional
+`scope` to narrow the new access token (widening returns `invalid_scope`).
 
 **Never use it for:** calling APIs, or anywhere client-side. It's the longest-lived credential
 in the system — treat it like a password.
@@ -123,7 +134,7 @@ nonce before returning. Any standard OIDC library pointed at
 **Validating manually** (no SDK): fetch the signing keys from the JWKS at
 `https://idp.valyd.work/api/auth/oidc/jwks.json`, verify the RS256 signature, then check
 `iss === "https://idp.valyd.work"`, `aud === your client_id`, `exp` in the future, and
-`nonce === the value you sent`. Never accept `alg: "none"` or an unexpected algorithm.
+`nonce === the value you sent` (if you sent one). Never accept `alg: "none"` or an unexpected algorithm.
 
 ## Related
 

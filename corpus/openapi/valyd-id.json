@@ -2,9 +2,9 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Valyd ID API",
-    "version": "1.10.1",
+    "version": "1.11.0",
     "summary": "Standards-based OpenID Connect for verified profiles, licenses, and identity claims.",
-    "description": "Valyd ID implements one standards-based OIDC namespace at /api/auth/oidc/*, plus discovery. UserInfo returns top-level OIDC claims. Credentials are created in the Developer Portal; keep client_secret and token exchange server-side.",
+    "description": "Valyd ID implements one standards-based OIDC namespace at /api/auth/oidc/*, plus discovery. UserInfo returns top-level OIDC claims. Credentials are created in the Developer Portal; keep client_secret and token exchange server-side. Since 2026-09-18 the OIDC protocol endpoints (authorize, token, userinfo, register, logout) follow OAuth 2.0 / OIDC exactly: PKCE S256 is required on every authorization request, authorization errors are redirected to the client's redirect_uri with `error`, `error_description`, `state` and `iss` (RFC 9207), and token / userinfo / register errors use the standard `OAuthError` body `{error, error_description}` (RFC 6749 §5.2 / RFC 6750 / RFC 7591). All other Valyd APIs keep the `{success, data, error:{code,message}}` envelope (`Error`).",
     "contact": {
       "name": "Valyd Developer Docs",
       "url": "https://docs.valyd.work/docs/overview.md"
@@ -64,9 +64,7 @@
                   "userinfo_endpoint": "https://idp.valyd.work/api/auth/oidc/userinfo",
                   "jwks_uri": "https://idp.valyd.work/api/auth/oidc/jwks.json",
                   "response_types_supported": [
-                    "code",
-                    "id_token",
-                    "token id_token"
+                    "code"
                   ],
                   "grant_types_supported": [
                     "authorization_code",
@@ -87,7 +85,8 @@
                   ],
                   "token_endpoint_auth_methods_supported": [
                     "client_secret_post",
-                    "client_secret_basic"
+                    "client_secret_basic",
+                    "none"
                   ],
                   "claims_supported": [
                     "sub",
@@ -100,7 +99,29 @@
                     "preferred_username",
                     "first_name",
                     "last_name"
-                  ]
+                  ],
+                  "end_session_endpoint": "https://idp.valyd.work/api/auth/oidc/logout",
+                  "response_modes_supported": [
+                    "query"
+                  ],
+                  "code_challenge_methods_supported": [
+                    "S256"
+                  ],
+                  "prompt_values_supported": [
+                    "none",
+                    "login",
+                    "consent",
+                    "select_account"
+                  ],
+                  "claim_types_supported": [
+                    "normal"
+                  ],
+                  "request_parameter_supported": false,
+                  "request_uri_parameter_supported": false,
+                  "claims_parameter_supported": false,
+                  "frontchannel_logout_supported": false,
+                  "backchannel_logout_supported": false,
+                  "authorization_response_iss_parameter_supported": true
                 }
               }
             }
@@ -114,7 +135,7 @@
           "OIDC"
         ],
         "summary": "OIDC authorization (browser redirect)",
-        "description": "Standard OpenID Connect authorization-code entry point. This is a browser redirect to the Valyd login/consent screen, not a JSON API call. Parameters follow OIDC Core; the docs do not enumerate them, so the standard set is shown for guidance.",
+        "description": "Standard OpenID Connect authorization-code entry point (OIDC Core §3.1.2). A browser redirect to the Valyd login/consent screen, not a JSON API call. Accepts GET (query) and POST (form). PKCE S256 is REQUIRED for every client. Once `client_id` and `redirect_uri` are verified, every error is redirected to `redirect_uri` as `?error=…&error_description=…&state=…&iss=…`; only an unknown client or unregistered `redirect_uri` renders an HTML error page.",
         "operationId": "oidcAuthorize",
         "security": [],
         "parameters": [
@@ -124,11 +145,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "examples": [
+              "enum": [
                 "code"
               ]
             },
-            "description": "Use `code` for the authorization-code flow."
+            "description": "Must be `code` (the only supported response type)."
           },
           {
             "name": "client_id",
@@ -166,7 +187,8 @@
             "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Recommended (CSRF). Echoed back verbatim on the callback — only if sent. No minimum length."
           },
           {
             "name": "nonce",
@@ -174,12 +196,281 @@
             "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Recommended. Copied into the ID token — the ID token contains `nonce` only if you sent one."
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]{43,128}$"
+            },
+            "description": "PKCE (RFC 7636): BASE64URL(SHA256(code_verifier)). Required for every client, public and confidential. Missing → `error=invalid_request`."
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S256"
+              ]
+            },
+            "description": "Must be `S256`; `plain` is not supported."
+          },
+          {
+            "name": "prompt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "examples": [
+                "none",
+                "login",
+                "consent",
+                "select_account",
+                "login consent"
+              ]
+            },
+            "description": "Space-separated `none` / `login` / `consent` / `select_account` (`none` cannot be combined). `none` → silent: `error=login_required` or `consent_required` instead of UI. `login` / `select_account` force re-authentication; `consent` forces the consent screen."
+          },
+          {
+            "name": "max_age",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Maximum authentication age in seconds; older sign-ins must re-authenticate. The ID token always carries `auth_time`."
+          },
+          {
+            "name": "id_token_hint",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "A previously issued ID token. With `prompt=none`, a different signed-in user → `login_required`."
+          },
+          {
+            "name": "login_hint",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Passed through to the sign-in screen."
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "RFC 8707 resource indicator; becomes the access token `aud`."
+          },
+          {
+            "name": "response_mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "query"
+              ]
+            },
+            "description": "Only `query` is supported."
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Not supported → `error=request_not_supported`."
+          },
+          {
+            "name": "request_uri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Not supported → `error=request_uri_not_supported`."
           }
         ],
         "responses": {
           "302": {
-            "description": "Redirect to the Valyd login/consent screen; on completion, redirects back to `redirect_uri` with `code` and `state`."
+            "description": "Redirect to the Valyd login/consent screen; on completion, redirects back to `redirect_uri` with `code`, `state` (if sent) and `iss` (RFC 9207). On error (after client + redirect_uri are verified): `redirect_uri?error=…&error_description=…&state=…&iss=…` with `error` ∈ `invalid_request`, `unsupported_response_type`, `invalid_scope`, `invalid_target`, `access_denied`, `login_required`, `consent_required`, `request_not_supported`, `request_uri_not_supported`, `server_error`.",
+            "headers": {
+              "Location": {
+                "description": "Consent screen, or the client callback carrying `code`/`state`/`iss` or `error`/`error_description`/`state`/`iss`.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown `client_id` or unregistered `redirect_uri` — an HTML error page is shown and the browser is NOT redirected.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OIDC authorization (form POST)",
+        "description": "Same as GET, with the parameters in an `application/x-www-form-urlencoded` body (OIDC Core §3.1.2.1).",
+        "operationId": "oidcAuthorizePost",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "response_type",
+                  "client_id",
+                  "redirect_uri",
+                  "scope",
+                  "code_challenge",
+                  "code_challenge_method"
+                ],
+                "properties": {
+                  "response_type": {
+                    "type": "string",
+                    "enum": [
+                      "code"
+                    ],
+                    "description": "Must be `code` (the only supported response type)."
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Must exactly match a registered redirect URI."
+                  },
+                  "scope": {
+                    "type": "string",
+                    "examples": [
+                      "openid profile email"
+                    ],
+                    "description": "Space-separated scopes; must include `openid`."
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "Recommended (CSRF). Echoed back verbatim on the callback — only if sent. No minimum length."
+                  },
+                  "nonce": {
+                    "type": "string",
+                    "description": "Recommended. Copied into the ID token — the ID token contains `nonce` only if you sent one."
+                  },
+                  "code_challenge": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9_-]{43,128}$",
+                    "description": "PKCE (RFC 7636): BASE64URL(SHA256(code_verifier)). Required for every client, public and confidential. Missing → `error=invalid_request`."
+                  },
+                  "code_challenge_method": {
+                    "type": "string",
+                    "enum": [
+                      "S256"
+                    ],
+                    "description": "Must be `S256`; `plain` is not supported."
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "examples": [
+                      "none",
+                      "login",
+                      "consent",
+                      "select_account",
+                      "login consent"
+                    ],
+                    "description": "Space-separated `none` / `login` / `consent` / `select_account` (`none` cannot be combined). `none` → silent: `error=login_required` or `consent_required` instead of UI. `login` / `select_account` force re-authentication; `consent` forces the consent screen."
+                  },
+                  "max_age": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Maximum authentication age in seconds; older sign-ins must re-authenticate. The ID token always carries `auth_time`."
+                  },
+                  "id_token_hint": {
+                    "type": "string",
+                    "description": "A previously issued ID token. With `prompt=none`, a different signed-in user → `login_required`."
+                  },
+                  "login_hint": {
+                    "type": "string",
+                    "description": "Passed through to the sign-in screen."
+                  },
+                  "resource": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "RFC 8707 resource indicator; becomes the access token `aud`."
+                  },
+                  "response_mode": {
+                    "type": "string",
+                    "enum": [
+                      "query"
+                    ],
+                    "description": "Only `query` is supported."
+                  },
+                  "request": {
+                    "type": "string",
+                    "description": "Not supported → `error=request_not_supported`."
+                  },
+                  "request_uri": {
+                    "type": "string",
+                    "description": "Not supported → `error=request_uri_not_supported`."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Redirect to the Valyd login/consent screen; on completion, redirects back to `redirect_uri` with `code`, `state` (if sent) and `iss` (RFC 9207). On error (after client + redirect_uri are verified): `redirect_uri?error=…&error_description=…&state=…&iss=…` with `error` ∈ `invalid_request`, `unsupported_response_type`, `invalid_scope`, `invalid_target`, `access_denied`, `login_required`, `consent_required`, `request_not_supported`, `request_uri_not_supported`, `server_error`.",
+            "headers": {
+              "Location": {
+                "description": "Consent screen, or the client callback carrying `code`/`state`/`iss` or `error`/`error_description`/`state`/`iss`.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown `client_id` or unregistered `redirect_uri` — an HTML error page is shown and the browser is NOT redirected.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -190,7 +481,7 @@
           "OIDC"
         ],
         "summary": "OIDC token exchange",
-        "description": "Exchange the OIDC authorization code for `access_token`, `id_token`, and `refresh_token`. Client authentication is `client_secret_post` (shown) or `client_secret_basic`. The docs do not print the exact request/response bodies; the OIDC Core standard shape is shown for guidance.",
+        "description": "Exchange an authorization code (with its PKCE `code_verifier`) or a refresh token for tokens. Client authentication: `client_secret_basic` (HTTP Basic, credentials form-urlencoded per RFC 6749 §2.3.1) OR `client_secret_post` — using both → `invalid_request`. Public first-party clients use `none` + PKCE. A replayed authorization code is rejected and revokes every token it already produced. Refresh tokens rotate; replaying an old one revokes the family. The access token is an RFC 9068 JWT (`typ: at+jwt`, `sub` = the user's valyd id). Errors use `OAuthError` with `Cache-Control: no-store`.",
         "operationId": "oidcToken",
         "security": [],
         "requestBody": {
@@ -200,31 +491,46 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "grant_type",
-                  "code",
-                  "redirect_uri",
-                  "client_id"
+                  "grant_type"
                 ],
                 "properties": {
                   "grant_type": {
                     "type": "string",
-                    "examples": [
-                      "authorization_code"
+                    "enum": [
+                      "authorization_code",
+                      "refresh_token"
                     ]
                   },
                   "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Required for `authorization_code`. Single-use."
                   },
                   "redirect_uri": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri",
+                    "description": "Required for `authorization_code`; must equal the value sent to /authorize."
                   },
                   "client_id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Required for `client_secret_post` and public clients; omit when using HTTP Basic."
                   },
                   "client_secret": {
                     "type": "string",
-                    "description": "Required for client_secret_post."
+                    "description": "Required for `client_secret_post`. Do not combine with HTTP Basic."
+                  },
+                  "code_verifier": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 128,
+                    "description": "Required for `authorization_code` — the PKCE verifier whose S256 hash was sent as `code_challenge`."
+                  },
+                  "refresh_token": {
+                    "type": "string",
+                    "description": "Required for `refresh_token`."
+                  },
+                  "scope": {
+                    "type": "string",
+                    "description": "`refresh_token` only, optional: narrow the new access token to a subset of the granted scopes (widening → `invalid_scope`)."
                   }
                 }
               }
@@ -241,6 +547,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/OAuthBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/OAuthInvalidClient"
           }
         }
       }
@@ -251,7 +563,7 @@
           "OIDC Resources"
         ],
         "summary": "Get user profile",
-        "description": "Retrieve the authenticated user's profile. Requires the `profile` scope.",
+        "description": "Retrieve the authenticated user's claims (OIDC Core §5.3). Requires a token with the `openid` scope; claims are filtered by the granted scopes (`profile`, `email`, `phone`). The token goes in `Authorization: Bearer` (GET/POST) or, for POST, a form-body `access_token` — not both. Errors follow RFC 6750 with a `WWW-Authenticate: Bearer` header.",
         "operationId": "oidcUserinfo",
         "security": [
           {
@@ -277,11 +589,314 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BearerBadRequest"
+          },
           "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "$ref": "#/components/responses/BearerInvalidToken"
           },
           "403": {
-            "$ref": "#/components/responses/Forbidden"
+            "$ref": "#/components/responses/BearerInsufficientScope"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OIDC Resources"
+        ],
+        "summary": "Get user profile (POST)",
+        "description": "Same as GET. The access token may be sent as `Authorization: Bearer` or as a form-body `access_token` (RFC 6750 §2.2) — not both (`invalid_request`).",
+        "operationId": "oidcUserinfoPost",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "access_token": {
+                    "type": "string",
+                    "description": "Alternative to the Authorization header."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserInfoResponse"
+                },
+                "example": {
+                  "sub": "valyd_225c7f2ac450496f97bbbc57354a5898",
+                  "valyd_id": "valyd_225c7f2ac450496f97bbbc57354a5898",
+                  "preferred_username": "johndoe",
+                  "email": "user@example.com",
+                  "name": "John Doe",
+                  "id_verified": true
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BearerBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/BearerInvalidToken"
+          },
+          "403": {
+            "$ref": "#/components/responses/BearerInsufficientScope"
+          }
+        }
+      }
+    },
+    "/api/auth/oidc/logout": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "RP-initiated logout (end_session_endpoint)",
+        "description": "OpenID Connect RP-Initiated Logout 1.0. Ends the user's Valyd session in this browser and revokes the calling app's tokens for the user, then redirects. Advertised in discovery as `end_session_endpoint`.",
+        "operationId": "oidcLogout",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id_token_hint",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Recommended. The ID token issued to this client (an expired one is accepted). Without a valid hint the user sees a \"Sign out of Valyd?\" confirmation page."
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifies the client when no id_token_hint is sent."
+          },
+          {
+            "name": "post_logout_redirect_uri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Must be registered for the client. First-party clients: their post-logout URI list. Developer-portal apps: one of their registered redirect URIs (transitional until 2026-12-01). Unregistered → error page."
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Appended to the post-logout redirect."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page — the \"Sign out of Valyd?\" confirmation (no valid id_token_hint), or the signed-out page when no post_logout_redirect_uri was given.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Valyd session ended in this browser (cookies cleared, refresh token revoked, IdP web-app storage cleared) and the client's tokens for the user revoked; redirect to `post_logout_redirect_uri` (+ `state`).",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "HTML error page — e.g. unregistered `post_logout_redirect_uri`.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "RP-initiated logout (form POST)",
+        "description": "Same as GET with the parameters in an `application/x-www-form-urlencoded` body.",
+        "operationId": "oidcLogoutPost",
+        "security": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_token_hint": {
+                    "type": "string",
+                    "description": "Recommended. The ID token issued to this client (an expired one is accepted). Without a valid hint the user sees a \"Sign out of Valyd?\" confirmation page."
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "description": "Identifies the client when no id_token_hint is sent."
+                  },
+                  "post_logout_redirect_uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Must be registered for the client. First-party clients: their post-logout URI list. Developer-portal apps: one of their registered redirect URIs (transitional until 2026-12-01). Unregistered → error page."
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "Appended to the post-logout redirect."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTML page — the \"Sign out of Valyd?\" confirmation (no valid id_token_hint), or the signed-out page when no post_logout_redirect_uri was given.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Valyd session ended in this browser (cookies cleared, refresh token revoked, IdP web-app storage cleared) and the client's tokens for the user revoked; redirect to `post_logout_redirect_uri` (+ `state`).",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "HTML error page — e.g. unregistered `post_logout_redirect_uri`.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/oidc/register": {
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Dynamic Client Registration (RFC 7591)",
+        "description": "Only available when enabled on the deployment (then advertised as `registration_endpoint` in discovery); protected by an initial-access Bearer token. Errors use `OAuthError` (RFC 7591 §3.2.2).",
+        "operationId": "oidcRegister",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "redirect_uris"
+                ],
+                "properties": {
+                  "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "client_name": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Client registered (RFC 7591 client information response).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_redirect_uri` or `invalid_client_metadata`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                },
+                "example": {
+                  "error": "invalid_redirect_uri",
+                  "error_description": "redirect_uris (non-empty array) is required"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/BearerInvalidToken"
+          },
+          "403": {
+            "description": "`access_denied` — dynamic registration is disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthError"
+                },
+                "example": {
+                  "error": "access_denied",
+                  "error_description": "Dynamic client registration is disabled"
+                }
+              }
+            }
           }
         }
       }
@@ -621,7 +1236,7 @@
     "schemas": {
       "Error": {
         "type": "object",
-        "description": "OAuth error envelope.",
+        "description": "Valyd error envelope — used by the non-OIDC Valyd APIs and the account resource endpoints (/licenses, /verifications). The OIDC protocol endpoints (token, userinfo, register) use `OAuthError` instead.",
         "required": [
           "success",
           "error"
@@ -847,6 +1462,11 @@
           },
           "id_verified": {
             "type": "boolean"
+          },
+          "email_verified": {
+            "type": "boolean",
+            "const": false,
+            "description": "Always false — Valyd does not verify email ownership; see `id_verified`."
           }
         }
       },
@@ -992,6 +1612,60 @@
             "items": {
               "type": "string"
             }
+          },
+          "end_session_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "registration_endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Only present when Dynamic Client Registration is enabled."
+          },
+          "response_modes_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "code_challenge_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "prompt_values_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "claim_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "request_parameter_supported": {
+            "type": "boolean"
+          },
+          "request_uri_parameter_supported": {
+            "type": "boolean"
+          },
+          "claims_parameter_supported": {
+            "type": "boolean"
+          },
+          "frontchannel_logout_supported": {
+            "type": "boolean"
+          },
+          "backchannel_logout_supported": {
+            "type": "boolean"
+          },
+          "authorization_response_iss_parameter_supported": {
+            "type": "boolean"
+          },
+          "resource_indicators_supported": {
+            "type": "boolean"
           }
         }
       },
@@ -1036,7 +1710,8 @@
             "format": "email"
           },
           "email_verified": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Always false — Valyd does not verify email ownership (identity verification is `id_verified`)."
           },
           "name": {
             "type": "string"
@@ -1050,6 +1725,34 @@
           "picture": {
             "type": "string",
             "format": "uri"
+          }
+        }
+      },
+      "OAuthError": {
+        "type": "object",
+        "description": "Standard OAuth 2.0 / OIDC error body (RFC 6749 §5.2, RFC 6750 §3, RFC 7591 §3.2.2). `error` is a string. Returned by the OIDC token, userinfo and register endpoints with `Cache-Control: no-store`.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error code.",
+            "examples": [
+              "invalid_grant",
+              "invalid_request",
+              "invalid_client",
+              "invalid_scope",
+              "unsupported_grant_type",
+              "invalid_token",
+              "insufficient_scope",
+              "invalid_redirect_uri",
+              "invalid_client_metadata"
+            ]
+          },
+          "error_description": {
+            "type": "string",
+            "description": "Human-readable description."
           }
         }
       }
@@ -1102,6 +1805,140 @@
                 "code": "insufficient_scope",
                 "message": "The request requires the profile scope"
               }
+            }
+          }
+        }
+      },
+      "OAuthBadRequest": {
+        "description": "RFC 6749 §5.2 error — `invalid_request`, `invalid_grant`, `invalid_scope`, or `unsupported_grant_type`.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OAuthError"
+            },
+            "example": {
+              "error": "invalid_grant",
+              "error_description": "Invalid or expired authorization code"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": {
+            "description": "Always `no-store`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OAuthInvalidClient": {
+        "description": "`invalid_client` — client authentication failed. Carries `WWW-Authenticate: Basic` when the client used HTTP Basic.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OAuthError"
+            },
+            "example": {
+              "error": "invalid_client",
+              "error_description": "Client authentication failed"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": {
+            "description": "Always `no-store`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "WWW-Authenticate": {
+            "description": "`Basic realm=\"valyd\", charset=\"UTF-8\"` when HTTP Basic was used.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BearerInvalidToken": {
+        "description": "RFC 6750 — the access token is missing, invalid or expired (`invalid_token`; a request with no token gets a bare `Bearer realm=\"valyd\"` challenge).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OAuthError"
+            },
+            "example": {
+              "error": "invalid_token",
+              "error_description": "The access token is invalid or expired"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": {
+            "description": "Always `no-store`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "WWW-Authenticate": {
+            "description": "RFC 6750 challenge, e.g. `Bearer realm=\"valyd\", error=\"invalid_token\", error_description=\"...\"`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BearerInsufficientScope": {
+        "description": "RFC 6750 — the access token lacks the `openid` scope (`insufficient_scope`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OAuthError"
+            },
+            "example": {
+              "error": "insufficient_scope",
+              "error_description": "The access token does not have the openid scope"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": {
+            "description": "Always `no-store`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "WWW-Authenticate": {
+            "description": "RFC 6750 challenge, e.g. `Bearer realm=\"valyd\", error=\"invalid_token\", error_description=\"...\"`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BearerBadRequest": {
+        "description": "RFC 6750 — `invalid_request` (e.g. the token was sent in both the header and the body).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OAuthError"
+            },
+            "example": {
+              "error": "invalid_request",
+              "error_description": "Send the access token in only one place"
+            }
+          }
+        },
+        "headers": {
+          "Cache-Control": {
+            "description": "Always `no-store`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "WWW-Authenticate": {
+            "description": "RFC 6750 challenge, e.g. `Bearer realm=\"valyd\", error=\"invalid_token\", error_description=\"...\"`.",
+            "schema": {
+              "type": "string"
             }
           }
         }
