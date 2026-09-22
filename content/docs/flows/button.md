@@ -3,8 +3,8 @@
 > 🔑 **Auth:** `client_id` in the tag, `client_secret` stays on your backend · 👤 **This IS the login** — the button runs the Authorization Code flow for you
 
 The drop-in button (`https://idp.valyd.work/signin/client.js`) is a front end for the
-[Authorization Code flow](/docs/flows/authorization-code). It generates `state` and `nonce`,
-builds the authorize URL, and redirects the user to Valyd. The code exchange still happens on
+[Authorization Code flow](/docs/flows/authorization-code). It generates `state`, `nonce`, and a
+PKCE `code_verifier` (PKCE S256 is required for every client), builds the authorize URL, and redirects the user to Valyd. The code exchange still happens on
 your backend with your `client_secret`.
 
 ```html
@@ -17,21 +17,22 @@ your backend with your `client_secret`.
 
 ## Redirect mode
 
-Before redirecting, the button stores the generated values in `valyd_oidc_state` and
-`valyd_oidc_nonce` cookies so your callback route can compare them.
+Before redirecting, the button stores the generated values in `valyd_oidc_state`,
+`valyd_oidc_nonce`, and `valyd_oidc_code_verifier` cookies (first-party, `SameSite=Lax`, 10 min)
+so your callback route can compare them and send the verifier at the code exchange.
 
 ```mermaid
 sequenceDiagram
     participant B as Browser
     participant Y as Your backend
     participant V as Valyd IdP
-    Note over B: click button — set valyd_oidc_state + valyd_oidc_nonce cookies
-    B->>V: navigate to /authorize
+    Note over B: click button — set valyd_oidc_state + _nonce + _code_verifier cookies
+    B->>V: navigate to /authorize (code_challenge, S256)
     Note over B,V: login + consent
-    V-->>B: 302 to redirect_uri?code&state
+    V-->>B: 302 to redirect_uri?code&state&iss (or ?error=...)
     B->>Y: GET /auth/valyd/callback
-    Note over Y: compare state vs cookie
-    Y->>V: exchange code
+    Note over Y: handle error, compare state vs cookie, check iss
+    Y->>V: exchange code + code_verifier
     V-->>Y: tokens
     Y-->>B: your app session
 ```
@@ -40,11 +41,17 @@ Backend handler (the whole thing):
 
 ```typescript
 app.get("/auth/valyd/callback", async (req, res) => {
-  const { user } = await valyd.handleCallback(req.url, {
-    expectedState: req.cookies.valyd_oidc_state,   // the button set this cookie
-    nonce: req.cookies.valyd_oidc_nonce,
-  });
-  res.redirect("/dashboard");
+  try {
+    const { user } = await valyd.handleCallback(req.url, {
+      expectedState: req.cookies.valyd_oidc_state,          // the button set these cookies
+      nonce: req.cookies.valyd_oidc_nonce,
+      codeVerifier: req.cookies.valyd_oidc_code_verifier,   // PKCE
+    });
+    res.redirect("/dashboard");
+  } catch (err) {
+    // e.g. access_denied (user pressed Cancel), invalid_grant, issuer_mismatch
+    res.status(400).send(err.code);
+  }
 });
 ```
 

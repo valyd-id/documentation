@@ -49,6 +49,8 @@ export SESSION_SECRET=replace_with_at_least_32_random_characters
 **`app.py`**
 
 ```python
+import base64
+import hashlib
 import os
 import secrets
 from urllib.parse import urlencode
@@ -71,8 +73,14 @@ def home():
 def login():
     state = secrets.token_hex(16)   # CSRF: Valyd echoes it back on the callback
     nonce = secrets.token_hex(16)   # bound into the id_token (replay protection)
+    # PKCE (required for every client): keep the verifier, send its S256 hash
+    code_verifier = secrets.token_urlsafe(48)
+    code_challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(code_verifier.encode()).digest()
+    ).rstrip(b"=").decode()
     session["valyd_state"] = state
     session["valyd_nonce"] = nonce
+    session["valyd_code_verifier"] = code_verifier
     return redirect(f"{VALYD}/api/auth/oidc/authorize?" + urlencode({
         "client_id":     os.environ["VALYD_CLIENT_ID"],
         "redirect_uri":  os.environ["VALYD_REDIRECT_URI"],  # must exactly match an app redirect URI
@@ -80,17 +88,24 @@ def login():
         "scope":         "openid profile",                  # openid is REQUIRED
         "state":         state,
         "nonce":         nonce,
+        "code_challenge":        code_challenge,
+        "code_challenge_method": "S256",
     }))
 
 
 @app.route("/callback")
 def callback():
-    if "error" in request.args or "code" not in request.args:
+    if "error" in request.args:  # e.g. access_denied (user pressed Cancel), login_required
+        return {"error": request.args["error"],
+                "error_description": request.args.get("error_description", "")}, 400
+    if "code" not in request.args:
         abort(400)
     if not secrets.compare_digest(
         session.pop("valyd_state", ""), request.args.get("state", "")
     ):
         abort(400)  # CSRF check — never skip it
+    if request.args.get("iss", VALYD) != VALYD:
+        abort(400)  # RFC 9207 mix-up defence
 
     token = requests.post(f"{VALYD}/api/auth/oidc/token", data={  # form-encoded
         "grant_type":    "authorization_code",
@@ -98,9 +113,13 @@ def callback():
         "client_id":     os.environ["VALYD_CLIENT_ID"],
         "client_secret": os.environ["VALYD_CLIENT_SECRET"],
         "redirect_uri":  os.environ["VALYD_REDIRECT_URI"],  # same URI used at authorize
+        "code_verifier": session.pop("valyd_code_verifier", ""),  # PKCE
     })
-    token.raise_for_status()
     tokens = token.json()  # TOP-LEVEL: access_token, refresh_token, id_token, expires_in (~900)
+    if token.status_code != 200:
+        # RFC 6749 §5.2: {"error": "invalid_grant", "error_description": "..."}
+        return {"error": tokens.get("error"),
+                "error_description": tokens.get("error_description")}, 400
 
     user = requests.get(
         f"{VALYD}/api/auth/oidc/userinfo",
@@ -132,7 +151,7 @@ Open http://localhost:5000 and click **Connect with Valyd**.
 
 <Callout type="info" emoji="✅">
 **Checkpoint:** `/login` redirects to `https://idp.valyd.work/api/auth/oidc/authorize?...` with
-`state` and `nonce` in the URL; after consent, `/callback` returns your `valyd_id` and
+`state`, `nonce`, `code_challenge`, and `code_challenge_method=S256` in the URL; after consent, `/callback` returns your `valyd_id` and
 `id_verified`; and a forged callback (wrong or missing `state`) is rejected with HTTP 400.
 </Callout>
 
@@ -145,6 +164,10 @@ Open http://localhost:5000 and click **Connect with Valyd**.
   `localhost:5000`. See [Errors & troubleshooting](/docs/errors).
 - **`invalid_scope` / missing `openid`** — `scope` must include `openid`, and every requested
   scope must be enabled on the app in the portal. See [Errors & troubleshooting](/docs/errors).
+- **`error=invalid_request` on the callback** — the authorize URL lacked `code_challenge` /
+  `code_challenge_method=S256`; PKCE is required for every client.
+- **`invalid_grant` from the token endpoint** — the code was already used or expired, or the
+  `code_verifier` doesn't match the challenge. Restart from `/login`.
 
 ## Next steps
 

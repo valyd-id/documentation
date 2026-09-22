@@ -60,7 +60,9 @@ use Illuminate\Support\Str;
 // GET /auth/valyd — the "Connect with Valyd" button links here
 Route::get('/auth/valyd', function () {
     $state = Str::random(32);                    // CSRF: Valyd echoes it back
-    session(['valyd_state' => $state]);
+    $verifier = Str::random(64);                 // PKCE (required for every client)
+    $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+    session(['valyd_state' => $state, 'valyd_code_verifier' => $verifier]);
     return redirect()->away(
         'https://idp.valyd.work/api/auth/oidc/authorize?' . http_build_query([
             'client_id'     => config('services.valyd.client_id'),
@@ -68,6 +70,8 @@ Route::get('/auth/valyd', function () {
             'response_type' => 'code',
             'scope'         => 'openid profile',                      // openid is REQUIRED
             'state'         => $state,
+            'code_challenge'        => $challenge,
+            'code_challenge_method' => 'S256',
         ])
     );
 });
@@ -78,15 +82,25 @@ Route::get('/auth/valyd/callback', function (Request $request) {
         hash_equals(session()->pull('valyd_state', ''), (string) $request->query('state')),
         403 // CSRF check — never skip it
     );
-    abort_if($request->query('error') || !$request->query('code'), 400);
+    if ($request->query('error')) { // e.g. access_denied (user pressed Cancel), login_required
+        return response()->json($request->only('error', 'error_description'), 400);
+    }
+    abort_unless($request->query('code'), 400);
+    abort_unless($request->query('iss', 'https://idp.valyd.work') === 'https://idp.valyd.work', 400); // RFC 9207
 
-    $token = Http::asForm()->post('https://idp.valyd.work/api/auth/oidc/token', [
+    $response = Http::asForm()->post('https://idp.valyd.work/api/auth/oidc/token', [
         'grant_type'    => 'authorization_code',
         'code'          => $request->query('code'),
         'client_id'     => config('services.valyd.client_id'),
         'client_secret' => config('services.valyd.client_secret'),
         'redirect_uri'  => config('services.valyd.redirect_uri'),     // same URI used at authorize
-    ])->throw()->json();
+        'code_verifier' => session()->pull('valyd_code_verifier'),    // PKCE
+    ]);
+    if ($response->failed()) {
+        // RFC 6749 §5.2: {"error": "invalid_grant", "error_description": "..."}
+        return response()->json($response->json(), 400);
+    }
+    $token = $response->json();
     // TOP-LEVEL JSON: access_token, refresh_token, id_token (RS256), expires_in (~900)
 
     $user = Http::withToken($token['access_token'])
@@ -111,7 +125,7 @@ Open http://localhost:8000/auth/valyd and complete the login.
 
 <Callout type="info" emoji="✅">
 **Checkpoint:** `/auth/valyd` redirects to `https://idp.valyd.work/api/auth/oidc/authorize?...`
-with your `state` in the URL; after consent, the callback returns your `valyd_id` and
+with your `state`, `code_challenge`, and `code_challenge_method=S256` in the URL; after consent, the callback returns your `valyd_id` and
 `id_verified`; and a forged callback (wrong or missing `state`) is rejected with HTTP 403.
 </Callout>
 
@@ -126,9 +140,12 @@ signature against `https://idp.valyd.work/api/auth/oidc/jwks.json` (e.g. with
 - **403 on legitimate logins** — the session cookie was lost between the two routes; both must
   run on the same host and go through Laravel's `web` middleware (sessions enabled). See
   [Errors & troubleshooting](/docs/errors).
-- **`invalid_grant` from `->throw()`** — the code is single-use and short-lived; refreshing the
-  callback URL replays a consumed code. Restart from `/auth/valyd`. See
-  [Errors & troubleshooting](/docs/errors).
+- **`invalid_grant` from the token endpoint** — the code is single-use and short-lived;
+  refreshing the callback URL replays a consumed code (and revokes the tokens it produced). A
+  `code_verifier` that doesn't match the challenge fails the same way. Restart from
+  `/auth/valyd`. See [Errors & troubleshooting](/docs/errors).
+- **`error=invalid_request` on the callback** — the authorize URL lacked `code_challenge` /
+  `code_challenge_method=S256`; PKCE is required for every client.
 
 ## Next steps
 

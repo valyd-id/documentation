@@ -23,9 +23,14 @@ sequenceDiagram
 
 ## Steps
 
-1. `POST https://idp.valyd.work/api/auth/oidc/token` with
-   `{ "grant_type": "refresh_token", "refresh_token": "…", "client_id": "…", "client_secret": "…" }`.
-2. Read the top-level response: a fresh `access_token` **and a new `refresh_token`**.
+1. `POST https://idp.valyd.work/api/auth/oidc/token` (form-encoded) with
+   `grant_type=refresh_token`, `refresh_token=…`, and your client credentials (HTTP Basic **or**
+   `client_id` + `client_secret` in the body — not both). Optionally pass `scope` to **narrow**
+   the new access token to a subset of the originally granted scopes; asking for more returns
+   `invalid_scope`.
+2. Read the top-level response: a fresh `access_token` **and a new `refresh_token`**. Failures
+   are standard OAuth 2.0 errors, e.g. `400 { "error": "invalid_grant", "error_description": "…" }`
+   — treat `invalid_grant` as "the user must sign in again".
 3. **Persist the new refresh token, atomically replacing the old one.** With the SDK
    (`@valyd/sdk`): `const next = await valyd.auth.refreshToken(stored)` — store both
    `next.accessToken` and `next.refreshToken`.
@@ -44,21 +49,29 @@ sequenceDiagram
 
 ## Logout & revocation
 
-RP-initiated logout is `GET https://idp.valyd.work/api/auth/oidc/logout`, advertised in
-discovery as `end_session_endpoint`:
+RP-initiated logout is `https://idp.valyd.work/api/auth/oidc/logout` (GET or POST), advertised
+in discovery as `end_session_endpoint`:
 
 ```text
 https://idp.valyd.work/api/auth/oidc/logout?id_token_hint=ID_TOKEN&post_logout_redirect_uri=https://yourapp.com/logged-out&state=RANDOM
 ```
 
-- `id_token_hint` — the `id_token` from login; an **expired one is accepted** (its signature
-  still proves the user/client).
-- `post_logout_redirect_uri` — must **exactly match** one of your registered redirect URIs, so
-  register your post-logout URL as an additional redirect URI.
-- `state` — optional, echoed back.
+- `id_token_hint` — the `id_token` from login (recommended); an **expired one is accepted** (its
+  signature still proves the user/client). Without a valid hint the user sees a
+  **"Sign out of Valyd?"** confirmation page first.
+- `client_id` — optional; identifies your app when you don't send `id_token_hint`.
+- `post_logout_redirect_uri` — must be **registered** for your client. First-party clients use
+  their registered post-logout URIs. Developer-portal apps may, for now, use one of their
+  registered redirect URIs (transitional — sunset **2026-12-01**, see
+  [Deprecations](/docs/deprecations)). An unregistered value shows an error page instead of
+  redirecting.
+- `state` — optional, appended to the post-logout redirect.
 
-It revokes the user's refresh and access tokens **for your client**, then redirects. Also clear
-your own app session — Valyd can't do that for you.
+Logout **ends the user's Valyd session in that browser** (Valyd cookies cleared, the IdP
+session's refresh token revoked, the Valyd web app's storage cleared) and revokes the user's
+refresh and access tokens **for your client**, then redirects. Also clear your own app session —
+Valyd can't do that for you. With the SDK:
+`valyd.auth.getEndSessionUrl({ idTokenHint, postLogoutRedirectUri, state })`.
 
 ## Build it
 

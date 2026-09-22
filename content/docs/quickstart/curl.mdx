@@ -34,29 +34,41 @@ Copy the `client_id` and the one-time `client_secret`.
 
 ## 2. Build the authorize URL and open it
 
-Generate a random `state` (and `nonce`), then open this URL in a browser:
+Generate a random `state`, `nonce`, and PKCE `code_verifier` (plus its S256 `code_challenge`),
+then open this URL in a browser:
 
 ```bash
 STATE=$(openssl rand -hex 16)   # store it — you compare it on the callback
 NONCE=$(openssl rand -hex 16)
+CODE_VERIFIER=$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=\n')   # keep it for step 4
+CODE_CHALLENGE=$(printf '%s' "$CODE_VERIFIER" | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')
 
-echo "https://idp.valyd.work/api/auth/oidc/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fcallback&response_type=code&scope=openid%20profile&state=$STATE&nonce=$NONCE"
+echo "https://idp.valyd.work/api/auth/oidc/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fcallback&response_type=code&scope=openid%20profile&state=$STATE&nonce=$NONCE&code_challenge=$CODE_CHALLENGE&code_challenge_method=S256"
 ```
 
 Anatomy: `response_type=code` always; `scope` is space-separated (URL-encoded) and **must include
-`openid`**; `state` is required and echoed back unchanged (your CSRF check); `nonce` is
-recommended and bound into the `id_token`.
+`openid`**; `code_challenge` + `code_challenge_method=S256` are **required** (PKCE, every client);
+`state` is recommended and echoed back unchanged (your CSRF check); `nonce` is recommended and
+bound into the `id_token`.
 
 ## 3. Grab the code from the callback
 
 After you approve the consent screen, the browser lands on your redirect URI:
 
 ```text
-http://localhost:8080/callback?code=AUTH_CODE_HERE&state=...
+http://localhost:8080/callback?code=AUTH_CODE_HERE&state=...&iss=https%3A%2F%2Fidp.valyd.work
 ```
 
-Check that `state` in the URL equals the `$STATE` you generated — then copy the `code`. It is
-single-use and expires in seconds, so exchange it immediately.
+Check that `state` in the URL equals the `$STATE` you generated and `iss` is
+`https://idp.valyd.work` — then copy the `code`. It is single-use and expires in seconds, so
+exchange it immediately.
+
+If you pressed **Cancel** (or something was wrong with the request) you get an error instead of
+a code:
+
+```text
+http://localhost:8080/callback?error=access_denied&error_description=...&state=...&iss=https%3A%2F%2Fidp.valyd.work
+```
 
 ## 4. Exchange the code for tokens
 
@@ -69,8 +81,12 @@ curl -X POST https://idp.valyd.work/api/auth/oidc/token \
   -d code=AUTH_CODE_HERE \
   -d client_id=YOUR_CLIENT_ID \
   -d client_secret=YOUR_CLIENT_SECRET \
-  -d redirect_uri=http://localhost:8080/callback
+  -d redirect_uri=http://localhost:8080/callback \
+  -d code_verifier=$CODE_VERIFIER
 ```
+
+(Or authenticate with HTTP Basic — `-u YOUR_CLIENT_ID:YOUR_CLIENT_SECRET` — and drop the two
+`client_*` fields. Don't send both.)
 
 The response is **top-level** token JSON — no `data` wrapper:
 
@@ -88,6 +104,15 @@ The response is **top-level** token JSON — no `data` wrapper:
 The `id_token` is an RS256 JWT — in production verify it against the JWKS at
 `https://idp.valyd.work/api/auth/oidc/jwks.json` and check its `nonce` claim equals your
 `$NONCE`.
+
+Errors are standard OAuth 2.0 JSON (no `success`/`data` wrapper):
+
+```json
+{
+  "error": "invalid_grant",
+  "error_description": "Invalid or expired authorization code"
+}
+```
 
 ## 5. Read the user
 
@@ -115,8 +140,11 @@ rotation is on, so always persist the new `refresh_token` you get back. Details 
 
 - **`redirect_uri` mismatch** — the URI at `/authorize` and `/token` must be identical and
   exactly match a registered redirect URI. See [Errors & troubleshooting](/docs/errors).
-- **`invalid_grant`** — the code expired or was already exchanged; go back to step 2 for a fresh
-  one. See [Errors & troubleshooting](/docs/errors).
+- **`invalid_grant`** — the code expired or was already exchanged, or `code_verifier` doesn't
+  match the `code_challenge`; go back to step 2 for a fresh one. See
+  [Errors & troubleshooting](/docs/errors).
+- **`error=invalid_request` on the callback** — the authorize URL was missing
+  `code_challenge` / `code_challenge_method=S256`. PKCE is required for every client.
 - **`invalid_scope` / missing `openid`** — `scope` must include `openid`, and every requested
   scope must be enabled on the app in the portal. See [Errors & troubleshooting](/docs/errors).
 

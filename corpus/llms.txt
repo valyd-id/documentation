@@ -117,6 +117,14 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
   session also carries the connected user's `valyd_access_token`.
 - Token exchange and webhook signature verification MUST run server-side (never expose the client
   secret or webhook secret to a browser).
+- **OIDC rules (since 2026-09-18):** PKCE `S256` is REQUIRED on every authorize request (send
+  `code_challenge` + `code_challenge_method=S256`, then `code_verifier` at the token endpoint —
+  `valyd.auth.createAuthorizationRequest()` does it). Authorization errors come back to your
+  `redirect_uri` as `?error=…&error_description=…&state=…&iss=…` (e.g. `access_denied` on Cancel);
+  verify `iss` equals the issuer. The OIDC token / userinfo / register endpoints return standard
+  `{"error":"…","error_description":"…"}` bodies (RFC 6749/6750/7591); every other Valyd API keeps
+  the `{success, data, error:{code,message}}` envelope. Logout (`/api/auth/oidc/logout`) ends the
+  user's Valyd browser session.
 - **Machine-readable API specs (OpenAPI 3.1):** for endpoint discovery, schemas, and codegen, fetch
   `https://docs.valyd.work/openapi/valyd-id.json` and `https://docs.valyd.work/openapi/valyd-verify.json`.
 - **Capability matrix (machine-readable):** to pick a path deterministically, fetch
@@ -134,7 +142,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 
 ## Valyd ID — Authentication & integration
 
-- [Authentication (OAuth2 / OIDC flow)](https://docs.valyd.work/docs/authentication.md): Connect with Valyd — authorization URL, state/nonce CSRF, callback handling, code→token exchange, refresh rotation.
+- [Authentication (OAuth2 / OIDC flow)](https://docs.valyd.work/docs/authentication.md): Connect with Valyd — authorization URL with required PKCE (S256), state/nonce CSRF, prompt/max_age, callback error + iss handling, code→token exchange, RFC 6749 errors, refresh rotation.
 - [OpenID Connect (OIDC) Integration](https://docs.valyd.work/docs/oidc.md): Discovery endpoint, manual config, Mendix setup, claim/user mapping, testing, troubleshooting, security.
 
 ## Valyd ID — Reference
@@ -142,7 +150,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 - [API Reference (endpoints)](https://docs.valyd.work/docs/endpoints.md): OIDC discovery, authorize, token, JWKS, UserInfo, licenses, and account verification proofs under `/api/auth/oidc`.
 - [OAuth2 Scopes](https://docs.valyd.work/docs/scopes.md): profile, verifications, doctor_license, zkp, mcp — what data each unlocks and how to request them.
 - [Errors & troubleshooting](https://docs.valyd.work/docs/errors.md): Every error code with cause and fix, plus the app-level "state mismatch" CSRF rejection.
-- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history, including the v1.10.1 secure OIDC transaction helpers.
+- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history, including the 2026-09-18 OIDC standards-compliance update (@valyd/sdk 1.12.0) and the v1.10.1 secure OIDC transaction helpers.
 
 
 - [Request user data (consent)](https://docs.valyd.work/docs/request-data.md): Ask a Valyd user for raw attributes (legal_name, dob, country). The user approves in their Valyd app; values return end-to-end encrypted (X25519 sealed box) via valyd.auth.requestAttributes + getAttributeResult. Needs libsodium-wrappers for self-custody.

@@ -1,5 +1,63 @@
 # Changelog
 
+## Platform update — OIDC standards compliance (2026-09-18)
+
+The Valyd IdP now follows OAuth 2.0 / OpenID Connect to the letter. Any conformant OIDC library
+works unchanged; hand-rolled integrations should check the **Breaking** items. Update to
+**`@valyd/sdk` 1.12.0**, which matches the new contract.
+
+- **Breaking (Authorize):** **PKCE is required for every client**, public and confidential —
+  send `code_challenge` (43–128 base64url chars) + `code_challenge_method=S256` (`plain` is not
+  supported) and the `code_verifier` at the token endpoint. Missing PKCE → redirect with
+  `error=invalid_request`.
+- **Breaking (Token / UserInfo / Registration errors):** OIDC protocol endpoints now return
+  standard errors — `{"error":"invalid_grant","error_description":"…"}` (`error` is a **string**)
+  with `Cache-Control: no-store`, instead of `{"success":false,"data":[],"error":{"code","message"}}`.
+  `invalid_client` is `401` (+ `WWW-Authenticate: Basic` when HTTP Basic was used). UserInfo uses
+  RFC 6750 (`401 invalid_token` / `403 insufficient_scope` with `WWW-Authenticate: Bearer`).
+  Registration uses RFC 7591 (`invalid_redirect_uri`, `invalid_client_metadata`). Every other
+  Valyd API keeps the envelope.
+- **Breaking (Authorize errors):** once `client_id` + `redirect_uri` are verified, every error is
+  redirected back to your app as `?error=…&error_description=…&state=…&iss=…`. **Cancel** on the
+  consent screen → `access_denied`; a private org app with an unassigned user → `access_denied`
+  (was a 403 JSON). Only an unknown client / unregistered `redirect_uri` shows an error page.
+- **Breaking (Access token):** access tokens are RFC 9068 JWTs (`typ: at+jwt`) and `sub` is now the
+  user's `valyd_…` id (same as the ID token and UserInfo — previously a numeric id); they also carry
+  `jti`, `client_id`, `scope`, `valyd_id`, and `aud` = the RFC 8707 resource if bound, else `vc-api`.
+- **Breaking (Token client auth):** use `client_secret_basic` **or** `client_secret_post` — both on
+  one request → `invalid_request`. Basic credentials are form-urlencoded (RFC 6749 §2.3.1).
+- **Changed (Authorize):** `state` is optional (still recommended) and echoed verbatim only if
+  sent — no minimum length. `nonce` is optional and the ID token contains `nonce` **only if you
+  sent one** (the IdP no longer invents one). `response_type` is `code` only, `response_mode`
+  `query` only; `request` / `request_uri` → `request_not_supported` / `request_uri_not_supported`.
+- **Changed (UserInfo):** `email_verified` is always `false` — Valyd does not verify email
+  ownership; identity verification is the separate `id_verified` claim.
+- **Changed (Logout):** RP-initiated logout (`/api/auth/oidc/logout`, GET or POST) now **ends the
+  Valyd session in that browser** (cookies, refresh token, IdP web-app storage) and revokes the
+  calling app's tokens for the user. Without a valid `id_token_hint` the user sees a "Sign out of
+  Valyd?" confirmation. `post_logout_redirect_uri` must be registered (developer-portal apps may use
+  a registered redirect URI until 2026-12-01); `state` is appended.
+- **Added (Authorize):** GET **and POST** (form); `prompt` (`none` / `login` / `consent` /
+  `select_account`) — `prompt=none` returns `login_required` / `consent_required`; `max_age`
+  (ID token always has `auth_time` = the real sign-in time); `id_token_hint`; `login_hint`.
+- **Added (Authorize):** RFC 9207 `iss` on every authorization response (success and error) —
+  verify it equals the issuer. Advertised as `authorization_response_iss_parameter_supported: true`.
+- **Added (Token):** refresh grant accepts an optional `scope` to **narrow** the new access token
+  (widening → `invalid_scope`).
+- **Added (UserInfo):** POST, and the token in a form-body `access_token` (not both).
+- **Added (Discovery):** `response_modes_supported`, `prompt_values_supported`,
+  `claim_types_supported`, `request_parameter_supported: false`,
+  `request_uri_parameter_supported: false`, `claims_parameter_supported: false`,
+  `frontchannel_logout_supported: false`, `backchannel_logout_supported: false`,
+  `authorization_response_iss_parameter_supported: true`.
+- **Fixed (Token):** replaying an authorization code is rejected **and revokes every token it
+  already produced** (RFC 6749 §4.1.2).
+- **SDK — `@valyd/sdk` 1.12.0:** reads both error shapes (`ValydError.code` = `error`);
+  `getAuthorizationUrl()` throws `pkce_required` without `codeChallenge` — use
+  `createAuthorizationRequest()`; `handleCallback()` verifies the callback `iss`
+  (`issuer_mismatch`); new `getEndSessionUrl({ idTokenHint, postLogoutRedirectUri, state })`.
+  See [Deprecations](/docs/deprecations).
+
 ## Platform update — recovery email, liveness reliability & auth (2026-09-16)
 
 - **Changed (Account Recovery):** `startAccountRecovery` now **always emails** the recovery link to

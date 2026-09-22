@@ -27,9 +27,9 @@ person asking is the same Valyd account.
 ## Prerequisites
 
 - The member must be a **claimed, active member** of your org with a **`valyd_id` and an enrolled
-  face** on file. Members onboarded through [Workforce onboarding](/docs/organizations/onboarding)
-  qualify; so does anyone you register with [`bindMember`](#bindmember) after they connect Valyd.
-  Never-claimed or faceless members are **not** recoverable (fail-closed).
+  face** on file. Members onboarded through [Workforce onboarding](/docs/organizations/onboarding) —
+  who scan a face-activation link once — qualify. Never-claimed or faceless members are **not**
+  recoverable (fail-closed).
 - You have your app's `clientId` / `clientSecret` and a Verify **project with a webhook** configured
   (the recovery result is delivered to that webhook).
 
@@ -46,33 +46,14 @@ person asking is the same Valyd account.
 5. On approved, YOUR app lets the user set a new password. Valyd sets nothing.
 ```
 
-## Registering members who connect after sign-in
+## How members become recoverable
 
-If your users sign in with email/password first and **connect Valyd afterwards** (OIDC), register
-that binding once so they become recoverable. Call `bindMember` when the OIDC callback returns the
-member's `valyd_id`:
-
-> **You often don't need `bindMember`.** A member who connects through a **face-activation link** — a
-> Workforce invite, or [`resendMemberInvite`](/docs/organizations/api#re-send-invite) with
-> `notify: false` behind an in-app "Connect with Valyd" button — is bound **automatically** when they
-> scan their face, and is recoverable immediately. Use `bindMember` only when **you** obtained the
-> `valyd_id` yourself (e.g. an OIDC login on your own site) and need to record the binding.
-
-### `bindMember`
-
-```ts
-// After the member completes "Connect with Valyd" and you have their valyd_id:
-const member = await client.bindMember({
-  valydId: "valyd_…",          // from the OIDC id_token / userinfo
-  email: "jane@acme.com",       // the email they sign in to YOUR app with
-  firstName: "Jane",
-  lastName: "Doe",
-});
-// member.status === "active"  → they are now a recoverable org member.
-```
-
-`POST /api/sdk/members/bind` — idempotent upsert. It marks the member **active** and bound to that
-`valyd_id`. Members added through Workforce onboarding are already bound and do not need this.
+A member becomes recoverable **automatically** when they connect a Valyd identity through a
+**face-activation link** — a [Workforce invite](/docs/organizations/onboarding), or
+[`resendMemberInvite`](/docs/organizations/api#re-send-invite) with `notify: false` behind an in-app
+"Connect with Valyd" button. Scanning the link binds their `valyd_id` to the membership and enrolls
+their face in one step, so no separate registration call is needed — the moment they show as
+`active` with a `valyd_id`, `startAccountRecovery` works for them.
 
 ## Start a recovery
 
@@ -168,5 +149,4 @@ agree on the same decision.
   only to the address already **on file**, never to a caller-supplied one.
 - The start endpoint is **rate-limited**. Return a **generic** response whether or not an account
   exists, so this can't be used to probe which members are registered.
-- `bindMember` and `startAccountRecovery` are **server-to-server** — the client secret must never
-  reach a browser.
+- `startAccountRecovery` is **server-to-server** — the client secret must never reach a browser.
