@@ -150,7 +150,7 @@ Integration Guide, rendered at https://docs.valyd.work/ai/agent-guide.
 - [API Reference (endpoints)](https://docs.valyd.work/docs/endpoints.md): OIDC discovery, authorize, token, JWKS, UserInfo, licenses, and account verification proofs under `/api/auth/oidc`.
 - [OAuth2 Scopes](https://docs.valyd.work/docs/scopes.md): profile, verifications, doctor_license, zkp, mcp — what data each unlocks and how to request them.
 - [Errors & troubleshooting](https://docs.valyd.work/docs/errors.md): Every error code with cause and fix, plus the app-level "state mismatch" CSRF rejection.
-- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history, including the 2026-09-18 OIDC standards-compliance update (@valyd/sdk 1.12.0) and the v1.10.1 secure OIDC transaction helpers.
+- [Changelog](https://docs.valyd.work/docs/changelog.md): @valyd/sdk release history, including the 2026-09-18 OIDC standards-compliance update and the secure OIDC transaction helpers.
 
 
 - [Request user data (consent)](https://docs.valyd.work/docs/request-data.md): Ask a Valyd user for raw attributes (legal_name, dob, country). The user approves in their Valyd app; values return end-to-end encrypted (X25519 sealed box) via valyd.auth.requestAttributes + getAttributeResult. Needs libsodium-wrappers for self-custody.
