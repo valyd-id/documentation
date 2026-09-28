@@ -15,10 +15,17 @@ const FALLBACK = '1.10.5'
 
 function resolveVersion() {
   if (process.env.SDK_VERSION && /^\d+\.\d+\.\d+$/.test(process.env.SDK_VERSION)) return process.env.SDK_VERSION
-  try {
-    const v = JSON.parse(fs.readFileSync(path.resolve(ROOT, '..', 'valyd-sdk-js', 'package.json'), 'utf8')).version
-    if (/^\d+\.\d+\.\d+$/.test(v)) return v
-  } catch { /* not co-located (CI) */ }
+  // Prefer the pinned published dependency (node_modules/@valyd/sdk — same as the contract gate),
+  // then a co-located ../valyd-sdk-js source checkout for local SDK development.
+  for (const pkg of [
+    path.resolve(ROOT, 'node_modules', '@valyd', 'sdk', 'package.json'),
+    path.resolve(ROOT, '..', 'valyd-sdk-js', 'package.json'),
+  ]) {
+    try {
+      const v = JSON.parse(fs.readFileSync(pkg, 'utf8')).version
+      if (/^\d+\.\d+\.\d+$/.test(v)) return v
+    } catch { /* try next */ }
+  }
   return FALLBACK
 }
 
