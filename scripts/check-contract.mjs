@@ -38,8 +38,16 @@ const notes = []
 // Static .d.ts parsing is fragile — a removed namespace can leave unused interface types behind
 // (e.g. `interface Workflow`) that keep the word alive. Import the built SDK and check the real
 // object graph: `verifyClient.<ns>.<method>` / `valydClient.<ns>.<method>` must be a function.
-const distJs = path.resolve(ROOT, '..', 'valyd-sdk-js', 'dist', 'index.js')
-if (fs.existsSync(distJs)) {
+// Resolve the built SDK to validate against. Prefer the pinned published dependency
+// (node_modules/@valyd/sdk — the exact package users install, kept current in package.json),
+// falling back to a co-located ../valyd-sdk-js source checkout for local SDK development.
+// This decouples the gate from a box's stale sibling checkout: docs validate against the
+// SDK they actually document, not whatever old version happens to sit next to them on a server.
+const distJs = [
+  path.resolve(ROOT, 'node_modules', '@valyd', 'sdk', 'dist', 'index.js'),
+  path.resolve(ROOT, '..', 'valyd-sdk-js', 'dist', 'index.js'),
+].find(p => fs.existsSync(p))
+if (distJs) {
   let valydClient, verifyClient, importErr
   try {
     const mod = await import(pathToFileURL(distJs).href)
