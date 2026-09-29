@@ -34,13 +34,14 @@ jobs:
       url: https://docs.valyd.vip
     steps:
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: 149.28.236.135          # staging box (idp.pollus.online), *.valyd.vip
           username: ahmad
           port: 2222
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
+          # abort on first failing command -> `set -euo pipefail` below
+          # (appleboy/ssh-action v1.2.x dropped the script_stop input)
           command_timeout: 20m
           envs: DOCS_BRANCH,DOCS_PATH,PM2_APP,DOCS_HOST
           script: |
