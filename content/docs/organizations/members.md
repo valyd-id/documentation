@@ -82,6 +82,14 @@ In the Developer Portal, the org owner/admin sees the full roster with each memb
 **Organization → Members** tab, and can re-send invites, deactivate/reactivate, or **Remove** a
 member outright (permanent, same as the API's `permanent: true`).
 
+## Badges
+
+Members (and any Valyd user who connects to your app) can hold **badges** — org-defined labels like
+"Background Check" or "Licensed Contractor". Assign them to staff in **Organization → Members**, or
+grant them to users over the API with [`grantBadge()`](/docs/organizations/badges#grant-a-badge).
+Badges can also **gate login** to your private apps. See **[Badges](/docs/organizations/badges)** for
+the full model (private vs public, expiry) and the badge API.
+
 ## Account recovery
 
 If a member is locked out of **your app** — they forgot the email/password they sign in with — you

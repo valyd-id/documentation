@@ -15,6 +15,9 @@ deactivate/reactivate, remove, re-send invites, and read your seats & billing �
 path **`/api/sdk`**. Every call is made with your organization's `client_id` + `client_secret`, so
 this API is **server-side only** — the secret must never reach a browser.
 
+> Managing **badges** (create, grant to a user, revoke, list) uses the same credentials and base path
+> and is documented on its own page — see **[Badges](/docs/organizations/badges)**.
+
 The examples below use the `@valyd/sdk` client and raw HTTP against
 `https://dev.valyd.work/api/sdk`.
 
