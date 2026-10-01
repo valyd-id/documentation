@@ -22,6 +22,7 @@ This section is split into five pages:
 | **Overview** (this page) | How organizations work, why use one, what you get, how to start |
 | [Roles & access](/docs/organizations/roles) | The `owner` / `admin` / `developer` / `member` roles and who can do what |
 | [Members & onboarding](/docs/organizations/members) | Adding members, invite methods, the lifecycle/status values, reactivation |
+| [Badges](/docs/organizations/badges) | Org-defined labels you grant to users — private/public, expiry, the grant/revoke API, and login gating |
 | [Organization API](/docs/organizations/api) | The server-to-server member API — every endpoint with real request + response |
 | [Pricing & billing](/docs/organizations/billing) | The per-seat model and the billing endpoint |
 
