@@ -219,11 +219,27 @@ X-Client-Secret: <your client_secret>
 
 ## Grant a badge
 
-Give one of your org's badges to a **Valyd user** by their `valyd_id`. This is the verification-reuse
-step: a user passed a check on your site, connected their Valyd ID, and now holds your badge.
+Offer one of your org's badges to a **Valyd user** by their `valyd_id`. This is the verification-reuse
+step: a user passed a check on your site and connected their Valyd ID.
+
+> **A grant is an _offer_, not an immediate assignment.** The badge is **not** added right away. The
+> user gets a notification in their Valyd app and must **approve** it — and if their identity isn't
+> **KYC-verified** yet, they complete a quick ID check first. Only then does the badge land on their
+> account. So this call returns **`status: "pending"`**; the outcome happens on the user's device and
+> there is **no callback** to your server.
+
+`first_name` / `last_name` are optional and **display-only** — shown in the user's approval
+notification.
 
 ```ts
-await client.grantBadge({ valydId: "valyd_9f8e7d6c5b4a3210fedcba98", badgeId: 12 });
+const res = await client.grantBadge({
+  valydId: "valyd_9f8e7d6c5b4a3210fedcba98",
+  badgeId: 12,
+  firstName: "Ada",     // optional, display-only
+  lastName: "Lovelace", // optional, display-only
+});
+// res.status === "pending"  → offered, awaiting the user's approval
+// res.status === "granted"  → the user already had it (nothing to do)
 ```
 
 ```http
@@ -233,33 +249,36 @@ X-Client-Id: <your client_id>
 X-Client-Secret: <your client_secret>
 Content-Type: application/json
 
-{ "valyd_id": "valyd_9f8e7d6c5b4a3210fedcba98", "badge_id": 12 }
+{ "valyd_id": "valyd_9f8e7d6c5b4a3210fedcba98", "badge_id": 12, "first_name": "Ada", "last_name": "Lovelace" }
 ```
+
+A fresh offer — the user must approve it:
 
 ```json
 {
   "success": true,
   "data": {
-    "granted": true,
+    "status": "pending",
+    "granted": false,
+    "request_id": "7b3f…",
     "valyd_id": "valyd_9f8e7d6c5b4a3210fedcba98",
-    "badge": {
-      "id": 12,
-      "name": "Background Check",
-      "visibility": "private",
-      "expiry_date": "2027-01-01",
-      "expired": false,
-      "created_at": "2026-09-30T10:00:00+00:00"
-    },
+    "badge": { "id": 12, "name": "Background Check", "visibility": "private", "expiry_date": "2027-01-01", "expired": false, "created_at": "2026-09-30T10:00:00+00:00" },
     "display": "Acme, Inc. Background Check"
   }
 }
 ```
 
+Already held — a no-op:
+
+```json
+{ "success": true, "data": { "status": "granted", "granted": true, "already_held": true, "valyd_id": "valyd_9f8e7d6c5b4a3210fedcba98", "badge": { "id": 12, "name": "Background Check", "visibility": "private", "expiry_date": "2027-01-01", "expired": false, "created_at": "2026-09-30T10:00:00+00:00" } } }
+```
+
 - **Identify the user** with `valyd_id` (their Valyd identity id — the OIDC `sub`). Email is **not**
   accepted here.
 - **Identify the badge** with its numeric `badge_id` from [List badges](#list-badges).
-- **Idempotent** — a user holds a badge at most once; re-granting is a safe no-op that still returns
-  `granted: true`.
+- **Idempotent** — a user holds a badge at most once, and a repeat call while an offer is still
+  pending **reuses** the open request (no duplicate notification).
 
 > **The user must have connected to your app first.** A grant only succeeds for a user who has signed
 > in to *your* application through Valyd (OAuth/OIDC) at least once. This stops a client from granting
@@ -346,9 +365,11 @@ in the portal, not this API; the requirement is enforced by Valyd at login.
    `id` (or read it later with [`listBadges()`](#list-badges)).
 2. **User connects** — the person passes your check, then signs in to your app with Valyd (OAuth), so
    they're connected to your client.
-3. **Grant** — call [`grantBadge({ valydId, badgeId })`](#grant-a-badge). The badge is now on their
-   Valyd identity.
-4. **Reuse** — if the badge is `public`, other apps see it in the user's `badges` claim; if you gate a
-   private app on it, the badge lets the user straight in.
+3. **Offer** — call [`grantBadge({ valydId, badgeId, firstName, lastName })`](#grant-a-badge). This
+   returns `status: "pending"` and notifies the user.
+4. **User approves** — on their device they approve the offer (and complete KYC if their identity
+   isn't verified yet). Only then is the badge added to their Valyd identity. You get no callback.
+5. **Reuse** — once granted, if the badge is `public`, other apps see it in the user's `badges` claim;
+   if you gate a private app on it, the badge lets the user straight in.
 
 See the **Checkr** example app (`checkr/server`) for an end-to-end verification-reuse integration.
