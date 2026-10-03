@@ -33,3 +33,30 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o ConnectTimeout=30 \
             "valyddeploy@$SSH_HOST"
+
+  deploy-aws:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    concurrency:
+      group: deploy-staging-aws
+      cancel-in-progress: false
+    steps:
+      - name: Deploy documentation to staging (AWS)
+        env:
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY_AWS }}
+          SSH_HOST: ${{ secrets.STAGING_HOST_AWS }}
+          SSH_PORT: ${{ secrets.STAGING_PORT_AWS }}
+          KNOWN_HOSTS: ${{ secrets.STAGING_KNOWN_HOSTS_AWS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          SSH_HOST=$(printf '%s' "$SSH_HOST" | tr -d '[:space:]')
+          SSH_PORT=$(printf '%s' "$SSH_PORT" | tr -d '[:space:]')
+          ssh -p "$SSH_PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=30 \
+            "valyddeploy@$SSH_HOST"
